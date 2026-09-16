@@ -45,20 +45,90 @@
     backToTop.classList.toggle("visible", window.scrollY > 500);
   }
 
+  /* ---------- Scroll progress bar ---------- */
+  var scrollProgress = document.getElementById("scrollProgress");
+  function updateScrollProgress() {
+    var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    var pct = docHeight > 0 ? (window.scrollY / docHeight) * 100 : 0;
+    scrollProgress.style.width = pct + "%";
+  }
+
   window.addEventListener(
     "scroll",
     function () {
       setActiveLink();
       toggleBackToTop();
+      updateScrollProgress();
     },
     { passive: true }
   );
   setActiveLink();
   toggleBackToTop();
+  updateScrollProgress();
 
   backToTop.addEventListener("click", function () {
     window.scrollTo({ top: 0, behavior: "smooth" });
   });
+
+  /* ---------- Scroll-reveal animations ---------- */
+  var revealEls = Array.prototype.slice.call(document.querySelectorAll(".reveal"));
+  if ("IntersectionObserver" in window) {
+    var revealObserver = new IntersectionObserver(
+      function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("is-visible");
+            revealObserver.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.15, rootMargin: "0px 0px -40px 0px" }
+    );
+    revealEls.forEach(function (el) {
+      revealObserver.observe(el);
+    });
+  } else {
+    revealEls.forEach(function (el) {
+      el.classList.add("is-visible");
+    });
+  }
+
+  /* ---------- Animated stat counters ---------- */
+  var countEls = Array.prototype.slice.call(document.querySelectorAll("[data-count-to]"));
+  function animateCount(el) {
+    var target = parseFloat(el.getAttribute("data-count-to"));
+    var suffix = el.getAttribute("data-suffix") || "";
+    var duration = 1200;
+    var start = null;
+    function step(timestamp) {
+      if (start === null) start = timestamp;
+      var progress = Math.min((timestamp - start) / duration, 1);
+      var eased = 1 - Math.pow(1 - progress, 3);
+      el.textContent = Math.round(target * eased) + suffix;
+      if (progress < 1) window.requestAnimationFrame(step);
+    }
+    window.requestAnimationFrame(step);
+  }
+  if ("IntersectionObserver" in window && countEls.length) {
+    var countObserver = new IntersectionObserver(
+      function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            animateCount(entry.target);
+            countObserver.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
+    countEls.forEach(function (el) {
+      countObserver.observe(el);
+    });
+  } else {
+    countEls.forEach(function (el) {
+      el.textContent = el.getAttribute("data-count-to") + (el.getAttribute("data-suffix") || "");
+    });
+  }
 
   /* ---------- Hero search (demo only, no backend) ---------- */
   var heroSearch = document.getElementById("heroSearch");
