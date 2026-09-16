@@ -868,6 +868,7 @@
   let replyMode = "mic"; // mic | type
   let availableVoices = [];
   let selectedVoice = null;
+  let lastAnswerText = "";
 
   // ---------- DOM ----------
   const selectEl = document.getElementById("verticalSelect");
@@ -1139,6 +1140,51 @@
     timerInterval = null;
   }
 
+  // ---------- Contextual acknowledgments ----------
+  // Lightweight keyword matching so replies feel heard, without any real AI/API call.
+  const ackPhrases = {
+    emergency: [
+      "Oh no, that sounds urgent — let's get this sorted quickly.",
+      "Okay, that needs sorting straight away.",
+      "Right, let's get you help as fast as we can."
+    ],
+    concern: [
+      "Sorry to hear that.",
+      "Ah, that's not fun — let's get you sorted.",
+      "Okay, thanks for letting me know."
+    ],
+    positive: [
+      "Great, thanks for that.",
+      "Perfect, got it.",
+      "Lovely, thank you."
+    ],
+    generic: [
+      "Got it, thanks.",
+      "Understood.",
+      "Noted, thank you.",
+      "Okay, perfect.",
+      "Thanks for that."
+    ]
+  };
+
+  const ackKeywords = {
+    emergency: ["emergency", "urgent", "break-in", "broken in", "locked out", "asap", "right now", "immediately", "trapped", "flooding", "can't get in"],
+    concern: ["pain", "hurts", "hurting", "injured", "injury", "ache", "swollen", "bleeding", "unwell", "sick", "broken"],
+    positive: ["checkup", "check-up", "routine", "cosmetic", "vaccination", "first time", "colour", "color", "style"]
+  };
+
+  function randomFrom(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  function pickAcknowledgment(text) {
+    const t = text.toLowerCase();
+    if (ackKeywords.emergency.some(w => t.includes(w))) return randomFrom(ackPhrases.emergency);
+    if (ackKeywords.concern.some(w => t.includes(w))) return randomFrom(ackPhrases.concern);
+    if (ackKeywords.positive.some(w => t.includes(w))) return randomFrom(ackPhrases.positive);
+    return randomFrom(ackPhrases.generic);
+  }
+
   // ---------- Captions & transcript ----------
   function escapeHtml(str) {
     const div = document.createElement("div");
@@ -1208,6 +1254,7 @@
     answers = {};
     questionIndex = -1;
     awaitingAnswer = false;
+    lastAnswerText = "";
     userInput.value = "";
     botCaption.textContent = "";
     userCaption.textContent = "";
@@ -1273,12 +1320,14 @@
 
   function advance() {
     if (callState !== "active") return;
+    const ack = lastAnswerText ? pickAcknowledgment(lastAnswerText) + " " : "";
+    lastAnswerText = "";
     questionIndex++;
     if (questionIndex < currentConfig.questions.length) {
       const q = currentConfig.questions[questionIndex];
-      botSay(q.prompt);
+      botSay(ack + q.prompt);
     } else {
-      botSay(currentConfig.closing, () => {
+      botSay(ack + currentConfig.closing, () => {
         setTimeout(endCall, 1200);
       });
     }
@@ -1293,6 +1342,7 @@
       const key = currentConfig.questions[questionIndex].key;
       answers[key] = text;
     }
+    lastAnswerText = text;
 
     userInput.value = "";
     awaitingAnswer = false;
