@@ -164,6 +164,13 @@
   }
   .biz-preview strong { color: var(--text); }
 
+  .hint {
+    margin: 6px 0 0;
+    font-size: 11.5px;
+    color: var(--text-dim);
+    line-height: 1.4;
+  }
+
   .toggle-row {
     display: flex;
     align-items: center;
@@ -678,6 +685,12 @@
         </div>
       </div>
 
+      <div class="field" id="voiceField">
+        <label for="voiceSelect">AI voice</label>
+        <select id="voiceSelect"></select>
+        <p class="hint">Voice quality depends on your browser/OS — Chrome and Edge usually sound the most natural. Try a few.</p>
+      </div>
+
       <button class="btn btn-primary" id="restartBtn">📞 New Incoming Call</button>
       <button class="btn btn-ghost" id="skipVoiceBtn">Replay last line aloud</button>
     </div>
@@ -731,6 +744,7 @@
         <button class="icon-btn end-call" id="endCallBtn" aria-label="End call">☎</button>
       </div>
       <p class="stt-note" id="sttNote" hidden>Speech recognition isn't supported in this browser (try Chrome or Edge) — using typed replies instead.</p>
+      <p class="stt-note" id="micHint">Speak clearly right after "Listening…" appears. Mic accuracy depends on your browser and microphone — Chrome on desktop tends to work best.</p>
 
       <details class="transcript" id="transcriptDetails" hidden>
         <summary>View full call transcript</summary>
@@ -852,6 +866,8 @@
   let recognizing = false;
   let sttSupported = false;
   let replyMode = "mic"; // mic | type
+  let availableVoices = [];
+  let selectedVoice = null;
 
   // ---------- DOM ----------
   const selectEl = document.getElementById("verticalSelect");
@@ -861,6 +877,8 @@
   const restartBtn = document.getElementById("restartBtn");
   const skipVoiceBtn = document.getElementById("skipVoiceBtn");
   const voiceToggle = document.getElementById("voiceToggle");
+  const voiceSelect = document.getElementById("voiceSelect");
+  const voiceField = document.getElementById("voiceField");
   const callerName = document.getElementById("callerName");
   const callerSub = document.getElementById("callerSub");
   const avatarRing = document.getElementById("avatarRing");
@@ -884,6 +902,7 @@
   const typePanel = document.getElementById("typePanel");
   const useMicBtn = document.getElementById("useMicBtn");
   const sttNote = document.getElementById("sttNote");
+  const micHint = document.getElementById("micHint");
 
   // ---------- Populate dropdown ----------
   businessConfigs.forEach((cfg) => {
@@ -905,6 +924,53 @@
   updatePreview(currentConfig);
 
   // ---------- Speech synthesis ----------
+  function loadVoices() {
+    if (!("speechSynthesis" in window)) {
+      voiceField.hidden = true;
+      return;
+    }
+    availableVoices = window.speechSynthesis.getVoices();
+    if (!availableVoices.length) return;
+
+    const englishVoices = availableVoices.filter(v => v.lang && v.lang.toLowerCase().startsWith("en"));
+    const voicesToList = englishVoices.length ? englishVoices : availableVoices;
+
+    voiceSelect.innerHTML = "";
+    voicesToList.forEach((v) => {
+      const opt = document.createElement("option");
+      opt.value = v.name;
+      opt.textContent = `${v.name} (${v.lang})${v.localService ? "" : " · online"}`;
+      voiceSelect.appendChild(opt);
+    });
+
+    // Prefer the more natural-sounding voices browsers ship, in rough order of quality.
+    const preferredPatterns = [
+      /natural/i, /neural/i, /online/i,
+      /aria/i, /jenny/i, /guy/i,
+      /google uk english female/i, /google us english/i,
+      /samantha/i, /daniel/i, /karen/i, /moira/i
+    ];
+    let best = null;
+    for (const pattern of preferredPatterns) {
+      best = voicesToList.find(v => pattern.test(v.name));
+      if (best) break;
+    }
+    const chosen = (selectedVoice && voicesToList.find(v => v.name === selectedVoice.name)) || best || voicesToList[0];
+    selectedVoice = chosen;
+    voiceSelect.value = chosen.name;
+  }
+
+  voiceSelect.addEventListener("change", () => {
+    selectedVoice = availableVoices.find(v => v.name === voiceSelect.value) || null;
+  });
+
+  if ("speechSynthesis" in window) {
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+  } else {
+    voiceField.hidden = true;
+  }
+
   function speak(text, onStart, onEnd) {
     lastSpokenText = text;
     if (!voiceToggle.checked || !("speechSynthesis" in window)) {
@@ -915,7 +981,8 @@
     try {
       window.speechSynthesis.cancel();
       const utter = new SpeechSynthesisUtterance(text);
-      utter.rate = 1.0;
+      if (selectedVoice) utter.voice = selectedVoice;
+      utter.rate = 0.98;
       utter.pitch = 1.0;
       utter.volume = 1.0;
       utter.onstart = () => { if (onStart) onStart(); };
@@ -943,6 +1010,7 @@
     if (!sttSupported) {
       replyMode = "type";
       sttNote.hidden = false;
+      micHint.hidden = true;
       micPanel.hidden = true;
       typePanel.hidden = false;
       useMicBtn.hidden = true;
@@ -952,7 +1020,7 @@
     recognition = new SpeechRecognition();
     recognition.continuous = false;
     recognition.interimResults = true;
-    recognition.lang = "en-GB";
+    recognition.lang = navigator.language || "en-US";
 
     recognition.onstart = () => {
       recognizing = true;
@@ -1006,11 +1074,13 @@
     replyMode = mode;
     if (mode === "mic") {
       micPanel.hidden = false;
+      micHint.hidden = false;
       typePanel.hidden = true;
       userInput.disabled = true;
       sendBtn.disabled = true;
     } else {
       micPanel.hidden = true;
+      micHint.hidden = true;
       typePanel.hidden = false;
       useMicBtn.hidden = !sttSupported;
       stopListening();
