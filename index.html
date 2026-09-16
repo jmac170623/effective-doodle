@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Travel Exchange 365 | Trade Trips, Explore More</title>
-<meta name="description" content="Travel Exchange 365 — swap, book, and discover unforgettable trips 365 days a year. List your vacation, exchange it for a new one, and travel further for less.">
+<title>Travel Exchange 365 | Private Travel Concierge</title>
+<meta name="description" content="Travel Exchange 365 is a private travel concierge for discerning clients. One call, and every detail of your journey — flights, villas, yachts, reservations — is arranged and managed for you, 365 days a year.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -19,24 +19,26 @@
 <header class="site-header" id="header">
   <div class="container header-inner">
     <a href="#home" class="logo">
-      <span class="logo-mark">✈</span>
+      <span class="logo-mark">✦</span>
       <span class="logo-text">Travel Exchange <em>365</em></span>
     </a>
 
     <nav class="main-nav" id="main-nav">
       <ul>
         <li><a href="#home" class="nav-link active">Home</a></li>
-        <li><a href="#how-it-works" class="nav-link">How It Works</a></li>
-        <li><a href="#destinations" class="nav-link">Destinations</a></li>
-        <li><a href="#plans" class="nav-link">Plans</a></li>
+        <li><a href="#process" class="nav-link">The Process</a></li>
+        <li><a href="#experiences" class="nav-link">Experiences</a></li>
+        <li><a href="#membership" class="nav-link">Membership</a></li>
         <li><a href="#about" class="nav-link">About</a></li>
         <li><a href="#contact" class="nav-link">Contact</a></li>
       </ul>
+      <div class="mobile-nav-cta">
+        <a href="#contact" class="btn btn-primary btn-block">Request a Consultation</a>
+      </div>
     </nav>
 
     <div class="header-actions">
-      <a href="#contact" class="btn btn-outline">Sign In</a>
-      <a href="#plans" class="btn btn-primary">Join Free</a>
+      <a href="#contact" class="btn btn-primary">Request a Consultation</a>
       <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="main-nav">
         <span></span><span></span><span></span>
       </button>
@@ -49,55 +51,56 @@
   <!-- Hero -->
   <section class="hero" id="home">
     <div class="hero-bg" aria-hidden="true">
-      <div class="blob blob-1"></div>
-      <div class="blob blob-2"></div>
-      <div class="blob blob-3"></div>
+      <div class="glow glow-1"></div>
+      <div class="glow glow-2"></div>
     </div>
     <div class="container hero-inner">
       <div class="hero-copy">
-        <span class="eyebrow">Open 365 days a year</span>
-        <h1>Trade your next trip.<br>Never stop exploring.</h1>
+        <span class="eyebrow">By invitation &amp; application · On call 365 days a year</span>
+        <h1>Extraordinary journeys,<br>effortlessly arranged.</h1>
         <p class="lead">
-          Travel Exchange 365 is the trip-swap marketplace that lets you exchange
-          unused vacation bookings, points, and stays for the getaway you actually
-          want — with real support, real savings, every single day of the year.
+          Travel Exchange 365 is a private travel concierge for clients who
+          expect everything handled — flights, private villas, superyachts,
+          reservations and the details in between — designed around you by a
+          dedicated travel architect.
         </p>
 
         <form class="hero-search" id="heroSearch">
-          <div class="field">
-            <label for="destination">Destination</label>
-            <input type="text" id="destination" name="destination" placeholder="Where to? e.g. Lisbon, Bali, Cancún">
+          <div class="hero-field">
+            <label for="destination">Where would you like to go?</label>
+            <input type="text" id="destination" name="destination" placeholder="e.g. the Amalfi Coast, the Maldives, Kyoto">
           </div>
-          <div class="field">
-            <label for="tripType">Trip type</label>
+          <div class="hero-field">
+            <label for="tripType">Occasion</label>
             <select id="tripType" name="tripType">
-              <option value="exchange">Exchange my trip</option>
-              <option value="book">Book a new trip</option>
-              <option value="points">Use my points</option>
+              <option value="leisure">Private escape</option>
+              <option value="celebration">Celebration or milestone</option>
+              <option value="business">Business &amp; private aviation</option>
+              <option value="group">Family or group journey</option>
             </select>
           </div>
-          <button type="submit" class="btn btn-primary btn-search">Find a Match</button>
+          <button type="submit" class="btn btn-primary btn-search">Begin Your Journey</button>
         </form>
 
         <ul class="hero-trust">
-          <li>No blackout dates</li>
-          <li>Member-verified listings</li>
-          <li>Cancel anytime</li>
+          <li>Dedicated travel architect</li>
+          <li>Global five-star partner network</li>
+          <li>Discreet, on call around the clock</li>
         </ul>
       </div>
 
       <div class="hero-visual" aria-hidden="true">
         <div class="hero-card card-1">
-          <span class="tag">Exchange match</span>
-          <strong>Santorini, Greece</strong>
-          <span class="muted">7 nights · Save 42%</span>
+          <span class="tag">Currently arranging</span>
+          <strong>Private Villa, Amalfi</strong>
+          <span class="muted">Staffed · Chef · Speedboat transfer</span>
         </div>
         <div class="hero-card card-2">
-          <span class="tag">Trending</span>
-          <strong>Kyoto, Japan</strong>
-          <span class="muted">5 nights · Cherry blossom season</span>
+          <span class="tag">In progress</span>
+          <strong>Safari &amp; Rail, Southern Africa</strong>
+          <span class="muted">14 days · Fully escorted</span>
         </div>
-        <div class="hero-globe">🌍</div>
+        <div class="hero-mark">✦</div>
       </div>
     </div>
   </section>
@@ -105,158 +108,158 @@
   <!-- Trust / stats bar -->
   <section class="stats" aria-label="Travel Exchange 365 by the numbers">
     <div class="container stats-grid">
-      <div class="stat"><strong>128K+</strong><span>Active members</span></div>
-      <div class="stat"><strong>190+</strong><span>Countries covered</span></div>
-      <div class="stat"><strong>2.4M</strong><span>Trips exchanged</span></div>
-      <div class="stat"><strong>365</strong><span>Days of support</span></div>
+      <div class="stat"><strong>35+</strong><span>Countries with resident partners</span></div>
+      <div class="stat"><strong>500+</strong><span>Five-star &amp; private properties</span></div>
+      <div class="stat"><strong>48hr</strong><span>Average bespoke proposal turnaround</span></div>
+      <div class="stat"><strong>365</strong><span>Days of dedicated concierge access</span></div>
     </div>
   </section>
 
-  <!-- How it works -->
-  <section class="section" id="how-it-works">
+  <!-- The Process -->
+  <section class="section" id="process">
     <div class="container">
       <div class="section-head">
-        <span class="eyebrow">How it works</span>
-        <h2>Three steps to your next getaway</h2>
-        <p class="section-sub">Whether you're swapping a booking or starting fresh, Travel Exchange 365 makes it simple.</p>
+        <span class="eyebrow">The process</span>
+        <h2>You describe the journey. We handle everything else.</h2>
+        <p class="section-sub">A private travel office, not a booking site — three steps, one point of contact.</p>
       </div>
 
       <div class="steps">
         <div class="step">
-          <div class="step-icon" aria-hidden="true">📋</div>
+          <div class="step-icon" aria-hidden="true">☎</div>
           <span class="step-num">01</span>
-          <h3>List or search</h3>
-          <p>Post a trip you can't use or browse thousands of member listings and curated packages across 190+ countries.</p>
+          <h3>Discovery call</h3>
+          <p>A private conversation with your travel architect to understand your taste, occasion, and how you like to travel — no forms, no boxes to tick.</p>
         </div>
         <div class="step">
-          <div class="step-icon" aria-hidden="true">🤝</div>
+          <div class="step-icon" aria-hidden="true">✎</div>
           <span class="step-num">02</span>
-          <h3>Match &amp; exchange</h3>
-          <p>Our matching engine finds swaps that fit your dates and budget, or you can book outright with member pricing.</p>
+          <h3>Bespoke proposal</h3>
+          <p>A fully designed itinerary is built around you — private villas, chartered flights, reservations at the tables you can't get into — usually within 48 hours.</p>
         </div>
         <div class="step">
-          <div class="step-icon" aria-hidden="true">🧳</div>
+          <div class="step-icon" aria-hidden="true">✦</div>
           <span class="step-num">03</span>
-          <h3>Confirm &amp; go</h3>
-          <p>We verify every exchange and protect your booking, so you can pack your bags with total confidence.</p>
+          <h3>Seamless delivery</h3>
+          <p>Every booking, transfer and reservation is arranged and monitored by our team, with a direct line to your concierge for the entire trip — day or night.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Destinations -->
-  <section class="section section-alt" id="destinations">
+  <!-- Signature Experiences -->
+  <section class="section section-alt" id="experiences">
     <div class="container">
       <div class="section-head">
-        <span class="eyebrow">Popular right now</span>
-        <h2>Top destinations to exchange into</h2>
-        <p class="section-sub">Hand-picked from the most in-demand swaps on the platform this month.</p>
+        <span class="eyebrow">Signature experiences</span>
+        <h2>A glimpse of what we arrange</h2>
+        <p class="section-sub">Every journey is designed from a blank page — these are recent proposals, not a catalogue.</p>
       </div>
 
       <div class="destinations-grid">
         <article class="dest-card">
-          <div class="dest-photo photo-1"><span class="dest-badge">Best value</span></div>
+          <div class="dest-photo photo-1"><span class="dest-badge">Private villa</span></div>
           <div class="dest-body">
-            <h3>Lisbon, Portugal</h3>
-            <p class="muted">6 nights · City &amp; coast</p>
-            <div class="dest-foot"><span class="price">From $649</span><span class="rating">★ 4.9</span></div>
+            <h3>Amalfi Coast, Italy</h3>
+            <p class="muted">Staffed clifftop villa · Private chef</p>
+            <div class="dest-foot"><span class="price">Price on application</span><span class="rating">★ Curated</span></div>
           </div>
         </article>
         <article class="dest-card">
-          <div class="dest-photo photo-2"><span class="dest-badge">Trending</span></div>
+          <div class="dest-photo photo-2"><span class="dest-badge">Superyacht</span></div>
           <div class="dest-body">
-            <h3>Bali, Indonesia</h3>
-            <p class="muted">8 nights · Villas &amp; wellness</p>
-            <div class="dest-foot"><span class="price">From $799</span><span class="rating">★ 4.8</span></div>
+            <h3>Amalfi &amp; the Aeolian Islands</h3>
+            <p class="muted">Crewed charter · Full itinerary</p>
+            <div class="dest-foot"><span class="price">Price on application</span><span class="rating">★ Curated</span></div>
           </div>
         </article>
         <article class="dest-card">
-          <div class="dest-photo photo-3"><span class="dest-badge">New</span></div>
+          <div class="dest-photo photo-3"><span class="dest-badge">Private jet</span></div>
           <div class="dest-body">
-            <h3>Banff, Canada</h3>
-            <p class="muted">5 nights · Mountains &amp; lakes</p>
-            <div class="dest-foot"><span class="price">From $589</span><span class="rating">★ 4.9</span></div>
+            <h3>Alpine Chalet, Courchevel</h3>
+            <p class="muted">Ski-in staffed chalet · Private transfers</p>
+            <div class="dest-foot"><span class="price">Price on application</span><span class="rating">★ Curated</span></div>
           </div>
         </article>
         <article class="dest-card">
-          <div class="dest-photo photo-4"><span class="dest-badge">Editor's pick</span></div>
+          <div class="dest-photo photo-4"><span class="dest-badge">Fully escorted</span></div>
           <div class="dest-body">
-            <h3>Marrakech, Morocco</h3>
-            <p class="muted">7 nights · Culture &amp; markets</p>
-            <div class="dest-foot"><span class="price">From $529</span><span class="rating">★ 4.7</span></div>
+            <h3>Safari &amp; Private Rail, Southern Africa</h3>
+            <p class="muted">Luxury camps · Personal ranger</p>
+            <div class="dest-foot"><span class="price">Price on application</span><span class="rating">★ Curated</span></div>
           </div>
         </article>
         <article class="dest-card">
-          <div class="dest-photo photo-5"><span class="dest-badge">Family favorite</span></div>
+          <div class="dest-photo photo-5"><span class="dest-badge">Private island</span></div>
           <div class="dest-body">
-            <h3>Gold Coast, Australia</h3>
-            <p class="muted">9 nights · Beach &amp; theme parks</p>
-            <div class="dest-foot"><span class="price">From $899</span><span class="rating">★ 4.8</span></div>
+            <h3>Private Island, Seychelles</h3>
+            <p class="muted">Whole-island buyout · Seaplane transfer</p>
+            <div class="dest-foot"><span class="price">Price on application</span><span class="rating">★ Curated</span></div>
           </div>
         </article>
         <article class="dest-card">
-          <div class="dest-photo photo-6"><span class="dest-badge">Best value</span></div>
+          <div class="dest-photo photo-6"><span class="dest-badge">Ryokan retreat</span></div>
           <div class="dest-body">
-            <h3>Cancún, Mexico</h3>
-            <p class="muted">6 nights · All-inclusive resorts</p>
-            <div class="dest-foot"><span class="price">From $679</span><span class="rating">★ 4.9</span></div>
+            <h3>Kyoto &amp; the Japanese Alps</h3>
+            <p class="muted">Private guide · Rare reservations</p>
+            <div class="dest-foot"><span class="price">Price on application</span><span class="rating">★ Curated</span></div>
           </div>
         </article>
       </div>
 
       <div class="center-cta">
-        <a href="#contact" class="btn btn-outline">Browse all exchange listings</a>
+        <a href="#contact" class="btn btn-outline">Discuss a journey of your own</a>
       </div>
     </div>
   </section>
 
-  <!-- Plans -->
-  <section class="section" id="plans">
+  <!-- Membership -->
+  <section class="section" id="membership">
     <div class="container">
       <div class="section-head">
         <span class="eyebrow">Membership</span>
-        <h2>Pick the plan that fits how you travel</h2>
-        <p class="section-sub">Every plan includes 365-day support and verified exchange protection.</p>
+        <h2>Access to the level of service you need</h2>
+        <p class="section-sub">All membership is by application. Every tier includes 365-day concierge access and full discretion.</p>
       </div>
 
       <div class="plans-grid">
         <div class="plan-card">
-          <h3>Explorer</h3>
-          <p class="plan-price"><span>$0</span>/mo</p>
-          <p class="muted">Best for occasional travelers</p>
+          <h3>Private Client</h3>
+          <p class="plan-price"><span>By application</span></p>
+          <p class="muted">For occasional bespoke journeys</p>
           <ul class="plan-features">
-            <li>Browse &amp; list exchanges</li>
-            <li>Standard matching</li>
-            <li>Email support</li>
+            <li>Dedicated travel architect per trip</li>
+            <li>Bespoke proposal within 48 hours</li>
+            <li>24/7 in-trip support</li>
           </ul>
-          <a href="#contact" class="btn btn-outline btn-block">Get started</a>
+          <a href="#contact" class="btn btn-outline btn-block">Enquire</a>
         </div>
 
         <div class="plan-card plan-featured">
-          <span class="plan-tag">Most popular</span>
-          <h3>Voyager</h3>
-          <p class="plan-price"><span>$19</span>/mo</p>
-          <p class="muted">For frequent exchangers</p>
+          <span class="plan-tag">Most requested</span>
+          <h3>Signature</h3>
+          <p class="plan-price"><span>By application</span></p>
+          <p class="muted">For clients who travel often</p>
           <ul class="plan-features">
-            <li>Priority matching</li>
-            <li>0% exchange fees</li>
-            <li>24/7 live support</li>
-            <li>Price-drop alerts</li>
+            <li>Standing travel architect &amp; team</li>
+            <li>Priority access to partner properties</li>
+            <li>Private aviation desk</li>
+            <li>Global emergency assistance</li>
           </ul>
-          <a href="#contact" class="btn btn-primary btn-block">Join Voyager</a>
+          <a href="#contact" class="btn btn-primary btn-block">Enquire about Signature</a>
         </div>
 
         <div class="plan-card">
-          <h3>Elite</h3>
-          <p class="plan-price"><span>$49</span>/mo</p>
-          <p class="muted">For dedicated globetrotters</p>
+          <h3>Black Card</h3>
+          <p class="plan-price"><span>By invitation</span></p>
+          <p class="muted">For unlimited, on-demand travel</p>
           <ul class="plan-features">
-            <li>Everything in Voyager</li>
-            <li>Dedicated travel concierge</li>
-            <li>Premium-only listings</li>
-            <li>Free cancellations</li>
+            <li>Everything in Signature</li>
+            <li>Named concierge, direct line, 365 days a year</li>
+            <li>Access to unlisted &amp; owner-only properties</li>
+            <li>Family office &amp; estate coordination</li>
           </ul>
-          <a href="#contact" class="btn btn-outline btn-block">Go Elite</a>
+          <a href="#contact" class="btn btn-outline btn-block">Request an introduction</a>
         </div>
       </div>
     </div>
@@ -267,32 +270,33 @@
     <div class="container about-grid">
       <div class="about-copy">
         <span class="eyebrow">About us</span>
-        <h2>Built by travelers, for travelers</h2>
+        <h2>A private travel office, not a booking site</h2>
         <p>
-          Travel Exchange 365 started with a simple frustration: bookings that go
-          to waste when plans change. We built a trusted marketplace where members
-          can exchange trips, share unused points, and book new adventures —
-          backed by real people who answer, 365 days a year.
+          Travel Exchange 365 exists for clients who don't have time to plan
+          and shouldn't have to compare websites. Our travel architects have
+          lived and worked in the places they book, and our partner network —
+          hoteliers, private aviation desks, yacht owners, guides — answers to
+          us directly, so nothing is left to a call centre.
         </p>
         <ul class="about-points">
-          <li><strong>Verified members</strong> — every listing is reviewed before it goes live.</li>
-          <li><strong>Protected exchanges</strong> — your booking is covered until you check in.</li>
-          <li><strong>Real humans</strong> — a support team that's on call every day of the year.</li>
+          <li><strong>One point of contact</strong> — from the first call to the return transfer home.</li>
+          <li><strong>No public rate cards</strong> — every proposal is negotiated and priced for you.</li>
+          <li><strong>Real people, always reachable</strong> — a named concierge, 365 days a year.</li>
         </ul>
       </div>
 
       <div class="testimonials">
         <blockquote class="testimonial">
-          <p>"We swapped a trip we couldn't take for two weeks in Portugal. The whole exchange took three days."</p>
-          <cite>— Priya M., Voyager member</cite>
+          <p>"I called on a Thursday for a Saturday departure. By Friday morning we had a villa, a chef, and a boat waiting."</p>
+          <cite>— Private Client, London</cite>
         </blockquote>
         <blockquote class="testimonial">
-          <p>"Support answered at 11pm on a Sunday. That's when I knew this platform actually means '365'."</p>
-          <cite>— Daniel K., Elite member</cite>
+          <p>"They don't ask what my budget is. They ask what the trip needs to feel like. That's the difference."</p>
+          <cite>— Signature Member, Singapore</cite>
         </blockquote>
         <blockquote class="testimonial">
-          <p>"Booked our anniversary trip to Bali for 30% less than any travel site quoted us."</p>
-          <cite>— The Alvarez Family, Explorer members</cite>
+          <p>"Our concierge rerouted an entire family trip around a storm without waking us up to ask permission. That's what we pay for."</p>
+          <cite>— Black Card Member, New York</cite>
         </blockquote>
       </div>
     </div>
@@ -301,9 +305,9 @@
   <!-- CTA banner -->
   <section class="cta-banner">
     <div class="container cta-banner-inner">
-      <h2>Your next trip is already out there.</h2>
-      <p>Join free and see your first matches in minutes.</p>
-      <a href="#contact" class="btn btn-light">Create your free account</a>
+      <h2>Your next journey, entirely arranged.</h2>
+      <p>Speak with a travel architect — by phone, in person, or by private consultation.</p>
+      <a href="#contact" class="btn btn-light">Request a Private Consultation</a>
     </div>
   </section>
 
@@ -312,14 +316,14 @@
     <div class="container contact-grid">
       <div class="contact-info">
         <span class="eyebrow">Get in touch</span>
-        <h2>Questions before you join?</h2>
-        <p class="section-sub">Our travel team is available every day of the year — that's the whole point.</p>
+        <h2>Request a private consultation</h2>
+        <p class="section-sub">Tell us what you have in mind. A travel architect will call you directly — no forms to fill in after that.</p>
 
         <ul class="contact-list">
           <li><span aria-hidden="true">📍</span> 365 Voyager Way, Austin, TX 78701</li>
           <li><span aria-hidden="true">📞</span> +1 (800) 365-0365</li>
-          <li><span aria-hidden="true">✉️</span> hello@travelexchange365.com</li>
-          <li><span aria-hidden="true">🕐</span> Support available 24/7, 365 days a year</li>
+          <li><span aria-hidden="true">✉️</span> concierge@travelexchange365.com</li>
+          <li><span aria-hidden="true">🕐</span> Available 24/7, 365 days a year</li>
         </ul>
 
         <div class="social-row" aria-label="Social media">
@@ -343,21 +347,27 @@
             <span class="error" data-error-for="email"></span>
           </div>
         </div>
-        <div class="field">
-          <label for="topic">I'm interested in</label>
-          <select id="topic" name="topic">
-            <option value="exchange">Exchanging a trip</option>
-            <option value="booking">Booking a new trip</option>
-            <option value="membership">Membership plans</option>
-            <option value="other">Something else</option>
-          </select>
+        <div class="form-row">
+          <div class="field">
+            <label for="phone">Phone</label>
+            <input type="tel" id="phone" name="phone" placeholder="Optional, for a direct call back">
+          </div>
+          <div class="field">
+            <label for="budget">Indicative budget</label>
+            <select id="budget" name="budget">
+              <option value="10-25k">$10,000 – $25,000</option>
+              <option value="25-50k">$25,000 – $50,000</option>
+              <option value="50-100k">$50,000 – $100,000</option>
+              <option value="100k+">$100,000+</option>
+            </select>
+          </div>
         </div>
         <div class="field">
-          <label for="message">Message</label>
-          <textarea id="message" name="message" rows="4" required></textarea>
+          <label for="message">Tell us about the journey</label>
+          <textarea id="message" name="message" rows="4" placeholder="Destination, dates, occasion, party size — as much or as little as you'd like." required></textarea>
           <span class="error" data-error-for="message"></span>
         </div>
-        <button type="submit" class="btn btn-primary btn-block">Send message</button>
+        <button type="submit" class="btn btn-primary btn-block">Request Consultation</button>
         <p class="form-status" id="formStatus" role="status" aria-live="polite"></p>
       </form>
     </div>
@@ -370,18 +380,18 @@
   <div class="container footer-grid">
     <div class="footer-brand">
       <a href="#home" class="logo logo-footer">
-        <span class="logo-mark">✈</span>
+        <span class="logo-mark">✦</span>
         <span class="logo-text">Travel Exchange <em>365</em></span>
       </a>
-      <p class="muted">The trip-exchange marketplace for travelers who never stop planning the next one.</p>
+      <p class="muted">A private travel concierge for clients who expect everything arranged, every day of the year.</p>
     </div>
 
     <div class="footer-col">
       <h4>Explore</h4>
       <ul>
-        <li><a href="#destinations">Destinations</a></li>
-        <li><a href="#how-it-works">How it works</a></li>
-        <li><a href="#plans">Membership plans</a></li>
+        <li><a href="#experiences">Experiences</a></li>
+        <li><a href="#process">The process</a></li>
+        <li><a href="#membership">Membership</a></li>
       </ul>
     </div>
 
@@ -395,7 +405,8 @@
     </div>
 
     <div class="footer-col">
-      <h4>Stay in the loop</h4>
+      <h4>The Dispatch</h4>
+      <p class="muted footer-note">Occasional notes on new properties and private openings. No mass mailings.</p>
       <form class="newsletter-form" id="newsletterForm">
         <label for="newsletterEmail" class="visually-hidden">Email address</label>
         <input type="email" id="newsletterEmail" placeholder="you@email.com" required>

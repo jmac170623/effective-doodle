@@ -69,10 +69,10 @@
     var status = document.getElementById("formStatus");
     if (destination) {
       status.textContent =
-        'Searching matches for "' + destination + '"... tell us more below and we’ll follow up.';
+        'Noted — tell us a little more about ' + destination + ' below and a travel architect will call you.';
       status.className = "form-status success";
       document.getElementById("message").value =
-        "I'm interested in exchanging/booking a trip to " + destination + ".";
+        "I'd like to discuss a trip to " + destination + ".";
     }
   });
 
@@ -129,7 +129,7 @@
     }
 
     formStatus.textContent =
-      "Thanks, " + name.split(" ")[0] + "! Your message is in — our team replies within a few hours, 365 days a year.";
+      "Thank you, " + name.split(" ")[0] + ". A travel architect will call you directly, usually within a few hours — 365 days a year.";
     formStatus.className = "form-status success";
     contactForm.reset();
   });
