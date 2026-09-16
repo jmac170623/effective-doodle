@@ -3,14 +3,23 @@ import { getSite, updateSite } from "@/lib/db";
 import { applyFeedback } from "@/lib/feedback";
 import { generateId } from "@/lib/idGen";
 import { FeedbackRound } from "@/lib/types";
+import { createClient } from "@/lib/supabase/server";
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const site = getSite(id);
-  if (!site) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "You must be logged in." }, { status: 401 });
+  }
+
+  const site = await getSite(supabase, id);
+  if (!site || site.ownerId !== user.id) {
     return NextResponse.json({ error: "Site not found." }, { status: 404 });
   }
   if (site.status === "published") {
@@ -44,7 +53,7 @@ export async function POST(
     updatedAt: new Date().toISOString(),
   };
 
-  updateSite(updated);
+  await updateSite(supabase, updated);
 
   return NextResponse.json(updated);
 }

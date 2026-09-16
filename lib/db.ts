@@ -1,113 +1,85 @@
-import Database from "better-sqlite3";
-import fs from "node:fs";
-import path from "node:path";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { FeedbackRound, GeneratedSite, OnboardingData, SiteRecord, SiteStatus } from "./types";
-
-const DATA_DIR = path.join(process.cwd(), "data");
-const DB_PATH = path.join(DATA_DIR, "app.db");
-
-declare global {
-  var __tradeSiteDb: Database.Database | undefined;
-}
-
-function createConnection(): Database.Database {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
-  const db = new Database(DB_PATH);
-  db.pragma("journal_mode = WAL");
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS sites (
-      id TEXT PRIMARY KEY,
-      created_at TEXT NOT NULL,
-      updated_at TEXT NOT NULL,
-      status TEXT NOT NULL,
-      onboarding_json TEXT NOT NULL,
-      generated_json TEXT NOT NULL,
-      feedback_json TEXT NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS leads (
-      id TEXT PRIMARY KEY,
-      site_id TEXT NOT NULL,
-      created_at TEXT NOT NULL,
-      name TEXT,
-      email TEXT,
-      message TEXT
-    );
-  `);
-  return db;
-}
-
-function getDb(): Database.Database {
-  if (!global.__tradeSiteDb) {
-    global.__tradeSiteDb = createConnection();
-  }
-  return global.__tradeSiteDb;
-}
 
 interface SiteRow {
   id: string;
+  owner_id: string;
   created_at: string;
   updated_at: string;
   status: SiteStatus;
-  onboarding_json: string;
-  generated_json: string;
-  feedback_json: string;
+  onboarding: OnboardingData;
+  generated: GeneratedSite;
+  feedback_history: FeedbackRound[];
 }
 
 function rowToRecord(row: SiteRow): SiteRecord {
   return {
     id: row.id,
+    ownerId: row.owner_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     status: row.status,
-    onboarding: JSON.parse(row.onboarding_json) as OnboardingData,
-    generated: JSON.parse(row.generated_json) as GeneratedSite,
-    feedbackHistory: JSON.parse(row.feedback_json) as FeedbackRound[],
+    onboarding: row.onboarding,
+    generated: row.generated,
+    feedbackHistory: row.feedback_history,
   };
 }
 
-export function insertSite(record: SiteRecord): void {
-  const db = getDb();
-  db.prepare(
-    `INSERT INTO sites (id, created_at, updated_at, status, onboarding_json, generated_json, feedback_json)
-     VALUES (@id, @createdAt, @updatedAt, @status, @onboardingJson, @generatedJson, @feedbackJson)`
-  ).run({
+export async function insertSite(supabase: SupabaseClient, record: SiteRecord): Promise<void> {
+  const { error } = await supabase.from("sites").insert({
     id: record.id,
-    createdAt: record.createdAt,
-    updatedAt: record.updatedAt,
+    owner_id: record.ownerId,
+    created_at: record.createdAt,
+    updated_at: record.updatedAt,
     status: record.status,
-    onboardingJson: JSON.stringify(record.onboarding),
-    generatedJson: JSON.stringify(record.generated),
-    feedbackJson: JSON.stringify(record.feedbackHistory),
+    onboarding: record.onboarding,
+    generated: record.generated,
+    feedback_history: record.feedbackHistory,
   });
+  if (error) throw new Error(error.message);
 }
 
-export function getSite(id: string): SiteRecord | null {
-  const db = getDb();
-  const row = db.prepare("SELECT * FROM sites WHERE id = ?").get(id) as SiteRow | undefined;
-  return row ? rowToRecord(row) : null;
+export async function getSite(supabase: SupabaseClient, id: string): Promise<SiteRecord | null> {
+  const { data, error } = await supabase.from("sites").select("*").eq("id", id).maybeSingle();
+  if (error) throw new Error(error.message);
+  return data ? rowToRecord(data as SiteRow) : null;
 }
 
-export function updateSite(record: SiteRecord): void {
-  const db = getDb();
-  db.prepare(
-    `UPDATE sites SET updated_at = @updatedAt, status = @status, onboarding_json = @onboardingJson,
-     generated_json = @generatedJson, feedback_json = @feedbackJson WHERE id = @id`
-  ).run({
-    id: record.id,
-    updatedAt: record.updatedAt,
-    status: record.status,
-    onboardingJson: JSON.stringify(record.onboarding),
-    generatedJson: JSON.stringify(record.generated),
-    feedbackJson: JSON.stringify(record.feedbackHistory),
+export async function updateSite(supabase: SupabaseClient, record: SiteRecord): Promise<void> {
+  const { error } = await supabase
+    .from("sites")
+    .update({
+      updated_at: record.updatedAt,
+      status: record.status,
+      onboarding: record.onboarding,
+      generated: record.generated,
+      feedback_history: record.feedbackHistory,
+    })
+    .eq("id", record.id);
+  if (error) throw new Error(error.message);
+}
+
+export async function listSitesForOwner(supabase: SupabaseClient, ownerId: string): Promise<SiteRecord[]> {
+  const { data, error } = await supabase
+    .from("sites")
+    .select("*")
+    .eq("owner_id", ownerId)
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data as SiteRow[] | null ?? []).map(rowToRecord);
+}
+
+export async function insertLead(
+  supabase: SupabaseClient,
+  lead: { id: string; siteId: string; createdAt: string; name: string; email: string; message: string }
+): Promise<void> {
+  const { error } = await supabase.from("leads").insert({
+    id: lead.id,
+    site_id: lead.siteId,
+    created_at: lead.createdAt,
+    name: lead.name,
+    email: lead.email,
+    message: lead.message,
   });
-}
-
-export function insertLead(lead: { id: string; siteId: string; createdAt: string; name: string; email: string; message: string }): void {
-  const db = getDb();
-  db.prepare(
-    `INSERT INTO leads (id, site_id, created_at, name, email, message) VALUES (@id, @siteId, @createdAt, @name, @email, @message)`
-  ).run(lead);
+  if (error) throw new Error(error.message);
 }

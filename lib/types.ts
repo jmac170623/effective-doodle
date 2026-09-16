@@ -119,6 +119,7 @@ export type SiteStatus = "draft" | "published";
 
 export interface SiteRecord {
   id: string;
+  ownerId: string;
   createdAt: string;
   updatedAt: string;
   status: SiteStatus;

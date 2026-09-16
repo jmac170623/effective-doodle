@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getSite } from "@/lib/db";
 import { SiteRenderer } from "@/components/site/SiteRenderer";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function PublishedSitePage({
   params,
@@ -8,7 +9,8 @@ export default async function PublishedSitePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const site = getSite(id);
+  const supabase = await createClient();
+  const site = await getSite(supabase, id);
 
   if (!site || site.status !== "published") {
     notFound();

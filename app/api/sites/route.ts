@@ -5,8 +5,17 @@ import { generateSite } from "@/lib/siteGenerator";
 import { insertSite } from "@/lib/db";
 import { generateId } from "@/lib/idGen";
 import { SiteRecord } from "@/lib/types";
+import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "You must be logged in to build a website." }, { status: 401 });
+  }
+
   const body = await request.json().catch(() => null);
   const result = validateOnboarding(body);
   if ("error" in result) {
@@ -19,6 +28,7 @@ export async function POST(request: NextRequest) {
 
   const record: SiteRecord = {
     id: generateId("site"),
+    ownerId: user.id,
     createdAt: now,
     updatedAt: now,
     status: "draft",
@@ -27,7 +37,7 @@ export async function POST(request: NextRequest) {
     feedbackHistory: [],
   };
 
-  insertSite(record);
+  await insertSite(supabase, record);
 
   return NextResponse.json({ id: record.id }, { status: 201 });
 }
