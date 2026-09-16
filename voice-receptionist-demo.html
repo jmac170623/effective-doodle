@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Voice Receptionist — Live Demo</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --panel: #161923;
+    --panel-2: #1d2130;
+    --border: #2a2f42;
+    --accent: #5b8cff;
+    --accent-2: #7c5bff;
+    --accent-soft: rgba(91, 140, 255, 0.14);
+    --text: #eef1fb;
+    --text-dim: #9aa1b8;
+    --success: #37d399;
+    --danger: #ff6b6b;
+    --bubble-bot: #1d2130;
+    --bubble-user: linear-gradient(135deg, #5b8cff, #7c5bff);
+    --radius: 16px;
+    font-size: 16px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: radial-gradient(1200px 800px at 10% -10%, #1a2036 0%, transparent 55%),
+                radial-gradient(1000px 700px at 100% 0%, #241a36 0%, transparent 50%),
+                var(--bg);
+    color: var(--text);
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .app-shell {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 20px 60px;
+    min-height: 100%;
+  }
+
+  header.top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .brand .logo {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 6px 18px rgba(91, 140, 255, 0.35);
+    flex-shrink: 0;
+  }
+
+  .brand h1 {
+    font-size: 18px;
+    margin: 0;
+    letter-spacing: 0.2px;
+  }
+
+  .brand p {
+    margin: 2px 0 0;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 0 3px rgba(55, 211, 153, 0.18);
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+
+  .control-card h2 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    margin: 0 0 14px;
+  }
+
+  .field { margin-bottom: 18px; }
+
+  .field label {
+    display: block;
+    font-size: 12.5px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+
+  select, .toggle-row {
+    width: 100%;
+  }
+
+  select {
+    appearance: none;
+    background: var(--panel-2) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="14" height="9" viewBox="0 0 14 9"><path d="M1 1l6 6 6-6" stroke="%239aa1b8" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>') no-repeat right 14px center;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 34px 11px 12px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  select:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+
+  .biz-preview {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+  .biz-preview strong { color: var(--text); }
+
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 13.5px;
+  }
+
+  .switch {
+    position: relative;
+    width: 40px;
+    height: 22px;
+    flex-shrink: 0;
+  }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute;
+    inset: 0;
+    background: #33384a;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .slider::before {
+    content: "";
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    left: 3px;
+    top: 3px;
+    background: #fff;
+    border-radius: 50%;
+    transition: 0.2s;
+  }
+  .switch input:checked + .slider { background: var(--accent); }
+  .switch input:checked + .slider::before { transform: translateX(18px); }
+
+  .btn {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.08s ease, opacity 0.15s ease;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #fff;
+    box-shadow: 0 8px 20px rgba(91, 140, 255, 0.3);
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    margin-top: 10px;
+  }
+  .btn-ghost:hover { color: var(--text); border-color: #3a4160; }
+
+  .chat-card {
+    display: flex;
+    flex-direction: column;
+    height: 640px;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .chat-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+  }
+
+  .chat-header .avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 15px;
+  }
+
+  .chat-header .info h3 { margin: 0; font-size: 15px; }
+  .chat-header .info span { font-size: 12.5px; color: var(--text-dim); display: flex; align-items: center; gap: 6px; }
+
+  .live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--success);
+    display: inline-block;
+    animation: pulse 1.6s infinite;
+  }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(55,211,153,0.5); }
+    70% { box-shadow: 0 0 0 6px rgba(55,211,153,0); }
+    100% { box-shadow: 0 0 0 0 rgba(55,211,153,0); }
+  }
+
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .messages::-webkit-scrollbar { width: 8px; }
+  .messages::-webkit-scrollbar-thumb { background: #2a2f42; border-radius: 8px; }
+
+  .msg-row { display: flex; gap: 10px; max-width: 82%; animation: fadeIn 0.25s ease; }
+  .msg-row.bot { align-self: flex-start; }
+  .msg-row.user { align-self: flex-end; flex-direction: row-reverse; margin-left: auto; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .msg-row.bot .msg-avatar { background: var(--accent-soft); color: var(--accent); }
+  .msg-row.user .msg-avatar { background: #2a2f42; color: var(--text-dim); }
+
+  .bubble {
+    padding: 11px 15px;
+    border-radius: var(--radius);
+    font-size: 14.5px;
+    line-height: 1.5;
+  }
+  .msg-row.bot .bubble {
+    background: var(--bubble-bot);
+    border: 1px solid var(--border);
+    border-top-left-radius: 4px;
+  }
+  .msg-row.user .bubble {
+    background: var(--bubble-user);
+    color: #fff;
+    border-top-right-radius: 4px;
+  }
+
+  .typing {
+    display: inline-flex;
+    gap: 4px;
+    padding: 4px 2px;
+  }
+  .typing span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-dim);
+    animation: bounce 1.2s infinite;
+  }
+  .typing span:nth-child(2) { animation-delay: 0.15s; }
+  .typing span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+    30% { transform: translateY(-4px); opacity: 1; }
+  }
+
+  .composer {
+    display: flex;
+    gap: 10px;
+    padding: 14px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--panel-2);
+  }
+
+  .composer input[type="text"] {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 14.5px;
+  }
+  .composer input[type="text"]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .composer input:disabled { opacity: 0.5; }
+
+  .send-btn {
+    width: 46px;
+    height: 46px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .summary-box {
+    margin: 6px 0 4px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(91,140,255,0.12), rgba(124,91,255,0.10));
+    border: 1px solid rgba(91,140,255,0.3);
+    font-size: 13.5px;
+    align-self: stretch;
+    max-width: 100%;
+  }
+  .summary-box h4 {
+    margin: 0 0 8px;
+    font-size: 12.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+  }
+  .summary-box dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; }
+  .summary-box dt { color: var(--text-dim); }
+  .summary-box dd { margin: 0; color: var(--text); font-weight: 500; }
+
+  footer.foot {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 12.5px;
+    margin-top: 24px;
+  }
+
+  .tag {
+    display: inline-block;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 600;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+</style>
+</head>
+<body>
+<div class="app-shell">
+
+  <header class="top">
+    <div class="brand">
+      <div class="logo">☎️</div>
+      <div>
+        <h1>AI Voice Receptionist<span class="tag">LIVE DEMO</span></h1>
+        <p>Scripted simulation — no calls are made, nothing leaves your browser</p>
+      </div>
+    </div>
+    <div class="status-pill"><span class="status-dot"></span> Demo environment ready</div>
+  </header>
+
+  <div class="layout">
+    <div class="card control-card">
+      <h2>Choose a business</h2>
+      <div class="field">
+        <label for="verticalSelect">Industry example</label>
+        <select id="verticalSelect"></select>
+      </div>
+
+      <div class="field">
+        <label>What it's calling for</label>
+        <div class="biz-preview" id="bizPreview"></div>
+      </div>
+
+      <div class="field">
+        <div class="toggle-row">
+          <span>🔊 Speak questions aloud</span>
+          <label class="switch">
+            <input type="checkbox" id="voiceToggle" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="restartBtn">▶ Start / Restart Call</button>
+      <button class="btn btn-ghost" id="skipVoiceBtn">Replay last question aloud</button>
+    </div>
+
+    <div class="card chat-card">
+      <div class="chat-header">
+        <div class="avatar" id="headerAvatar">AI</div>
+        <div class="info">
+          <h3 id="headerName">Seren Dental</h3>
+          <span><span class="live-dot"></span> AI Receptionist · Simulated call</span>
+        </div>
+      </div>
+
+      <div class="messages" id="messages"></div>
+
+      <div class="composer">
+        <input type="text" id="userInput" placeholder="Type your reply and press Enter…" autocomplete="off">
+        <button class="send-btn" id="sendBtn" aria-label="Send">➤</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="foot">Sales demonstration tool · Scripted branching logic only · Powered by your browser's built-in speech engine</footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- Business configs ----------
+  const businessConfigs = [
+    {
+      id: "dentist",
+      name: "Seren Dental",
+      industry: "Dentist",
+      icon: "🦷",
+      greeting: "Thanks for calling Seren Dental! How can I help today?",
+      questions: [
+        { key: "reason", prompt: "Is this for a new appointment, or are you an existing patient?" },
+        { key: "concern", prompt: "What's the issue — pain, checkup, or a cosmetic enquiry?" },
+        { key: "availability", prompt: "What days generally work best for you?" },
+        { key: "contact", prompt: "Great — what's the best number to confirm your booking?" }
+      ],
+      closing: "Perfect, I've got everything I need — our team will confirm your appointment shortly. Thanks for calling Seren Dental!"
+    },
+    {
+      id: "vet",
+      name: "Willowbrook Vets",
+      industry: "Veterinary Clinic",
+      icon: "🐾",
+      greeting: "Hi there, thanks for calling Willowbrook Vets! What can I help with today?",
+      questions: [
+        { key: "pet", prompt: "What's your pet's name and species?" },
+        { key: "reason", prompt: "Is this a routine check-up, vaccination, or is your pet unwell or injured?" },
+        { key: "urgency", prompt: "On a scale of not urgent to emergency, how would you describe it right now?" },
+        { key: "availability", prompt: "What days or times suit you best for a visit?" },
+        { key: "contact", prompt: "Lastly, what's the best number to reach you on to confirm?" }
+      ],
+      closing: "Thank you — I've noted everything down and the clinic team will confirm your visit shortly. Give your pet a scratch behind the ears from us!"
+    },
+    {
+      id: "locksmith",
+      name: "RapidKey Locksmiths",
+      industry: "Locksmith (Urgent Call-Out)",
+      icon: "🔑",
+      greeting: "RapidKey Locksmiths, 24-hour call-out — what's happened?",
+      questions: [
+        { key: "situation", prompt: "Are you locked out, is a key broken in the lock, or has there been a break-in?" },
+        { key: "location", prompt: "What's the address you need us at?" },
+        { key: "propertyType", prompt: "Is this a home, a car, or a business premises?" },
+        { key: "safety", prompt: "Is everyone safe right now, and is the property secure?" },
+        { key: "contact", prompt: "What's the best number for our locksmith to call you on when they're 5 minutes out?" }
+      ],
+      closing: "Understood — I'm dispatching the nearest available locksmith now. They'll call you shortly and should be with you within the hour."
+    },
+    {
+      id: "salon",
+      name: "Lush & Co. Hair Studio",
+      industry: "Hair Salon",
+      icon: "💇",
+      greeting: "Hi! Thanks for calling Lush & Co. — how can I help you today?",
+      questions: [
+        { key: "service", prompt: "What service are you after — cut, colour, styling, or something else?" },
+        { key: "stylist", prompt: "Do you have a preferred stylist, or is anyone available fine?" },
+        { key: "availability", prompt: "What days or times work best for you this week?" },
+        { key: "firstVisit", prompt: "Have you visited us before, or will this be your first time?" },
+        { key: "contact", prompt: "What's the best number to text your booking confirmation to?" }
+      ],
+      closing: "Lovely — you're all set! We'll text over your appointment confirmation shortly. See you soon at Lush & Co.!"
+    },
+    {
+      id: "lettingAgent",
+      name: "Harbourview Lettings",
+      industry: "Letting Agent",
+      icon: "🏠",
+      greeting: "Good afternoon, Harbourview Lettings — how can I help you today?",
+      questions: [
+        { key: "reason", prompt: "Are you enquiring about a property to rent, or are you an existing tenant with a query?" },
+        { key: "details", prompt: "Could you tell me the area, budget, and number of bedrooms you're looking for?" },
+        { key: "timeline", prompt: "When are you looking to move in?" },
+        { key: "viewing", prompt: "Would you like us to arrange a viewing, and if so, what days suit you?" },
+        { key: "contact", prompt: "What's the best number and email to send the property details to?" }
+      ],
+      closing: "Brilliant, thank you — one of our letting agents will be in touch shortly with suitable properties and viewing times."
+    },
+    {
+      id: "physio",
+      name: "MoveWell Physiotherapy",
+      industry: "Physiotherapy Clinic",
+      icon: "🩺",
+      greeting: "Hi, thanks for calling MoveWell Physiotherapy — what can I help with today?",
+      questions: [
+        { key: "reason", prompt: "Is this for a new injury, an ongoing condition, or a follow-up session?" },
+        { key: "area", prompt: "Which part of the body is affected?" },
+        { key: "referral", prompt: "Do you have a referral from a GP or specialist, or is this self-referred?" },
+        { key: "availability", prompt: "What days and times work best for your first session?" },
+        { key: "contact", prompt: "What's the best number to confirm your appointment on?" }
+      ],
+      closing: "Great, that's everything we need — our reception team will confirm your session shortly. Take care until then!"
+    }
+  ];
+
+  // ---------- State ----------
+  let currentConfig = businessConfigs[0];
+  let questionIndex = -1; // -1 = greeting not yet sent
+  let answers = {};
+  let awaitingAnswer = false;
+  let lastSpokenText = "";
+
+  // ---------- DOM ----------
+  const selectEl = document.getElementById("verticalSelect");
+  const bizPreview = document.getElementById("bizPreview");
+  const messagesEl = document.getElementById("messages");
+  const userInput = document.getElementById("userInput");
+  const sendBtn = document.getElementById("sendBtn");
+  const restartBtn = document.getElementById("restartBtn");
+  const skipVoiceBtn = document.getElementById("skipVoiceBtn");
+  const voiceToggle = document.getElementById("voiceToggle");
+  const headerName = document.getElementById("headerName");
+  const headerAvatar = document.getElementById("headerAvatar");
+
+  // ---------- Populate dropdown ----------
+  businessConfigs.forEach((cfg, i) => {
+    const opt = document.createElement("option");
+    opt.value = cfg.id;
+    opt.textContent = `${cfg.icon} ${cfg.name} — ${cfg.industry}`;
+    selectEl.appendChild(opt);
+  });
+
+  function updatePreview(cfg) {
+    bizPreview.innerHTML =
+      `<strong>${cfg.icon} ${cfg.name}</strong><br>${cfg.industry}<br><br>` +
+      `Asks ${cfg.questions.length} scripted questions, then confirms the booking automatically.`;
+    headerName.textContent = cfg.name;
+    headerAvatar.textContent = cfg.icon;
+  }
+
+  updatePreview(currentConfig);
+
+  // ---------- Speech synthesis ----------
+  function speak(text) {
+    if (!voiceToggle.checked) return;
+    if (!("speechSynthesis" in window)) return;
+    try {
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.rate = 1.0;
+      utter.pitch = 1.0;
+      utter.volume = 1.0;
+      lastSpokenText = text;
+      window.speechSynthesis.speak(utter);
+    } catch (e) {
+      // speech synthesis unsupported/blocked — silently ignore, chat still works
+    }
+  }
+
+  skipVoiceBtn.addEventListener("click", () => {
+    if (lastSpokenText) speak(lastSpokenText);
+  });
+
+  // ---------- Chat rendering ----------
+  function scrollToBottom() {
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function addMessage(sender, text) {
+    const row = document.createElement("div");
+    row.className = `msg-row ${sender}`;
+
+    const avatar = document.createElement("div");
+    avatar.className = "msg-avatar";
+    avatar.textContent = sender === "bot" ? currentConfig.icon : "You";
+
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+    bubble.textContent = text;
+
+    row.appendChild(avatar);
+    row.appendChild(bubble);
+    messagesEl.appendChild(row);
+    scrollToBottom();
+    return row;
+  }
+
+  function addTypingIndicator() {
+    const row = document.createElement("div");
+    row.className = "msg-row bot";
+    row.id = "typingRow";
+
+    const avatar = document.createElement("div");
+    avatar.className = "msg-avatar";
+    avatar.textContent = currentConfig.icon;
+
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+    bubble.innerHTML = '<span class="typing"><span></span><span></span><span></span></span>';
+
+    row.appendChild(avatar);
+    row.appendChild(bubble);
+    messagesEl.appendChild(row);
+    scrollToBottom();
+  }
+
+  function removeTypingIndicator() {
+    const row = document.getElementById("typingRow");
+    if (row) row.remove();
+  }
+
+  function botSay(text, callback) {
+    awaitingAnswer = false;
+    userInput.disabled = true;
+    sendBtn.disabled = true;
+    addTypingIndicator();
+    const delay = 500 + Math.min(text.length * 12, 900);
+    setTimeout(() => {
+      removeTypingIndicator();
+      addMessage("bot", text);
+      speak(text);
+      userInput.disabled = false;
+      sendBtn.disabled = false;
+      userInput.focus();
+      awaitingAnswer = true;
+      if (callback) callback();
+    }, delay);
+  }
+
+  function renderSummary() {
+    const box = document.createElement("div");
+    box.className = "summary-box";
+    let rows = "";
+    currentConfig.questions.forEach(q => {
+      const val = answers[q.key] && answers[q.key].trim() ? answers[q.key] : "—";
+      const label = q.key.charAt(0).toUpperCase() + q.key.slice(1);
+      rows += `<dt>${label}</dt><dd>${escapeHtml(val)}</dd>`;
+    });
+    box.innerHTML = `<h4>Call summary captured</h4><dl>${rows}</dl>`;
+    messagesEl.appendChild(box);
+    scrollToBottom();
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // ---------- Flow control ----------
+  function startCall() {
+    window.speechSynthesis && window.speechSynthesis.cancel();
+    messagesEl.innerHTML = "";
+    answers = {};
+    questionIndex = -1;
+    userInput.value = "";
+    botSay(currentConfig.greeting, () => {
+      setTimeout(advance, 400);
+    });
+  }
+
+  function advance() {
+    questionIndex++;
+    if (questionIndex < currentConfig.questions.length) {
+      const q = currentConfig.questions[questionIndex];
+      botSay(q.prompt);
+    } else {
+      botSay(currentConfig.closing, () => {
+        renderSummary();
+      });
+    }
+  }
+
+  function handleUserReply() {
+    const text = userInput.value.trim();
+    if (!text || !awaitingAnswer) return;
+    addMessage("user", text);
+
+    if (questionIndex >= 0 && questionIndex < currentConfig.questions.length) {
+      const key = currentConfig.questions[questionIndex].key;
+      answers[key] = text;
+    }
+
+    userInput.value = "";
+    awaitingAnswer = false;
+    setTimeout(advance, 350);
+  }
+
+  // ---------- Events ----------
+  sendBtn.addEventListener("click", handleUserReply);
+  userInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") handleUserReply();
+  });
+
+  restartBtn.addEventListener("click", startCall);
+
+  selectEl.addEventListener("change", () => {
+    currentConfig = businessConfigs.find(c => c.id === selectEl.value) || businessConfigs[0];
+    updatePreview(currentConfig);
+    startCall();
+  });
+
+  voiceToggle.addEventListener("change", () => {
+    if (!voiceToggle.checked && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+  });
+
+  // ---------- Init ----------
+  startCall();
+})();
+</script>
+</body>
+</html>
