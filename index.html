@@ -13,6 +13,8 @@
 </head>
 <body>
 
+<div class="scroll-progress" id="scrollProgress"></div>
+
 <a class="skip-link" href="#main">Skip to content</a>
 
 <!-- Header -->
@@ -108,36 +110,36 @@
   <!-- Trust / stats bar -->
   <section class="stats" aria-label="Travel Exchange 365 by the numbers">
     <div class="container stats-grid">
-      <div class="stat"><strong>35+</strong><span>Countries with resident partners</span></div>
-      <div class="stat"><strong>500+</strong><span>Five-star &amp; private properties</span></div>
-      <div class="stat"><strong>48hr</strong><span>Average bespoke proposal turnaround</span></div>
-      <div class="stat"><strong>365</strong><span>Days of dedicated concierge access</span></div>
+      <div class="stat reveal"><strong data-count-to="35" data-suffix="+">0</strong><span>Countries with resident partners</span></div>
+      <div class="stat reveal"><strong data-count-to="500" data-suffix="+">0</strong><span>Five-star &amp; private properties</span></div>
+      <div class="stat reveal"><strong data-count-to="48" data-suffix="hr">0</strong><span>Average bespoke proposal turnaround</span></div>
+      <div class="stat reveal"><strong data-count-to="365" data-suffix="">0</strong><span>Days of dedicated concierge access</span></div>
     </div>
   </section>
 
   <!-- The Process -->
   <section class="section" id="process">
     <div class="container">
-      <div class="section-head">
+      <div class="section-head reveal">
         <span class="eyebrow">The process</span>
         <h2>You describe the journey. We handle everything else.</h2>
         <p class="section-sub">A private travel office, not a booking site — three steps, one point of contact.</p>
       </div>
 
       <div class="steps">
-        <div class="step">
+        <div class="step reveal">
           <div class="step-icon" aria-hidden="true">☎</div>
           <span class="step-num">01</span>
           <h3>Discovery call</h3>
           <p>A private conversation with your travel architect to understand your taste, occasion, and how you like to travel — no forms, no boxes to tick.</p>
         </div>
-        <div class="step">
+        <div class="step reveal">
           <div class="step-icon" aria-hidden="true">✎</div>
           <span class="step-num">02</span>
           <h3>Bespoke proposal</h3>
           <p>A fully designed itinerary is built around you — private villas, chartered flights, reservations at the tables you can't get into — usually within 48 hours.</p>
         </div>
-        <div class="step">
+        <div class="step reveal">
           <div class="step-icon" aria-hidden="true">✦</div>
           <span class="step-num">03</span>
           <h3>Seamless delivery</h3>
@@ -150,14 +152,14 @@
   <!-- Signature Experiences -->
   <section class="section section-alt" id="experiences">
     <div class="container">
-      <div class="section-head">
+      <div class="section-head reveal">
         <span class="eyebrow">Signature experiences</span>
         <h2>A glimpse of what we arrange</h2>
         <p class="section-sub">Every journey is designed from a blank page — these are recent proposals, not a catalogue.</p>
       </div>
 
       <div class="destinations-grid">
-        <article class="dest-card">
+        <article class="dest-card reveal">
           <div class="dest-photo photo-1"><span class="dest-badge">Private villa</span></div>
           <div class="dest-body">
             <h3>Amalfi Coast, Italy</h3>
@@ -165,7 +167,7 @@
             <div class="dest-foot"><span class="price">Price on application</span><span class="rating">★ Curated</span></div>
           </div>
         </article>
-        <article class="dest-card">
+        <article class="dest-card reveal">
           <div class="dest-photo photo-2"><span class="dest-badge">Superyacht</span></div>
           <div class="dest-body">
             <h3>Amalfi &amp; the Aeolian Islands</h3>
@@ -173,7 +175,7 @@
             <div class="dest-foot"><span class="price">Price on application</span><span class="rating">★ Curated</span></div>
           </div>
         </article>
-        <article class="dest-card">
+        <article class="dest-card reveal">
           <div class="dest-photo photo-3"><span class="dest-badge">Private jet</span></div>
           <div class="dest-body">
             <h3>Alpine Chalet, Courchevel</h3>
@@ -181,7 +183,7 @@
             <div class="dest-foot"><span class="price">Price on application</span><span class="rating">★ Curated</span></div>
           </div>
         </article>
-        <article class="dest-card">
+        <article class="dest-card reveal">
           <div class="dest-photo photo-4"><span class="dest-badge">Fully escorted</span></div>
           <div class="dest-body">
             <h3>Safari &amp; Private Rail, Southern Africa</h3>
@@ -189,7 +191,7 @@
             <div class="dest-foot"><span class="price">Price on application</span><span class="rating">★ Curated</span></div>
           </div>
         </article>
-        <article class="dest-card">
+        <article class="dest-card reveal">
           <div class="dest-photo photo-5"><span class="dest-badge">Private island</span></div>
           <div class="dest-body">
             <h3>Private Island, Seychelles</h3>
@@ -197,7 +199,7 @@
             <div class="dest-foot"><span class="price">Price on application</span><span class="rating">★ Curated</span></div>
           </div>
         </article>
-        <article class="dest-card">
+        <article class="dest-card reveal">
           <div class="dest-photo photo-6"><span class="dest-badge">Ryokan retreat</span></div>
           <div class="dest-body">
             <h3>Kyoto &amp; the Japanese Alps</h3>
@@ -216,14 +218,14 @@
   <!-- Membership -->
   <section class="section" id="membership">
     <div class="container">
-      <div class="section-head">
+      <div class="section-head reveal">
         <span class="eyebrow">Membership</span>
         <h2>Access to the level of service you need</h2>
         <p class="section-sub">All membership is by application. Every tier includes 365-day concierge access and full discretion.</p>
       </div>
 
       <div class="plans-grid">
-        <div class="plan-card">
+        <div class="plan-card reveal">
           <h3>Private Client</h3>
           <p class="plan-price"><span>By application</span></p>
           <p class="muted">For occasional bespoke journeys</p>
@@ -235,7 +237,7 @@
           <a href="#contact" class="btn btn-outline btn-block">Enquire</a>
         </div>
 
-        <div class="plan-card plan-featured">
+        <div class="plan-card plan-featured reveal">
           <span class="plan-tag">Most requested</span>
           <h3>Signature</h3>
           <p class="plan-price"><span>By application</span></p>
@@ -249,7 +251,7 @@
           <a href="#contact" class="btn btn-primary btn-block">Enquire about Signature</a>
         </div>
 
-        <div class="plan-card">
+        <div class="plan-card reveal">
           <h3>Black Card</h3>
           <p class="plan-price"><span>By invitation</span></p>
           <p class="muted">For unlimited, on-demand travel</p>
@@ -268,7 +270,7 @@
   <!-- About / Testimonials -->
   <section class="section section-alt" id="about">
     <div class="container about-grid">
-      <div class="about-copy">
+      <div class="about-copy reveal">
         <span class="eyebrow">About us</span>
         <h2>A private travel office, not a booking site</h2>
         <p>
@@ -286,15 +288,15 @@
       </div>
 
       <div class="testimonials">
-        <blockquote class="testimonial">
+        <blockquote class="testimonial reveal">
           <p>"I called on a Thursday for a Saturday departure. By Friday morning we had a villa, a chef, and a boat waiting."</p>
           <cite>— Private Client, London</cite>
         </blockquote>
-        <blockquote class="testimonial">
+        <blockquote class="testimonial reveal">
           <p>"They don't ask what my budget is. They ask what the trip needs to feel like. That's the difference."</p>
           <cite>— Signature Member, Singapore</cite>
         </blockquote>
-        <blockquote class="testimonial">
+        <blockquote class="testimonial reveal">
           <p>"Our concierge rerouted an entire family trip around a storm without waking us up to ask permission. That's what we pay for."</p>
           <cite>— Black Card Member, New York</cite>
         </blockquote>
@@ -304,7 +306,7 @@
 
   <!-- CTA banner -->
   <section class="cta-banner">
-    <div class="container cta-banner-inner">
+    <div class="container cta-banner-inner reveal">
       <h2>Your next journey, entirely arranged.</h2>
       <p>Speak with a travel architect — by phone, in person, or by private consultation.</p>
       <a href="#contact" class="btn btn-light">Request a Private Consultation</a>
@@ -314,7 +316,7 @@
   <!-- Contact -->
   <section class="section" id="contact">
     <div class="container contact-grid">
-      <div class="contact-info">
+      <div class="contact-info reveal">
         <span class="eyebrow">Get in touch</span>
         <h2>Request a private consultation</h2>
         <p class="section-sub">Tell us what you have in mind. A travel architect will call you directly — no forms to fill in after that.</p>
@@ -334,7 +336,7 @@
         </div>
       </div>
 
-      <form class="contact-form" id="contactForm" novalidate>
+      <form class="contact-form reveal" id="contactForm" novalidate>
         <div class="form-row">
           <div class="field">
             <label for="name">Full name</label>
