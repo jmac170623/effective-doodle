@@ -16,9 +16,7 @@
     --text: #eef1fb;
     --text-dim: #9aa1b8;
     --success: #37d399;
-    --danger: #ff6b6b;
-    --bubble-bot: #1d2130;
-    --bubble-user: linear-gradient(135deg, #5b8cff, #7c5bff);
+    --danger: #ff5c5c;
     --radius: 16px;
     font-size: 16px;
   }
@@ -230,44 +228,37 @@
   }
   .btn-ghost:hover { color: var(--text); border-color: #3a4160; }
 
-  .chat-card {
+  /* ---------- Call screen ---------- */
+  .call-card {
     display: flex;
     flex-direction: column;
     height: 640px;
     padding: 0;
     overflow: hidden;
+    position: relative;
+    background: radial-gradient(600px 400px at 50% 0%, rgba(91,140,255,0.08), transparent 60%), var(--panel);
   }
 
-  .chat-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border);
-    background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
-  }
-
-  .chat-header .avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  .call-status-bar {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 700;
-    font-size: 15px;
+    gap: 10px;
+    padding: 14px 16px;
+    font-size: 12.5px;
+    color: var(--text-dim);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
   }
-
-  .chat-header .info h3 { margin: 0; font-size: 15px; }
-  .chat-header .info span { font-size: 12.5px; color: var(--text-dim); display: flex; align-items: center; gap: 6px; }
-
-  .live-dot {
+  .call-status-bar .dot {
     width: 7px;
     height: 7px;
     border-radius: 50%;
+    background: var(--text-dim);
+  }
+  .call-status-bar.active .dot {
     background: var(--success);
-    display: inline-block;
     animation: pulse 1.6s infinite;
   }
   @keyframes pulse {
@@ -276,85 +267,208 @@
     100% { box-shadow: 0 0 0 0 rgba(55,211,153,0); }
   }
 
-  .messages {
+  .call-stage {
     flex: 1;
-    overflow-y: auto;
-    padding: 20px;
     display: flex;
     flex-direction: column;
-    gap: 14px;
-  }
-  .messages::-webkit-scrollbar { width: 8px; }
-  .messages::-webkit-scrollbar-thumb { background: #2a2f42; border-radius: 8px; }
-
-  .msg-row { display: flex; gap: 10px; max-width: 82%; animation: fadeIn 0.25s ease; }
-  .msg-row.bot { align-self: flex-start; }
-  .msg-row.user { align-self: flex-end; flex-direction: row-reverse; margin-left: auto; }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: translateY(0); }
+    align-items: center;
+    justify-content: center;
+    padding: 20px 24px 10px;
+    text-align: center;
+    min-height: 0;
   }
 
-  .msg-avatar {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    flex-shrink: 0;
+  .avatar-ring {
+    position: relative;
+    width: 128px;
+    height: 128px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 13px;
-    font-weight: 700;
+    margin-bottom: 18px;
+    flex-shrink: 0;
   }
-  .msg-row.bot .msg-avatar { background: var(--accent-soft); color: var(--accent); }
-  .msg-row.user .msg-avatar { background: #2a2f42; color: var(--text-dim); }
+  .avatar-ring::before, .avatar-ring::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    opacity: 0;
+  }
+  .avatar-ring.ringing::before, .avatar-ring.ringing::after {
+    animation: ringPulse 1.6s ease-out infinite;
+  }
+  .avatar-ring.ringing::after { animation-delay: 0.5s; }
+  .avatar-ring.speaking::before {
+    animation: speakPulse 1s ease-out infinite;
+    opacity: 1;
+  }
+  @keyframes ringPulse {
+    0% { transform: scale(0.85); opacity: 0.7; }
+    100% { transform: scale(1.5); opacity: 0; }
+  }
+  @keyframes speakPulse {
+    0% { transform: scale(1); opacity: 0.6; border-color: var(--success); }
+    100% { transform: scale(1.35); opacity: 0; border-color: var(--success); }
+  }
 
-  .bubble {
-    padding: 11px 15px;
-    border-radius: var(--radius);
+  .avatar-circle {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 42px;
+    box-shadow: 0 10px 30px rgba(91, 140, 255, 0.35);
+    z-index: 1;
+    transition: transform 0.15s ease;
+  }
+  .avatar-ring.speaking .avatar-circle { transform: scale(1.04); }
+
+  .call-stage h2 {
+    margin: 0 0 2px;
+    font-size: 19px;
+  }
+  .call-stage .call-sub {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+  .call-timer {
+    margin-top: 10px;
+    font-variant-numeric: tabular-nums;
+    font-size: 14px;
+    color: var(--success);
+    font-weight: 600;
+  }
+  .call-timer[hidden] { display: none; }
+
+  .captions {
+    width: 100%;
+    max-width: 460px;
+    margin-top: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 66px;
+  }
+
+  .caption-line {
     font-size: 14.5px;
     line-height: 1.5;
+    padding: 10px 14px;
+    border-radius: 12px;
+    animation: fadeIn 0.25s ease;
   }
-  .msg-row.bot .bubble {
-    background: var(--bubble-bot);
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .caption-line.bot {
+    background: var(--panel-2);
     border: 1px solid var(--border);
-    border-top-left-radius: 4px;
+    color: var(--text);
   }
-  .msg-row.user .bubble {
-    background: var(--bubble-user);
-    color: #fff;
-    border-top-right-radius: 4px;
+  .caption-line.bot::before {
+    content: "AI Receptionist";
+    display: block;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    margin-bottom: 4px;
   }
+  .caption-line.user {
+    background: var(--accent-soft);
+    border: 1px solid rgba(91,140,255,0.3);
+    color: var(--text);
+  }
+  .caption-line.user::before {
+    content: "You";
+    display: block;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+  .caption-line:empty { display: none; }
 
-  .typing {
+  .typing-dots {
     display: inline-flex;
     gap: 4px;
-    padding: 4px 2px;
+    padding: 2px 0;
   }
-  .typing span {
+  .typing-dots span {
     width: 6px;
     height: 6px;
     border-radius: 50%;
     background: var(--text-dim);
     animation: bounce 1.2s infinite;
   }
-  .typing span:nth-child(2) { animation-delay: 0.15s; }
-  .typing span:nth-child(3) { animation-delay: 0.3s; }
+  .typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.3s; }
   @keyframes bounce {
     0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
     30% { transform: translateY(-4px); opacity: 1; }
   }
 
-  .composer {
+  /* Incoming call controls */
+  .call-actions {
     display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 56px;
+    padding: 26px 16px 30px;
+    border-top: 1px solid var(--border);
+  }
+  .call-actions[hidden] { display: none; }
+
+  .call-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-dim);
+    font-size: 12px;
+  }
+  .call-btn .circle {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: #fff;
+    transition: transform 0.1s ease;
+  }
+  .call-btn:active .circle { transform: scale(0.92); }
+  .call-btn.decline .circle { background: var(--danger); box-shadow: 0 8px 20px rgba(255,92,92,0.35); }
+  .call-btn.accept .circle { background: var(--success); box-shadow: 0 8px 20px rgba(55,211,153,0.35); animation: acceptBounce 1.4s infinite; }
+  @keyframes acceptBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+
+  /* In-call controls */
+  .in-call-controls {
+    display: flex;
+    align-items: center;
     gap: 10px;
     padding: 14px 16px;
     border-top: 1px solid var(--border);
     background: var(--panel-2);
   }
+  .in-call-controls[hidden] { display: none; }
 
-  .composer input[type="text"] {
+  .in-call-controls input[type="text"] {
     flex: 1;
     background: var(--bg);
     border: 1px solid var(--border);
@@ -363,33 +477,57 @@
     border-radius: 10px;
     font-size: 14.5px;
   }
-  .composer input[type="text"]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
-  .composer input:disabled { opacity: 0.5; }
+  .in-call-controls input[type="text"]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .in-call-controls input:disabled { opacity: 0.5; }
 
-  .send-btn {
+  .icon-btn {
     width: 46px;
     height: 46px;
     border-radius: 10px;
     border: none;
-    background: linear-gradient(135deg, var(--accent), var(--accent-2));
-    color: #fff;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    font-size: 17px;
   }
-  .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .icon-btn.send { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; }
+  .icon-btn.send:disabled { opacity: 0.4; cursor: not-allowed; }
+  .icon-btn.end-call { background: var(--danger); color: #fff; border-radius: 50%; }
+
+  /* Transcript */
+  .transcript {
+    border-top: 1px solid var(--border);
+    font-size: 12.5px;
+  }
+  .transcript summary {
+    padding: 10px 16px;
+    color: var(--text-dim);
+    cursor: pointer;
+    user-select: none;
+  }
+  .transcript summary:hover { color: var(--text); }
+  .transcript-log {
+    max-height: 130px;
+    overflow-y: auto;
+    padding: 0 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .transcript-log .t-line { color: var(--text-dim); }
+  .transcript-log .t-line b { color: var(--text); font-weight: 600; }
 
   .summary-box {
-    margin: 6px 0 4px;
+    margin: 14px auto 0;
     padding: 14px 16px;
     border-radius: 14px;
     background: linear-gradient(135deg, rgba(91,140,255,0.12), rgba(124,91,255,0.10));
     border: 1px solid rgba(91,140,255,0.3);
     font-size: 13.5px;
-    align-self: stretch;
-    max-width: 100%;
+    max-width: 460px;
+    width: 100%;
   }
   .summary-box h4 {
     margin: 0 0 8px;
@@ -459,25 +597,49 @@
         </div>
       </div>
 
-      <button class="btn btn-primary" id="restartBtn">▶ Start / Restart Call</button>
-      <button class="btn btn-ghost" id="skipVoiceBtn">Replay last question aloud</button>
+      <button class="btn btn-primary" id="restartBtn">📞 New Incoming Call</button>
+      <button class="btn btn-ghost" id="skipVoiceBtn">Replay last line aloud</button>
     </div>
 
-    <div class="card chat-card">
-      <div class="chat-header">
-        <div class="avatar" id="headerAvatar">AI</div>
-        <div class="info">
-          <h3 id="headerName">Seren Dental</h3>
-          <span><span class="live-dot"></span> AI Receptionist · Simulated call</span>
+    <div class="card call-card">
+      <div class="call-status-bar" id="callStatusBar">
+        <span class="dot"></span>
+        <span id="callStateLabel">Incoming call…</span>
+        <span class="call-timer" id="callTimer" hidden>00:00</span>
+      </div>
+
+      <div class="call-stage">
+        <div class="avatar-ring ringing" id="avatarRing">
+          <div class="avatar-circle" id="avatarCircle">🦷</div>
+        </div>
+        <h2 id="callerName">Seren Dental</h2>
+        <p class="call-sub" id="callerSub">Dentist · AI Receptionist</p>
+
+        <div class="captions" id="captions">
+          <div class="caption-line bot" id="botCaption"></div>
+          <div class="caption-line user" id="userCaption"></div>
         </div>
       </div>
 
-      <div class="messages" id="messages"></div>
-
-      <div class="composer">
-        <input type="text" id="userInput" placeholder="Type your reply and press Enter…" autocomplete="off">
-        <button class="send-btn" id="sendBtn" aria-label="Send">➤</button>
+      <div class="call-actions" id="incomingActions">
+        <button class="call-btn decline" id="declineBtn">
+          <span class="circle">✕</span> Decline
+        </button>
+        <button class="call-btn accept" id="acceptBtn">
+          <span class="circle">📞</span> Accept
+        </button>
       </div>
+
+      <div class="in-call-controls" id="inCallControls" hidden>
+        <input type="text" id="userInput" placeholder="Type your reply and press Enter…" autocomplete="off" disabled>
+        <button class="icon-btn send" id="sendBtn" aria-label="Send" disabled>➤</button>
+        <button class="icon-btn end-call" id="endCallBtn" aria-label="End call">☎</button>
+      </div>
+
+      <details class="transcript" id="transcriptDetails" hidden>
+        <summary>View full call transcript</summary>
+        <div class="transcript-log" id="transcriptLog"></div>
+      </details>
     </div>
   </div>
 
@@ -587,21 +749,37 @@
   let answers = {};
   let awaitingAnswer = false;
   let lastSpokenText = "";
+  let callState = "incoming"; // incoming | active | ended
+  let timerInterval = null;
+  let callSeconds = 0;
 
   // ---------- DOM ----------
   const selectEl = document.getElementById("verticalSelect");
   const bizPreview = document.getElementById("bizPreview");
-  const messagesEl = document.getElementById("messages");
   const userInput = document.getElementById("userInput");
   const sendBtn = document.getElementById("sendBtn");
   const restartBtn = document.getElementById("restartBtn");
   const skipVoiceBtn = document.getElementById("skipVoiceBtn");
   const voiceToggle = document.getElementById("voiceToggle");
-  const headerName = document.getElementById("headerName");
-  const headerAvatar = document.getElementById("headerAvatar");
+  const callerName = document.getElementById("callerName");
+  const callerSub = document.getElementById("callerSub");
+  const avatarRing = document.getElementById("avatarRing");
+  const avatarCircle = document.getElementById("avatarCircle");
+  const callStatusBar = document.getElementById("callStatusBar");
+  const callStateLabel = document.getElementById("callStateLabel");
+  const callTimer = document.getElementById("callTimer");
+  const botCaption = document.getElementById("botCaption");
+  const userCaption = document.getElementById("userCaption");
+  const incomingActions = document.getElementById("incomingActions");
+  const inCallControls = document.getElementById("inCallControls");
+  const acceptBtn = document.getElementById("acceptBtn");
+  const declineBtn = document.getElementById("declineBtn");
+  const endCallBtn = document.getElementById("endCallBtn");
+  const transcriptDetails = document.getElementById("transcriptDetails");
+  const transcriptLog = document.getElementById("transcriptLog");
 
   // ---------- Populate dropdown ----------
-  businessConfigs.forEach((cfg, i) => {
+  businessConfigs.forEach((cfg) => {
     const opt = document.createElement("option");
     opt.value = cfg.id;
     opt.textContent = `${cfg.icon} ${cfg.name} — ${cfg.industry}`;
@@ -612,97 +790,185 @@
     bizPreview.innerHTML =
       `<strong>${cfg.icon} ${cfg.name}</strong><br>${cfg.industry}<br><br>` +
       `Asks ${cfg.questions.length} scripted questions, then confirms the booking automatically.`;
-    headerName.textContent = cfg.name;
-    headerAvatar.textContent = cfg.icon;
+    callerName.textContent = cfg.name;
+    callerSub.textContent = `${cfg.industry} · AI Receptionist`;
+    avatarCircle.textContent = cfg.icon;
   }
 
   updatePreview(currentConfig);
 
   // ---------- Speech synthesis ----------
-  function speak(text) {
-    if (!voiceToggle.checked) return;
-    if (!("speechSynthesis" in window)) return;
+  function speak(text, onStart, onEnd) {
+    lastSpokenText = text;
+    if (!voiceToggle.checked || !("speechSynthesis" in window)) {
+      if (onStart) onStart();
+      if (onEnd) setTimeout(onEnd, 600 + Math.min(text.length * 25, 1800));
+      return;
+    }
     try {
       window.speechSynthesis.cancel();
       const utter = new SpeechSynthesisUtterance(text);
       utter.rate = 1.0;
       utter.pitch = 1.0;
       utter.volume = 1.0;
-      lastSpokenText = text;
+      utter.onstart = () => { if (onStart) onStart(); };
+      utter.onend = () => { if (onEnd) onEnd(); };
+      utter.onerror = () => { if (onEnd) onEnd(); };
       window.speechSynthesis.speak(utter);
     } catch (e) {
-      // speech synthesis unsupported/blocked — silently ignore, chat still works
+      if (onStart) onStart();
+      if (onEnd) setTimeout(onEnd, 800);
     }
   }
 
   skipVoiceBtn.addEventListener("click", () => {
-    if (lastSpokenText) speak(lastSpokenText);
+    if (lastSpokenText) speak(lastSpokenText, setSpeaking, clearSpeaking);
   });
 
-  // ---------- Chat rendering ----------
-  function scrollToBottom() {
-    messagesEl.scrollTop = messagesEl.scrollHeight;
+  function setSpeaking() { avatarRing.classList.add("speaking"); }
+  function clearSpeaking() { avatarRing.classList.remove("speaking"); }
+
+  // ---------- Timer ----------
+  function formatTime(totalSeconds) {
+    const m = Math.floor(totalSeconds / 60).toString().padStart(2, "0");
+    const s = (totalSeconds % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
   }
 
-  function addMessage(sender, text) {
-    const row = document.createElement("div");
-    row.className = `msg-row ${sender}`;
-
-    const avatar = document.createElement("div");
-    avatar.className = "msg-avatar";
-    avatar.textContent = sender === "bot" ? currentConfig.icon : "You";
-
-    const bubble = document.createElement("div");
-    bubble.className = "bubble";
-    bubble.textContent = text;
-
-    row.appendChild(avatar);
-    row.appendChild(bubble);
-    messagesEl.appendChild(row);
-    scrollToBottom();
-    return row;
+  function startTimer() {
+    stopTimer();
+    callSeconds = 0;
+    callTimer.textContent = "00:00";
+    callTimer.hidden = false;
+    timerInterval = setInterval(() => {
+      callSeconds++;
+      callTimer.textContent = formatTime(callSeconds);
+    }, 1000);
   }
 
-  function addTypingIndicator() {
-    const row = document.createElement("div");
-    row.className = "msg-row bot";
-    row.id = "typingRow";
-
-    const avatar = document.createElement("div");
-    avatar.className = "msg-avatar";
-    avatar.textContent = currentConfig.icon;
-
-    const bubble = document.createElement("div");
-    bubble.className = "bubble";
-    bubble.innerHTML = '<span class="typing"><span></span><span></span><span></span></span>';
-
-    row.appendChild(avatar);
-    row.appendChild(bubble);
-    messagesEl.appendChild(row);
-    scrollToBottom();
+  function stopTimer() {
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = null;
   }
 
-  function removeTypingIndicator() {
-    const row = document.getElementById("typingRow");
-    if (row) row.remove();
+  // ---------- Captions & transcript ----------
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function logTranscript(sender, text) {
+    const line = document.createElement("div");
+    line.className = "t-line";
+    line.innerHTML = `<b>${sender === "bot" ? "AI:" : "You:"}</b> ${escapeHtml(text)}`;
+    transcriptLog.appendChild(line);
+    transcriptLog.scrollTop = transcriptLog.scrollHeight;
+  }
+
+  function showBotCaption(text) {
+    botCaption.textContent = text;
+    userCaption.textContent = "";
+    logTranscript("bot", text);
+  }
+
+  function showUserCaption(text) {
+    userCaption.textContent = text;
+    logTranscript("user", text);
+  }
+
+  function showTyping() {
+    botCaption.innerHTML = '<span class="typing-dots"><span></span><span></span><span></span></span>';
+    userCaption.textContent = "";
+  }
+
+  // ---------- Call state transitions ----------
+  function setCallState(state) {
+    callState = state;
+    if (state === "incoming") {
+      callStatusBar.classList.remove("active");
+      callStateLabel.textContent = "Incoming call…";
+      callTimer.hidden = true;
+      avatarRing.classList.add("ringing");
+      avatarRing.classList.remove("speaking");
+      incomingActions.hidden = false;
+      inCallControls.hidden = true;
+      transcriptDetails.hidden = true;
+      userInput.disabled = true;
+      sendBtn.disabled = true;
+    } else if (state === "active") {
+      callStatusBar.classList.add("active");
+      callStateLabel.textContent = "Call in progress";
+      avatarRing.classList.remove("ringing");
+      incomingActions.hidden = true;
+      inCallControls.hidden = false;
+      transcriptDetails.hidden = false;
+    } else if (state === "ended") {
+      callStatusBar.classList.remove("active");
+      callStateLabel.textContent = "Call ended";
+      avatarRing.classList.remove("ringing", "speaking");
+      incomingActions.hidden = true;
+      inCallControls.hidden = true;
+      userInput.disabled = true;
+      sendBtn.disabled = true;
+      stopTimer();
+    }
+  }
+
+  function resetCallScreen() {
+    window.speechSynthesis && window.speechSynthesis.cancel();
+    stopTimer();
+    answers = {};
+    questionIndex = -1;
+    awaitingAnswer = false;
+    userInput.value = "";
+    botCaption.textContent = "";
+    userCaption.textContent = "";
+    transcriptLog.innerHTML = "";
+    const existingSummary = document.querySelector(".summary-box");
+    if (existingSummary) existingSummary.remove();
+    setCallState("incoming");
+  }
+
+  function acceptCall() {
+    setCallState("active");
+    startTimer();
+    botSay(currentConfig.greeting, () => {
+      setTimeout(advance, 400);
+    });
+  }
+
+  function declineCall() {
+    window.speechSynthesis && window.speechSynthesis.cancel();
+    callStateLabel.textContent = "Call declined";
+    avatarRing.classList.remove("ringing");
+  }
+
+  function endCall() {
+    window.speechSynthesis && window.speechSynthesis.cancel();
+    setCallState("ended");
+    renderSummary();
   }
 
   function botSay(text, callback) {
     awaitingAnswer = false;
     userInput.disabled = true;
     sendBtn.disabled = true;
-    addTypingIndicator();
-    const delay = 500 + Math.min(text.length * 12, 900);
+    showTyping();
+    const thinkDelay = 450 + Math.min(text.length * 8, 500);
     setTimeout(() => {
-      removeTypingIndicator();
-      addMessage("bot", text);
-      speak(text);
-      userInput.disabled = false;
-      sendBtn.disabled = false;
-      userInput.focus();
-      awaitingAnswer = true;
-      if (callback) callback();
-    }, delay);
+      if (callState !== "active") return;
+      showBotCaption(text);
+      speak(text, setSpeaking, () => {
+        clearSpeaking();
+        if (callState !== "active") return;
+        userInput.disabled = false;
+        sendBtn.disabled = false;
+        userInput.focus();
+        awaitingAnswer = true;
+        if (callback) callback();
+      });
+    }, thinkDelay);
   }
 
   function renderSummary() {
@@ -715,44 +981,27 @@
       rows += `<dt>${label}</dt><dd>${escapeHtml(val)}</dd>`;
     });
     box.innerHTML = `<h4>Call summary captured</h4><dl>${rows}</dl>`;
-    messagesEl.appendChild(box);
-    scrollToBottom();
-  }
-
-  function escapeHtml(str) {
-    const div = document.createElement("div");
-    div.textContent = str;
-    return div.innerHTML;
-  }
-
-  // ---------- Flow control ----------
-  function startCall() {
-    window.speechSynthesis && window.speechSynthesis.cancel();
-    messagesEl.innerHTML = "";
-    answers = {};
-    questionIndex = -1;
-    userInput.value = "";
-    botSay(currentConfig.greeting, () => {
-      setTimeout(advance, 400);
-    });
+    document.querySelector(".call-stage").appendChild(box);
   }
 
   function advance() {
+    if (callState !== "active") return;
     questionIndex++;
     if (questionIndex < currentConfig.questions.length) {
       const q = currentConfig.questions[questionIndex];
       botSay(q.prompt);
     } else {
       botSay(currentConfig.closing, () => {
-        renderSummary();
+        setTimeout(endCall, 1200);
       });
     }
   }
 
   function handleUserReply() {
+    if (callState !== "active") return;
     const text = userInput.value.trim();
     if (!text || !awaitingAnswer) return;
-    addMessage("user", text);
+    showUserCaption(text);
 
     if (questionIndex >= 0 && questionIndex < currentConfig.questions.length) {
       const key = currentConfig.questions[questionIndex].key;
@@ -761,7 +1010,7 @@
 
     userInput.value = "";
     awaitingAnswer = false;
-    setTimeout(advance, 350);
+    setTimeout(advance, 500);
   }
 
   // ---------- Events ----------
@@ -770,22 +1019,27 @@
     if (e.key === "Enter") handleUserReply();
   });
 
-  restartBtn.addEventListener("click", startCall);
+  acceptBtn.addEventListener("click", acceptCall);
+  declineBtn.addEventListener("click", declineCall);
+  endCallBtn.addEventListener("click", endCall);
+
+  restartBtn.addEventListener("click", resetCallScreen);
 
   selectEl.addEventListener("change", () => {
     currentConfig = businessConfigs.find(c => c.id === selectEl.value) || businessConfigs[0];
     updatePreview(currentConfig);
-    startCall();
+    resetCallScreen();
   });
 
   voiceToggle.addEventListener("change", () => {
     if (!voiceToggle.checked && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
+      clearSpeaking();
     }
   });
 
   // ---------- Init ----------
-  startCall();
+  setCallState("incoming");
 })();
 </script>
 </body>
