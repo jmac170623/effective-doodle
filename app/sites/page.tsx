@@ -53,12 +53,20 @@ export default async function SitesPage() {
                   {new Date(site.updatedAt).toLocaleDateString()}
                 </p>
               </div>
-              <Link
-                href={site.status === "published" ? `/site/${site.id}` : `/preview/${site.id}`}
-                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:border-slate-400"
-              >
-                {site.status === "published" ? "View live site" : "Continue editing"}
-              </Link>
+              <div className="flex gap-2">
+                <Link
+                  href={site.status === "published" ? `/site/${site.id}` : `/preview/${site.id}`}
+                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:border-slate-400"
+                >
+                  {site.status === "published" ? "View live site" : "Continue editing"}
+                </Link>
+                <Link
+                  href={`/manage/${site.id}`}
+                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:border-slate-400"
+                >
+                  Manage
+                </Link>
+              </div>
             </div>
           ))}
         </div>

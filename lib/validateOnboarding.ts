@@ -1,9 +1,37 @@
-import { OnboardingData } from "./types";
+import { OnboardingData, ServiceItem, SocialLinks } from "./types";
 
 function normalizeUrl(value: string): string | undefined {
   const trimmed = value.trim();
   if (!trimmed) return undefined;
   return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
+
+function parseSocial(input: unknown): SocialLinks {
+  const social = (input as Record<string, unknown>) || {};
+  return {
+    facebook: typeof social.facebook === "string" ? normalizeUrl(social.facebook) : undefined,
+    instagram: typeof social.instagram === "string" ? normalizeUrl(social.instagram) : undefined,
+    tiktok: typeof social.tiktok === "string" ? normalizeUrl(social.tiktok) : undefined,
+    website: typeof social.website === "string" ? normalizeUrl(social.website) : undefined,
+  };
+}
+
+function parseServices(input: unknown): { data: ServiceItem[] } | { error: string } {
+  if (!Array.isArray(input) || input.length === 0) {
+    return { error: "At least one service is required." };
+  }
+  for (const s of input) {
+    if (typeof s !== "object" || s === null || typeof (s as { name?: unknown }).name !== "string" || (s as { name: string }).name.trim() === "") {
+      return { error: "Each service needs a name." };
+    }
+  }
+  return {
+    data: (input as { name: string; description?: string }[]).map((s, i) => ({
+      id: `svc_${i}_${Math.random().toString(36).slice(2, 8)}`,
+      name: s.name.trim(),
+      description: s.description?.trim() || undefined,
+    })),
+  };
 }
 
 export function validateOnboarding(input: unknown): { data: OnboardingData } | { error: string } {
@@ -27,14 +55,8 @@ export function validateOnboarding(input: unknown): { data: OnboardingData } | {
     }
   }
 
-  if (!Array.isArray(d.services) || d.services.length === 0) {
-    return { error: "At least one service is required." };
-  }
-  for (const s of d.services) {
-    if (typeof s !== "object" || s === null || typeof (s as { name?: unknown }).name !== "string" || (s as { name: string }).name.trim() === "") {
-      return { error: "Each service needs a name." };
-    }
-  }
+  const services = parseServices(d.services);
+  if ("error" in services) return services;
 
   const quiz = d.quiz as Record<string, unknown> | undefined;
   if (
@@ -52,8 +74,6 @@ export function validateOnboarding(input: unknown): { data: OnboardingData } | {
     return { error: "Years of experience must be a number." };
   }
 
-  const social = (d.social as Record<string, unknown>) || {};
-
   const data: OnboardingData = {
     fullName: (d.fullName as string).trim(),
     age: d.age ? Number(d.age) : undefined,
@@ -64,17 +84,8 @@ export function validateOnboarding(input: unknown): { data: OnboardingData } | {
     dayRate: d.dayRate ? Number(d.dayRate) : undefined,
     phone: (d.phone as string).trim(),
     email: (d.email as string).trim(),
-    social: {
-      facebook: typeof social.facebook === "string" ? normalizeUrl(social.facebook) : undefined,
-      instagram: typeof social.instagram === "string" ? normalizeUrl(social.instagram) : undefined,
-      tiktok: typeof social.tiktok === "string" ? normalizeUrl(social.tiktok) : undefined,
-      website: typeof social.website === "string" ? normalizeUrl(social.website) : undefined,
-    },
-    services: (d.services as { name: string; description?: string }[]).map((s, i) => ({
-      id: `svc_${i}_${Math.random().toString(36).slice(2, 8)}`,
-      name: s.name.trim(),
-      description: s.description?.trim() || undefined,
-    })),
+    social: parseSocial(d.social),
+    services: services.data,
     aboutText: (d.aboutText as string).trim(),
     quiz: {
       feeling: quiz.feeling as string,
@@ -85,4 +96,49 @@ export function validateOnboarding(input: unknown): { data: OnboardingData } | {
   };
 
   return { data };
+}
+
+// Post-launch dashboard edits — a smaller field set than initial onboarding.
+// Trade, years of experience, and the personality quiz aren't editable here;
+// they're what originally drove the tone/copy, and changing them quietly
+// would be confusing without re-running the quiz.
+export type OnboardingPatch = Pick<
+  OnboardingData,
+  "businessName" | "areaCovered" | "phone" | "email" | "social" | "services" | "aboutText" | "dayRate"
+>;
+
+export function validateOnboardingPatch(input: unknown): { data: OnboardingPatch } | { error: string } {
+  if (typeof input !== "object" || input === null) {
+    return { error: "Invalid submission." };
+  }
+  const d = input as Record<string, unknown>;
+
+  const required: [string, unknown][] = [
+    ["businessName", d.businessName],
+    ["areaCovered", d.areaCovered],
+    ["phone", d.phone],
+    ["email", d.email],
+    ["aboutText", d.aboutText],
+  ];
+  for (const [key, value] of required) {
+    if (typeof value !== "string" || value.trim().length === 0) {
+      return { error: `Missing required field: ${key}` };
+    }
+  }
+
+  const services = parseServices(d.services);
+  if ("error" in services) return services;
+
+  return {
+    data: {
+      businessName: (d.businessName as string).trim(),
+      areaCovered: (d.areaCovered as string).trim(),
+      phone: (d.phone as string).trim(),
+      email: (d.email as string).trim(),
+      social: parseSocial(d.social),
+      services: services.data,
+      aboutText: (d.aboutText as string).trim(),
+      dayRate: d.dayRate ? Number(d.dayRate) : undefined,
+    },
+  };
 }
