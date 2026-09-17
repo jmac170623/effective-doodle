@@ -16,7 +16,13 @@ style of the generated site.
   Approachable.
 - **Site generation engine** (`lib/siteGenerator.ts`, `lib/styleTokens.ts`) —
   produces hero/about/services/gallery/contact copy and a distinct color/font/
-  density style per tone profile.
+  density style per tone profile. Copy is written by Claude
+  (`lib/aiCopywriter.ts`) from the onboarding answers — including two optional
+  "proud moment" / "unique fact" questions that give it real material to work
+  with — so two businesses with the same tone read differently instead of
+  filling in the same template. If `ANTHROPIC_API_KEY` isn't set or the call
+  fails for any reason, generation falls back to the deterministic template
+  copy automatically.
 - **Preview + feedback loop** (`/preview/[id]`, owner-only) — renders the
   generated site and lets the owner describe what they don't like in plain
   English; a rule-based adjuster (`lib/feedback.ts`) shifts tone, colors, copy
@@ -113,3 +119,19 @@ through the questionnaire.
    `checkout.session.completed`, `customer.subscription.updated`, and
    `customer.subscription.deleted`. Copy the endpoint's **Signing secret**
    (`whsec_...`) into `STRIPE_WEBHOOK_SECRET`.
+
+## Setting up AI-written copy (optional)
+
+Without this, every site still gets real, working copy from the built-in
+template system — this step just makes the copy unique per business instead
+of filled into a template.
+
+1. **Get an API key**: [console.anthropic.com](https://console.anthropic.com)
+   → **API Keys** → **Create Key**. This requires a funded Anthropic Console
+   account (pay-as-you-go billing, separate from a claude.ai subscription).
+2. **Add one env var** (locally in `.env.local`, and in Vercel → Settings →
+   Environment Variables): `ANTHROPIC_API_KEY`.
+3. Redeploy (or restart `npm run dev`). New sites — and any existing site
+   that's edited or regenerated via feedback — will now get AI-written copy.
+   If the key is missing or a request fails, generation silently falls back
+   to the template copy, so this is always safe to leave unset.

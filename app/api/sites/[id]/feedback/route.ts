@@ -32,7 +32,7 @@ export async function POST(
     return NextResponse.json({ error: "Feedback message is required." }, { status: 400 });
   }
 
-  const { generated, toneProfile, summary } = applyFeedback(
+  const { generated, toneProfile, summary } = await applyFeedback(
     site.onboarding,
     site.generated,
     site.generated.toneProfile,

@@ -6,7 +6,9 @@ import {
   ToneProfileId,
 } from "./types";
 import { PALETTE_VARIANTS } from "./styleTokens";
+import { TONE_PROFILES } from "./toneProfiles";
 import { generateId } from "./idGen";
+import { generateCopyWithAI } from "./aiCopywriter";
 
 function tradeNoun(trade: string): string {
   return trade.trim() || "tradesperson";
@@ -267,14 +269,11 @@ function buildGallery(data: OnboardingData): GalleryPlaceholder[] {
   return slots;
 }
 
-export function generateSite(
-  onboarding: OnboardingData,
-  toneProfile: ToneProfileId
-): GeneratedSite {
+function buildTemplateCopy(onboarding: OnboardingData, toneProfile: ToneProfileId): GeneratedCopy {
   const hero = buildHeroCopy(toneProfile, onboarding);
   const sections = buildSectionCopy(toneProfile, onboarding);
 
-  const copy: GeneratedCopy = {
+  return {
     heroHeadline: hero.headline,
     heroSubheadline: hero.subheadline,
     heroCta: hero.cta,
@@ -288,6 +287,15 @@ export function generateSite(
     contactIntro: sections.contactIntro,
     footerNote: sections.footerNote,
   };
+}
+
+export async function generateSite(
+  onboarding: OnboardingData,
+  toneProfile: ToneProfileId
+): Promise<GeneratedSite> {
+  const copy =
+    (await generateCopyWithAI(onboarding, TONE_PROFILES[toneProfile])) ??
+    buildTemplateCopy(onboarding, toneProfile);
 
   return {
     toneProfile,

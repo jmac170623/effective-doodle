@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
   }
 
   const toneProfile = computeToneProfile(result.data.quiz);
-  const generated = generateSite(result.data, toneProfile);
+  const generated = await generateSite(result.data, toneProfile);
   const now = new Date().toISOString();
 
   const record: SiteRecord = {

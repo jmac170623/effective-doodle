@@ -57,6 +57,10 @@ export interface OnboardingData {
 
   // About
   aboutText: string;
+  // Optional richer material for the AI copywriter to draw on — a specific
+  // story rather than generic self-description.
+  proudMoment?: string;
+  uniqueFact?: string;
 
   // Personality quiz
   quiz: QuizAnswers;

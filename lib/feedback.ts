@@ -31,12 +31,12 @@ interface FeedbackResult {
   summary: string[];
 }
 
-export function applyFeedback(
+export async function applyFeedback(
   onboarding: OnboardingData,
   currentGenerated: GeneratedSite,
   currentTone: ToneProfileId,
   message: string
-): FeedbackResult {
+): Promise<FeedbackResult> {
   const text = message.toLowerCase();
   const summary: string[] = [];
   let nextTone = currentTone;
@@ -95,7 +95,7 @@ export function applyFeedback(
   // Regenerate base copy/style if the tone changed.
   let generated =
     nextTone !== currentTone
-      ? generateSite(onboarding, nextTone)
+      ? await generateSite(onboarding, nextTone)
       : { ...currentGenerated, style: { ...currentGenerated.style } };
 
   // 2. Color adjustments.

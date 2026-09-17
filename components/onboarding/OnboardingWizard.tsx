@@ -25,6 +25,8 @@ interface WizardState {
   services: ServiceDraft[];
   dayRate: string;
   aboutText: string;
+  proudMoment: string;
+  uniqueFact: string;
   feeling: string;
   phrase: string;
   oneWordDescriptor: string;
@@ -47,6 +49,8 @@ const INITIAL_STATE: WizardState = {
   services: [{ name: "", description: "" }],
   dayRate: "",
   aboutText: "",
+  proudMoment: "",
+  uniqueFact: "",
   feeling: "",
   phrase: "",
   oneWordDescriptor: "",
@@ -107,6 +111,8 @@ export function OnboardingWizard() {
           .filter((s) => s.name.trim())
           .map((s) => ({ name: s.name, description: s.description || undefined })),
         aboutText: state.aboutText,
+        proudMoment: state.proudMoment || undefined,
+        uniqueFact: state.uniqueFact || undefined,
         quiz: {
           feeling: state.feeling,
           phrase: state.phrase,
@@ -409,6 +415,28 @@ function AboutStep({
         value={state.aboutText}
         onChange={(e) => update("aboutText", e.target.value)}
       />
+
+      <Field label="A job you're proud of, or a customer moment that stuck with you (optional)">
+        <textarea
+          className={`${inputClass} min-h-20`}
+          placeholder="e.g. Rewired a house for a family who'd been living with one working socket for months"
+          value={state.proudMoment}
+          onChange={(e) => update("proudMoment", e.target.value)}
+        />
+      </Field>
+
+      <Field label="What's something people wouldn't expect about you or your business? (optional)">
+        <textarea
+          className={`${inputClass} min-h-20`}
+          placeholder="e.g. Started out as a chef before retraining as a plumber"
+          value={state.uniqueFact}
+          onChange={(e) => update("uniqueFact", e.target.value)}
+        />
+      </Field>
+
+      <p className="text-xs text-slate-500">
+        These two are optional but genuinely help — the more specific and personal your answers, the less generic your site will sound.
+      </p>
     </div>
   );
 }

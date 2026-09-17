@@ -52,7 +52,7 @@ export async function PATCH(
     : site.generated.toneProfile;
 
   const updatedOnboarding = { ...site.onboarding, ...result.data };
-  const regenerated = generateSite(updatedOnboarding, toneProfile);
+  const regenerated = await generateSite(updatedOnboarding, toneProfile);
 
   const updated = {
     ...site,

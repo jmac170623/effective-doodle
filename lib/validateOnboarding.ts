@@ -87,6 +87,8 @@ export function validateOnboarding(input: unknown): { data: OnboardingData } | {
     social: parseSocial(d.social),
     services: services.data,
     aboutText: (d.aboutText as string).trim(),
+    proudMoment: typeof d.proudMoment === "string" ? d.proudMoment.trim() || undefined : undefined,
+    uniqueFact: typeof d.uniqueFact === "string" ? d.uniqueFact.trim() || undefined : undefined,
     quiz: {
       feeling: quiz.feeling as string,
       phrase: quiz.phrase as string,
@@ -104,7 +106,16 @@ export function validateOnboarding(input: unknown): { data: OnboardingData } | {
 // would be confusing without re-running the quiz.
 export type OnboardingPatch = Pick<
   OnboardingData,
-  "businessName" | "areaCovered" | "phone" | "email" | "social" | "services" | "aboutText" | "dayRate"
+  | "businessName"
+  | "areaCovered"
+  | "phone"
+  | "email"
+  | "social"
+  | "services"
+  | "aboutText"
+  | "dayRate"
+  | "proudMoment"
+  | "uniqueFact"
 >;
 
 export function validateOnboardingPatch(input: unknown): { data: OnboardingPatch } | { error: string } {
@@ -139,6 +150,8 @@ export function validateOnboardingPatch(input: unknown): { data: OnboardingPatch
       services: services.data,
       aboutText: (d.aboutText as string).trim(),
       dayRate: d.dayRate ? Number(d.dayRate) : undefined,
+      proudMoment: typeof d.proudMoment === "string" ? d.proudMoment.trim() || undefined : undefined,
+      uniqueFact: typeof d.uniqueFact === "string" ? d.uniqueFact.trim() || undefined : undefined,
     },
   };
 }

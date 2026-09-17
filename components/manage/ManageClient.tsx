@@ -29,6 +29,8 @@ export function ManageClient({ siteId }: { siteId: string }) {
   const [website, setWebsite] = useState("");
   const [services, setServices] = useState<ServiceDraft[]>([]);
   const [aboutText, setAboutText] = useState("");
+  const [proudMoment, setProudMoment] = useState("");
+  const [uniqueFact, setUniqueFact] = useState("");
   const [dayRate, setDayRate] = useState("");
   const [toneProfile, setToneProfile] = useState<ToneProfileId>("friendly");
 
@@ -63,6 +65,8 @@ export function ManageClient({ siteId }: { siteId: string }) {
           data.onboarding.services.map((s) => ({ name: s.name, description: s.description ?? "" }))
         );
         setAboutText(data.onboarding.aboutText);
+        setProudMoment(data.onboarding.proudMoment ?? "");
+        setUniqueFact(data.onboarding.uniqueFact ?? "");
         setDayRate(data.onboarding.dayRate ? String(data.onboarding.dayRate) : "");
         setToneProfile(data.generated.toneProfile);
         setImages(data.images ?? []);
@@ -153,6 +157,8 @@ export function ManageClient({ siteId }: { siteId: string }) {
           social: { facebook, instagram, tiktok, website },
           services: services.filter((s) => s.name.trim()),
           aboutText,
+          proudMoment: proudMoment || undefined,
+          uniqueFact: uniqueFact || undefined,
           dayRate: dayRate ? Number(dayRate) : undefined,
           toneProfile,
         }),
@@ -276,6 +282,14 @@ export function ManageClient({ siteId }: { siteId: string }) {
           <section className="space-y-3 border-t border-slate-100 pt-4">
             <h2 className="text-sm font-semibold text-slate-700">About</h2>
             <textarea className={`${inputClass} min-h-24`} value={aboutText} onChange={(e) => setAboutText(e.target.value)} />
+            <label className="block text-xs font-medium text-slate-600">
+              A job you&apos;re proud of, or a customer moment that stuck with you (optional)
+            </label>
+            <textarea className={`${inputClass} min-h-16`} value={proudMoment} onChange={(e) => setProudMoment(e.target.value)} />
+            <label className="block text-xs font-medium text-slate-600">
+              Something people wouldn&apos;t expect about you or your business (optional)
+            </label>
+            <textarea className={`${inputClass} min-h-16`} value={uniqueFact} onChange={(e) => setUniqueFact(e.target.value)} />
           </section>
 
           <section className="space-y-3 border-t border-slate-100 pt-4">
