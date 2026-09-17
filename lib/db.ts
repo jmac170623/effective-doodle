@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { BillingStatus, FeedbackRound, GeneratedSite, OnboardingData, QuoteBreakdown, SiteImage, SiteRecord, SiteStatus } from "./types";
+import { AnimationStatus, BillingStatus, FeedbackRound, GeneratedSite, OnboardingData, QuoteBreakdown, SiteAnimation, SiteImage, SiteRecord, SiteStatus } from "./types";
 
 interface SiteRow {
   id: string;
@@ -13,6 +13,7 @@ interface SiteRow {
   billing_status: BillingStatus;
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
+  animation_credits: number;
 }
 
 function rowToRecord(row: SiteRow): SiteRecord {
@@ -28,6 +29,7 @@ function rowToRecord(row: SiteRow): SiteRecord {
     billingStatus: row.billing_status,
     stripeCustomerId: row.stripe_customer_id ?? undefined,
     stripeSubscriptionId: row.stripe_subscription_id ?? undefined,
+    animationCredits: row.animation_credits,
   };
 }
 
@@ -199,5 +201,82 @@ export async function insertQuote(
     service_name: quote.serviceName,
     breakdown: quote.breakdown,
   });
+  if (error) throw new Error(error.message);
+}
+
+interface SiteAnimationRow {
+  id: string;
+  site_id: string;
+  image_id: string;
+  status: AnimationStatus;
+  video_url: string | null;
+  used_credit: boolean;
+  created_at: string;
+}
+
+function rowToSiteAnimation(row: SiteAnimationRow): SiteAnimation {
+  return {
+    id: row.id,
+    siteId: row.site_id,
+    imageId: row.image_id,
+    status: row.status,
+    videoUrl: row.video_url ?? undefined,
+    usedCredit: row.used_credit,
+    createdAt: row.created_at,
+  };
+}
+
+export async function listSiteAnimations(supabase: SupabaseClient, siteId: string): Promise<SiteAnimation[]> {
+  const { data, error } = await supabase
+    .from("site_animations")
+    .select("*")
+    .eq("site_id", siteId)
+    .order("created_at", { ascending: true });
+  if (error) throw new Error(error.message);
+  return (data as SiteAnimationRow[] | null ?? []).map(rowToSiteAnimation);
+}
+
+export async function insertSiteAnimation(
+  supabase: SupabaseClient,
+  animation: { id: string; siteId: string; imageId: string; usedCredit: boolean }
+): Promise<void> {
+  const { error } = await supabase.from("site_animations").insert({
+    id: animation.id,
+    site_id: animation.siteId,
+    image_id: animation.imageId,
+    status: "processing",
+    used_credit: animation.usedCredit,
+  });
+  if (error) throw new Error(error.message);
+}
+
+export async function updateSiteAnimationStatus(
+  supabase: SupabaseClient,
+  params: { id: string; status: AnimationStatus; videoUrl?: string }
+): Promise<void> {
+  const { error } = await supabase
+    .from("site_animations")
+    .update({ status: params.status, video_url: params.videoUrl })
+    .eq("id", params.id);
+  if (error) throw new Error(error.message);
+}
+
+// Consumes one purchased animation credit — called when an animation is
+// created past the free cap. Not run inside a DB transaction; a rare race
+// between two simultaneous requests could both pass the eligibility check
+// and this would let the balance go negative, which is an acceptable MVP
+// tradeoff for a single-user-per-site dashboard.
+export async function consumeAnimationCredit(supabase: SupabaseClient, siteId: string, currentCredits: number): Promise<void> {
+  const { error } = await supabase
+    .from("sites")
+    .update({ animation_credits: Math.max(0, currentCredits - 1) })
+    .eq("id", siteId);
+  if (error) throw new Error(error.message);
+}
+
+// Called by the Stripe webhook (service-role client) after a successful
+// one-time animation-credit payment.
+export async function addAnimationCredits(supabase: SupabaseClient, siteId: string, count: number): Promise<void> {
+  const { error } = await supabase.rpc("increment_animation_credits", { p_site_id: siteId, p_count: count });
   if (error) throw new Error(error.message);
 }

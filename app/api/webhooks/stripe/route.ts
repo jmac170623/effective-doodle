@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { activateSiteBilling, updateBillingStatusBySubscription } from "@/lib/db";
+import { activateSiteBilling, addAnimationCredits, updateBillingStatusBySubscription } from "@/lib/db";
 import { BillingStatus } from "@/lib/types";
 
 export async function POST(request: NextRequest) {
@@ -26,6 +26,15 @@ export async function POST(request: NextRequest) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;
       const siteId = session.metadata?.siteId;
+
+      if (session.mode === "payment" && session.metadata?.type === "animation_credit") {
+        const credits = Number.parseInt(session.metadata.credits ?? "1", 10);
+        if (siteId && credits > 0) {
+          await addAnimationCredits(supabase, siteId, credits);
+        }
+        break;
+      }
+
       const customerId = typeof session.customer === "string" ? session.customer : session.customer?.id;
       const subscriptionId = typeof session.subscription === "string" ? session.subscription : session.subscription?.id;
       if (siteId && customerId && subscriptionId) {

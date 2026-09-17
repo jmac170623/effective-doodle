@@ -148,9 +148,28 @@ export interface SiteRecord {
   billingStatus: BillingStatus;
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
+  // Paid animation credits beyond the free-per-site cap (see lib/animationLimits.ts).
+  animationCredits: number;
   // Attached by API routes that fetch it separately (site_images is its own
   // table, not a column on sites) — absent unless the caller populated it.
   images?: SiteImage[];
+}
+
+// ---- Higgsfield photo-to-video animations ----
+// Each site gets a small number of free animations (see FREE_ANIMATION_CAP
+// in lib/animationLimits.ts); beyond that, animating a photo consumes a
+// purchased credit (one-time Stripe payment) instead.
+
+export type AnimationStatus = "processing" | "completed" | "failed";
+
+export interface SiteAnimation {
+  id: string;
+  siteId: string;
+  imageId: string;
+  status: AnimationStatus;
+  videoUrl?: string;
+  usedCredit: boolean;
+  createdAt: string;
 }
 
 // ---- Quote tool ----

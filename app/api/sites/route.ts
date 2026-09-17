@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
     generated,
     feedbackHistory: [],
     billingStatus: "unpaid",
+    animationCredits: 0,
   };
 
   await insertSite(supabase, record);
