@@ -43,6 +43,9 @@ export interface OnboardingData {
   yearsExperience: number;
   businessName: string;
   areaCovered: string;
+  // Optional day rate used by the quote calculator; a trade-based default
+  // is used when left blank.
+  dayRate?: number;
 
   // Contact
   phone: string;
@@ -127,4 +130,56 @@ export interface SiteRecord {
   onboarding: OnboardingData;
   generated: GeneratedSite;
   feedbackHistory: FeedbackRound[];
+}
+
+// ---- Quote tool ----
+// Materials are a shared catalog (not owned per-site) so the same merchant
+// pricing feed can power every generated site at once — the "advertise
+// your prices across every tradesperson site we generate" pitch.
+
+export type TradeCategory = "plumbing" | "electrical" | "tiling" | "painting" | "general";
+
+export type JobSize = "small" | "medium" | "large";
+
+export interface Material {
+  id: string;
+  category: TradeCategory;
+  name: string;
+  unit: string;
+  unitPrice: number;
+  merchantLabel: string;
+  suggestedQty: Record<JobSize, number>;
+}
+
+export interface QuoteLineItem {
+  materialId: string;
+  name: string;
+  unit: string;
+  unitPrice: number;
+  quantity: number;
+  lineTotal: number;
+  merchantLabel: string;
+}
+
+export interface QuoteBreakdown {
+  category: TradeCategory;
+  jobSize: JobSize;
+  lineItems: QuoteLineItem[];
+  materialsTotal: number;
+  labourDays: number;
+  labourRate: number;
+  labourTotal: number;
+  grandTotalLow: number;
+  grandTotalHigh: number;
+}
+
+export interface QuoteRequest {
+  id: string;
+  siteId: string;
+  createdAt: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone?: string;
+  serviceName: string;
+  breakdown: QuoteBreakdown;
 }

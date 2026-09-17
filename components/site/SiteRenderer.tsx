@@ -1,6 +1,8 @@
 import { OnboardingData, GeneratedSite } from "@/lib/types";
 import { ContactForm } from "./ContactForm";
 import { ScrollReveal } from "./ScrollReveal";
+import { QuoteCalculator } from "./QuoteCalculator";
+import { matchTradeCategory, defaultDayRate } from "@/lib/quoteCategories";
 
 interface SiteRendererProps {
   siteId: string;
@@ -62,6 +64,10 @@ export function SiteRenderer({ siteId, onboarding, generated }: SiteRendererProp
       </div>
 
       <Reveal motion={style.motion}>
+        <QuoteSection siteId={siteId} onboarding={onboarding} sectionGapClass={sectionGapClass} />
+      </Reveal>
+
+      <Reveal motion={style.motion}>
         <Contact siteId={siteId} copy={copy} onboarding={onboarding} sectionGapClass={sectionGapClass} />
       </Reveal>
 
@@ -88,6 +94,7 @@ function Nav({ businessName, phone }: { businessName: string; phone: string }) {
         <a href="#about" className="hover:opacity-70">About</a>
         <a href="#services" className="hover:opacity-70">Services</a>
         <a href="#gallery" className="hover:opacity-70">Gallery</a>
+        <a href="#quote" className="hover:opacity-70">Get a Quote</a>
         <a href="#contact" className="hover:opacity-70">Contact</a>
       </nav>
       <a
@@ -208,6 +215,40 @@ function Gallery({
               <span className="mt-1 text-[10px] opacity-70">Photo slot — add later</span>
             </div>
           ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function QuoteSection({
+  siteId,
+  onboarding,
+  sectionGapClass,
+}: {
+  siteId: string;
+  onboarding: OnboardingData;
+  sectionGapClass: string;
+}) {
+  const category = matchTradeCategory(onboarding.trade);
+  const dayRate = onboarding.dayRate ?? defaultDayRate(category);
+
+  return (
+    <section id="quote" className={`px-6 ${sectionGapClass}`}>
+      <div className="mx-auto max-w-5xl">
+        <h2 className="text-2xl font-bold sm:text-3xl" style={{ fontFamily: "var(--font-heading)" }}>
+          Get an Instant Quote
+        </h2>
+        <p className="mt-2 max-w-xl" style={{ color: "var(--color-muted)" }}>
+          Pick a service and job size for a real, itemized estimate — no waiting around for a callback.
+        </p>
+        <div className="mt-8">
+          <QuoteCalculator
+            siteId={siteId}
+            category={category}
+            dayRate={dayRate}
+            services={onboarding.services}
+          />
         </div>
       </div>
     </section>

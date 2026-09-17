@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { FeedbackRound, GeneratedSite, OnboardingData, SiteRecord, SiteStatus } from "./types";
+import { FeedbackRound, GeneratedSite, OnboardingData, QuoteBreakdown, SiteRecord, SiteStatus } from "./types";
 
 interface SiteRow {
   id: string;
@@ -80,6 +80,32 @@ export async function insertLead(
     name: lead.name,
     email: lead.email,
     message: lead.message,
+  });
+  if (error) throw new Error(error.message);
+}
+
+export async function insertQuote(
+  supabase: SupabaseClient,
+  quote: {
+    id: string;
+    siteId: string;
+    createdAt: string;
+    customerName: string;
+    customerEmail: string;
+    customerPhone?: string;
+    serviceName: string;
+    breakdown: QuoteBreakdown;
+  }
+): Promise<void> {
+  const { error } = await supabase.from("quotes").insert({
+    id: quote.id,
+    site_id: quote.siteId,
+    created_at: quote.createdAt,
+    customer_name: quote.customerName,
+    customer_email: quote.customerEmail,
+    customer_phone: quote.customerPhone,
+    service_name: quote.serviceName,
+    breakdown: quote.breakdown,
   });
   if (error) throw new Error(error.message);
 }

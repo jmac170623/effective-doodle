@@ -61,6 +61,7 @@ export function validateOnboarding(input: unknown): { data: OnboardingData } | {
     yearsExperience,
     businessName: (d.businessName as string).trim(),
     areaCovered: (d.areaCovered as string).trim(),
+    dayRate: d.dayRate ? Number(d.dayRate) : undefined,
     phone: (d.phone as string).trim(),
     email: (d.email as string).trim(),
     social: {

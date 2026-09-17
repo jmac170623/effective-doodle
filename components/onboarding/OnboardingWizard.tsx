@@ -23,6 +23,7 @@ interface WizardState {
   tiktok: string;
   website: string;
   services: ServiceDraft[];
+  dayRate: string;
   aboutText: string;
   feeling: string;
   phrase: string;
@@ -44,6 +45,7 @@ const INITIAL_STATE: WizardState = {
   tiktok: "",
   website: "",
   services: [{ name: "", description: "" }],
+  dayRate: "",
   aboutText: "",
   feeling: "",
   phrase: "",
@@ -92,6 +94,7 @@ export function OnboardingWizard() {
         yearsExperience: Number(state.yearsExperience),
         businessName: state.businessName,
         areaCovered: state.areaCovered,
+        dayRate: state.dayRate ? Number(state.dayRate) : undefined,
         phone: state.phone,
         email: state.email,
         social: {
@@ -369,6 +372,21 @@ function ServicesStep({
       >
         + Add another service
       </button>
+
+      <div className="border-t border-slate-100 pt-4">
+        <Field label="Typical day rate (optional)">
+          <input
+            type="number"
+            className={inputClass}
+            placeholder="e.g. 250"
+            value={state.dayRate}
+            onChange={(e) => update("dayRate", e.target.value)}
+          />
+        </Field>
+        <p className="mt-1 text-xs text-slate-500">
+          Used to power the instant quote calculator on your site. Leave blank and we&apos;ll use a typical rate for your trade.
+        </p>
+      </div>
     </div>
   );
 }
