@@ -1142,35 +1142,122 @@
 
   // ---------- Contextual acknowledgments ----------
   // Lightweight keyword matching so replies feel heard, without any real AI/API call.
+  // Categories are checked in priority order (most specific/urgent first) in pickAcknowledgment().
   const ackPhrases = {
     emergency: [
       "Oh no, that sounds urgent — let's get this sorted quickly.",
       "Okay, that needs sorting straight away.",
-      "Right, let's get you help as fast as we can."
+      "Right, let's get you help as fast as we can.",
+      "Understood, we'll treat this as a priority.",
+      "Okay, let's not waste any time on this one."
+    ],
+    complaint: [
+      "I'm really sorry to hear that.",
+      "Oh no, I do apologise for that.",
+      "That's not the experience we want you to have — I'll flag this for the team.",
+      "I'm sorry about that, let's get it put right."
     ],
     concern: [
       "Sorry to hear that.",
       "Ah, that's not fun — let's get you sorted.",
-      "Okay, thanks for letting me know."
+      "Okay, thanks for letting me know.",
+      "I'm sorry you're dealing with that.",
+      "Okay, that sounds uncomfortable — let's get you seen."
+    ],
+    budget: [
+      "No problem, our team can go through the costs with you when they call.",
+      "Sure, we'll cover all the pricing details on the follow-up call.",
+      "Good question — someone from the team will run through that with you."
+    ],
+    returning: [
+      "Welcome back, lovely to hear from you again.",
+      "Great to have you back with us.",
+      "Ah, good to hear from you again."
+    ],
+    firstTime: [
+      "Welcome, glad you got in touch.",
+      "Lovely, we'll take good care of you.",
+      "Great, thanks for trying us out."
+    ],
+    flexible: [
+      "Great, that gives us a bit more flexibility.",
+      "Perfect, that's helpful to know.",
+      "Good to know, that opens things up a bit."
+    ],
+    gratitude: [
+      "You're very welcome.",
+      "Not a problem at all.",
+      "Happy to help."
     ],
     positive: [
       "Great, thanks for that.",
       "Perfect, got it.",
-      "Lovely, thank you."
+      "Lovely, thank you.",
+      "That's great to hear."
+    ],
+    uncertain: [
+      "No worries, we can figure that out together.",
+      "That's alright, we can work it out as we go.",
+      "No problem, take your time."
     ],
     generic: [
       "Got it, thanks.",
       "Understood.",
       "Noted, thank you.",
       "Okay, perfect.",
-      "Thanks for that."
+      "Thanks for that.",
+      "Alright, thank you.",
+      "Okay, got that down."
     ]
   };
 
   const ackKeywords = {
-    emergency: ["emergency", "urgent", "break-in", "broken in", "locked out", "asap", "right now", "immediately", "trapped", "flooding", "can't get in"],
-    concern: ["pain", "hurts", "hurting", "injured", "injury", "ache", "swollen", "bleeding", "unwell", "sick", "broken"],
-    positive: ["checkup", "check-up", "routine", "cosmetic", "vaccination", "first time", "colour", "color", "style"]
+    emergency: [
+      "emergency", "urgent", "urgently", "break-in", "broken in", "burglary", "burgled", "stolen",
+      "locked out", "lock out", "asap", "as soon as possible", "right now", "immediately", "trapped",
+      "flooding", "flooded", "can't get in", "cant get in", "gas leak", "fire", "collapsed", "won't wake up",
+      "wont wake up", "severe", "critical", "life threatening"
+    ],
+    complaint: [
+      "unhappy", "not happy", "annoyed", "frustrated", "angry", "upset", "disappointed", "complaint",
+      "complain", "terrible", "awful", "ridiculous", "unacceptable", "waited too long", "no one called",
+      "still hasn't", "still has not", "poor service", "let down"
+    ],
+    concern: [
+      "pain", "hurts", "hurting", "hurt", "injured", "injury", "ache", "aching", "sore", "swollen",
+      "swelling", "bleeding", "unwell", "sick", "poorly", "broken", "infection", "infected", "worried",
+      "concerned", "nervous", "anxious", "scared", "limping", "can't move", "cant move", "not eating",
+      "vomiting", "fever"
+    ],
+    budget: [
+      "how much", "cost", "costs", "price", "pricing", "afford", "expensive", "cheap", "cheapest",
+      "budget", "quote", "fee", "fees", "charge", "charges", "deposit", "rent", "per month", "a month"
+    ],
+    returning: [
+      "been here before", "existing patient", "existing customer", "regular", "usual", "last time",
+      "again", "as always", "you did my", "previous appointment", "returning customer", "loyal customer"
+    ],
+    firstTime: [
+      "first time", "never been", "new patient", "new customer", "just moved", "haven't used",
+      "havent used", "recommended by", "found you online", "saw your ad", "first visit"
+    ],
+    flexible: [
+      "whenever", "any day", "anytime", "any time", "flexible", "no preference", "either works",
+      "weekend", "weekday", "evenings", "mornings", "afternoon", "as soon as possible", "not fussy",
+      "open to"
+    ],
+    gratitude: [
+      "thank you", "thanks", "cheers", "appreciate it", "much appreciated", "great, thanks"
+    ],
+    positive: [
+      "checkup", "check-up", "routine", "cosmetic", "vaccination", "colour", "color", "style", "great",
+      "fantastic", "excellent", "perfect", "no rush", "not urgent", "just a general", "just wondering",
+      "just enquiring", "just enquiry"
+    ],
+    uncertain: [
+      "not sure", "don't know", "dont know", "no idea", "not certain", "maybe", "possibly", "i think",
+      "not 100%", "unsure", "hard to say"
+    ]
   };
 
   function randomFrom(arr) {
@@ -1179,9 +1266,10 @@
 
   function pickAcknowledgment(text) {
     const t = text.toLowerCase();
-    if (ackKeywords.emergency.some(w => t.includes(w))) return randomFrom(ackPhrases.emergency);
-    if (ackKeywords.concern.some(w => t.includes(w))) return randomFrom(ackPhrases.concern);
-    if (ackKeywords.positive.some(w => t.includes(w))) return randomFrom(ackPhrases.positive);
+    const priority = ["emergency", "complaint", "concern", "budget", "returning", "firstTime", "flexible", "gratitude", "positive", "uncertain"];
+    for (const category of priority) {
+      if (ackKeywords[category].some(w => t.includes(w))) return randomFrom(ackPhrases[category]);
+    }
     return randomFrom(ackPhrases.generic);
   }
 
