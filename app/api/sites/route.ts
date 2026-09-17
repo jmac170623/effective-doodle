@@ -23,23 +23,30 @@ export async function POST(request: NextRequest) {
   }
 
   const toneProfile = computeToneProfile(result.data.quiz);
-  const generated = await generateSite(result.data, toneProfile);
-  const now = new Date().toISOString();
 
-  const record: SiteRecord = {
-    id: generateId("site"),
-    ownerId: user.id,
-    createdAt: now,
-    updatedAt: now,
-    status: "draft",
-    onboarding: result.data,
-    generated,
-    feedbackHistory: [],
-    billingStatus: "unpaid",
-    animationCredits: 0,
-  };
+  try {
+    const generated = await generateSite(result.data, toneProfile);
+    const now = new Date().toISOString();
 
-  await insertSite(supabase, record);
+    const record: SiteRecord = {
+      id: generateId("site"),
+      ownerId: user.id,
+      createdAt: now,
+      updatedAt: now,
+      status: "draft",
+      onboarding: result.data,
+      generated,
+      feedbackHistory: [],
+      billingStatus: "unpaid",
+      animationCredits: 0,
+    };
 
-  return NextResponse.json({ id: record.id }, { status: 201 });
+    await insertSite(supabase, record);
+
+    return NextResponse.json({ id: record.id }, { status: 201 });
+  } catch (error) {
+    console.error("Site generation failed:", error);
+    const message = error instanceof Error ? error.message : "Something went wrong generating your site.";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
