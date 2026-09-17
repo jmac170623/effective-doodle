@@ -1,5 +1,6 @@
 import { OnboardingData, GeneratedSite } from "@/lib/types";
 import { ContactForm } from "./ContactForm";
+import { ScrollReveal } from "./ScrollReveal";
 
 interface SiteRendererProps {
   siteId: string;
@@ -42,23 +43,36 @@ export function SiteRenderer({ siteId, onboarding, generated }: SiteRendererProp
 
       <div className="flex flex-col">
         <div style={{ order: 10 - emphasis.services * 5 }}>
-          <Services copy={copy} services={onboarding.services} sectionGapClass={sectionGapClass} />
+          <Reveal motion={style.motion}>
+            <Services copy={copy} services={onboarding.services} sectionGapClass={sectionGapClass} />
+          </Reveal>
         </div>
 
         <div style={{ order: 20 - emphasis.gallery * 5 }}>
-          <Gallery copy={copy} gallery={gallery} sectionGapClass={sectionGapClass} />
+          <Reveal motion={style.motion}>
+            <Gallery copy={copy} gallery={gallery} sectionGapClass={sectionGapClass} />
+          </Reveal>
         </div>
 
         <div style={{ order: 30 - emphasis.about * 5 }}>
-          <About copy={copy} sectionGapClass={sectionGapClass} />
+          <Reveal motion={style.motion}>
+            <About copy={copy} sectionGapClass={sectionGapClass} />
+          </Reveal>
         </div>
       </div>
 
-      <Contact siteId={siteId} copy={copy} onboarding={onboarding} sectionGapClass={sectionGapClass} />
+      <Reveal motion={style.motion}>
+        <Contact siteId={siteId} copy={copy} onboarding={onboarding} sectionGapClass={sectionGapClass} />
+      </Reveal>
 
       <Footer copy={copy} onboarding={onboarding} />
     </div>
   );
+}
+
+function Reveal({ motion, children }: { motion: GeneratedSite["style"]["motion"]; children: React.ReactNode }) {
+  if (motion === "none") return <>{children}</>;
+  return <ScrollReveal>{children}</ScrollReveal>;
 }
 
 function Nav({ businessName, phone }: { businessName: string; phone: string }) {

@@ -1,5 +1,11 @@
 import { OnboardingData } from "./types";
 
+function normalizeUrl(value: string): string | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
+
 export function validateOnboarding(input: unknown): { data: OnboardingData } | { error: string } {
   if (typeof input !== "object" || input === null) {
     return { error: "Invalid submission." };
@@ -58,10 +64,10 @@ export function validateOnboarding(input: unknown): { data: OnboardingData } | {
     phone: (d.phone as string).trim(),
     email: (d.email as string).trim(),
     social: {
-      facebook: typeof social.facebook === "string" ? social.facebook : undefined,
-      instagram: typeof social.instagram === "string" ? social.instagram : undefined,
-      tiktok: typeof social.tiktok === "string" ? social.tiktok : undefined,
-      website: typeof social.website === "string" ? social.website : undefined,
+      facebook: typeof social.facebook === "string" ? normalizeUrl(social.facebook) : undefined,
+      instagram: typeof social.instagram === "string" ? normalizeUrl(social.instagram) : undefined,
+      tiktok: typeof social.tiktok === "string" ? normalizeUrl(social.tiktok) : undefined,
+      website: typeof social.website === "string" ? normalizeUrl(social.website) : undefined,
     },
     services: (d.services as { name: string; description?: string }[]).map((s, i) => ({
       id: `svc_${i}_${Math.random().toString(36).slice(2, 8)}`,

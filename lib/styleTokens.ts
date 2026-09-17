@@ -13,6 +13,7 @@ export const STYLE_TOKENS: Record<ToneProfileId, StyleTokens> = {
     fontBody: "var(--font-nunito), sans-serif",
     radius: "1.25rem",
     density: "cozy",
+    motion: "subtle",
   },
   "no-nonsense": {
     colorPrimary: "#111318",
@@ -26,6 +27,7 @@ export const STYLE_TOKENS: Record<ToneProfileId, StyleTokens> = {
     fontBody: "var(--font-inter), sans-serif",
     radius: "0.25rem",
     density: "compact",
+    motion: "none",
   },
   premium: {
     colorPrimary: "#101828",
@@ -39,6 +41,7 @@ export const STYLE_TOKENS: Record<ToneProfileId, StyleTokens> = {
     fontBody: "var(--font-inter), sans-serif",
     radius: "0.5rem",
     density: "spacious",
+    motion: "none",
   },
   approachable: {
     colorPrimary: "#2f7ea3",
@@ -52,5 +55,6 @@ export const STYLE_TOKENS: Record<ToneProfileId, StyleTokens> = {
     fontBody: "var(--font-mulish), sans-serif",
     radius: "1rem",
     density: "cozy",
+    motion: "subtle",
   },
 };

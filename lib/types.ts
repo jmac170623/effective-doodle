@@ -92,6 +92,7 @@ export interface StyleTokens {
   fontBody: string;
   radius: string;
   density: "compact" | "cozy" | "spacious";
+  motion: "none" | "subtle";
 }
 
 export interface SectionEmphasis {
