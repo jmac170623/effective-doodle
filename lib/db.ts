@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { FeedbackRound, GeneratedSite, OnboardingData, QuoteBreakdown, SiteRecord, SiteStatus } from "./types";
+import { BillingStatus, FeedbackRound, GeneratedSite, OnboardingData, QuoteBreakdown, SiteRecord, SiteStatus } from "./types";
 
 interface SiteRow {
   id: string;
@@ -10,6 +10,9 @@ interface SiteRow {
   onboarding: OnboardingData;
   generated: GeneratedSite;
   feedback_history: FeedbackRound[];
+  billing_status: BillingStatus;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
 }
 
 function rowToRecord(row: SiteRow): SiteRecord {
@@ -22,6 +25,9 @@ function rowToRecord(row: SiteRow): SiteRecord {
     onboarding: row.onboarding,
     generated: row.generated,
     feedbackHistory: row.feedback_history,
+    billingStatus: row.billing_status,
+    stripeCustomerId: row.stripe_customer_id ?? undefined,
+    stripeSubscriptionId: row.stripe_subscription_id ?? undefined,
   };
 }
 
@@ -35,6 +41,7 @@ export async function insertSite(supabase: SupabaseClient, record: SiteRecord): 
     onboarding: record.onboarding,
     generated: record.generated,
     feedback_history: record.feedbackHistory,
+    billing_status: record.billingStatus,
   });
   if (error) throw new Error(error.message);
 }
@@ -67,6 +74,41 @@ export async function listSitesForOwner(supabase: SupabaseClient, ownerId: strin
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return (data as SiteRow[] | null ?? []).map(rowToRecord);
+}
+
+export async function activateSiteBilling(
+  supabase: SupabaseClient,
+  params: { siteId: string; stripeCustomerId: string; stripeSubscriptionId: string }
+): Promise<void> {
+  const { error } = await supabase
+    .from("sites")
+    .update({
+      billing_status: "active",
+      status: "published",
+      stripe_customer_id: params.stripeCustomerId,
+      stripe_subscription_id: params.stripeSubscriptionId,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", params.siteId);
+  if (error) throw new Error(error.message);
+}
+
+export async function updateBillingStatusBySubscription(
+  supabase: SupabaseClient,
+  params: { stripeSubscriptionId: string; billingStatus: BillingStatus; unpublish: boolean }
+): Promise<void> {
+  const update: Record<string, unknown> = {
+    billing_status: params.billingStatus,
+    updated_at: new Date().toISOString(),
+  };
+  if (params.unpublish) {
+    update.status = "draft";
+  }
+  const { error } = await supabase
+    .from("sites")
+    .update(update)
+    .eq("stripe_subscription_id", params.stripeSubscriptionId);
+  if (error) throw new Error(error.message);
 }
 
 export async function insertLead(

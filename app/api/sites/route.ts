@@ -35,6 +35,7 @@ export async function POST(request: NextRequest) {
     onboarding: result.data,
     generated,
     feedbackHistory: [],
+    billingStatus: "unpaid",
   };
 
   await insertSite(supabase, record);

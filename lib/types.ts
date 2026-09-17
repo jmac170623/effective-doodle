@@ -121,6 +121,8 @@ export interface FeedbackRound {
 
 export type SiteStatus = "draft" | "published";
 
+export type BillingStatus = "unpaid" | "active" | "past_due" | "canceled";
+
 export interface SiteRecord {
   id: string;
   ownerId: string;
@@ -130,6 +132,9 @@ export interface SiteRecord {
   onboarding: OnboardingData;
   generated: GeneratedSite;
   feedbackHistory: FeedbackRound[];
+  billingStatus: BillingStatus;
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
 }
 
 // ---- Quote tool ----

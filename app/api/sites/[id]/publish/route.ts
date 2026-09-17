@@ -19,6 +19,12 @@ export async function POST(
   if (!site || site.ownerId !== user.id) {
     return NextResponse.json({ error: "Site not found." }, { status: 404 });
   }
+  if (site.billingStatus !== "active") {
+    return NextResponse.json(
+      { error: "This site needs an active retainer before it can be published.", requiresPayment: true },
+      { status: 402 }
+    );
+  }
 
   const updated = {
     ...site,

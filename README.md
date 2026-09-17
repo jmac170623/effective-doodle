@@ -23,14 +23,21 @@ style of the generated site.
   length, or section emphasis in response, across multiple rounds.
 - **My Sites** (`/sites`) — every account's dashboard-lite: lists their sites
   (draft or published) with links back into preview or the live page.
-- **Publish** — freezes the site and exposes it at a clean public URL
-  (`/site/[id]`) with no visible edit affordances.
+- **Instant quote calculator** — every generated site gets a "Get an Instant
+  Quote" section backed by a shared materials catalog (`materials` table,
+  currently placeholder-branded pricing — see `lib/quoteCategories.ts` and
+  `lib/quoteEngine.ts`). A visitor picks a service and job size and gets a
+  real itemized estimate (materials + labour); requests are recomputed
+  server-side and stored in `quotes`.
+- **Publish is billing-gated** — publishing a site requires an active £35/mo
+  Stripe subscription for that specific site (`lib/stripe.ts`,
+  `app/api/webhooks/stripe/route.ts`). The Stripe webhook is the source of
+  truth: it flips a site to `published` on successful checkout and back to
+  `draft` if the subscription lapses.
 
 Out of scope for now (follow-up work): the full post-launch content-editing
-dashboard, quoting tool, and merchant/materials integration. The data model
-(`lib/types.ts`) leaves room for these — e.g. `ServiceItem.priceFrom`/`unit`
-are defined but unused, and every site is keyed by a stable `siteId` a future
-quoting or merchant module can reference.
+dashboard. The data model (`lib/types.ts`) leaves room for it — every site
+is keyed by a stable `siteId`.
 
 ## Stack
 
@@ -42,6 +49,9 @@ quoting or merchant module can reference.
   the leads it collected. See `supabase/migrations/0001_init.sql`.
 - The contact form POSTs to a mock `/api/contact` endpoint that stores the
   lead in the `leads` table (no real email/CRM delivery yet).
+- **Stripe** for the per-site publishing retainer (subscriptions, Checkout,
+  webhooks). Not wired to a real product catalog beyond the one `Site
+  Retainer` price.
 
 ## Setting it up (Supabase + local dev)
 
@@ -81,3 +91,25 @@ through the questionnaire.
 4. Deploy. No build configuration changes are needed — this is a standard
    Next.js app with no native dependencies, so it runs on Vercel's serverless
    functions without modification.
+
+## Setting up Stripe billing
+
+1. **Run the new migrations** (`0002_materials.sql`, `0003_quotes.sql`,
+   `0004_billing.sql` — in that order, in the Supabase SQL editor) if you
+   haven't already.
+2. **Create a Price in Stripe**: Dashboard → Product catalog → add a product
+   (e.g. "Site Retainer") with a recurring monthly price. Copy its Price ID
+   (`price_...`).
+3. **Get your Stripe secret key**: Dashboard → Developers → API keys → copy
+   the **Secret key** (`sk_...`).
+4. **Get your Supabase service-role key**: Supabase → Project Settings → API
+   → copy the **service_role** secret (not the anon/publishable one — this
+   one bypasses Row Level Security and must never be exposed client-side).
+5. **Add four env vars** (locally in `.env.local`, and in Vercel → Settings →
+   Environment Variables): `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`,
+   `SUPABASE_SERVICE_ROLE_KEY`, and `STRIPE_WEBHOOK_SECRET` (from step 6).
+6. **Register the webhook**: Stripe Dashboard → Developers → Webhooks → add
+   endpoint → URL `https://<your-domain>/api/webhooks/stripe` → listen for
+   `checkout.session.completed`, `customer.subscription.updated`, and
+   `customer.subscription.deleted`. Copy the endpoint's **Signing secret**
+   (`whsec_...`) into `STRIPE_WEBHOOK_SECRET`.
