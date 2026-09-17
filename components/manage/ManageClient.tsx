@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { SiteRecord, ToneProfileId } from "@/lib/types";
+import { SiteImage, SiteRecord, ToneProfileId } from "@/lib/types";
 import { TONE_PROFILES } from "@/lib/toneProfiles";
+import { createClient } from "@/lib/supabase/client";
+import { generateId } from "@/lib/idGen";
 
 interface ServiceDraft {
   name: string;
@@ -34,6 +36,11 @@ export function ManageClient({ siteId }: { siteId: string }) {
   const [saveError, setSaveError] = useState("");
   const [saved, setSaved] = useState(false);
 
+  const [images, setImages] = useState<SiteImage[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     let cancelled = false;
     fetch(`/api/sites/${siteId}`)
@@ -58,6 +65,7 @@ export function ManageClient({ siteId }: { siteId: string }) {
         setAboutText(data.onboarding.aboutText);
         setDayRate(data.onboarding.dayRate ? String(data.onboarding.dayRate) : "");
         setToneProfile(data.generated.toneProfile);
+        setImages(data.images ?? []);
       })
       .catch((err) => {
         if (!cancelled) setLoadError(err instanceof Error ? err.message : "Failed to load site.");
@@ -77,6 +85,56 @@ export function ManageClient({ siteId }: { siteId: string }) {
 
   function removeService(index: number) {
     setServices((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  async function handleUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setUploadError("");
+    try {
+      const supabase = createClient();
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `${siteId}/${generateId("img")}.${ext}`;
+
+      const { error: uploadErr } = await supabase.storage.from("gallery").upload(path, file);
+      if (uploadErr) throw new Error(uploadErr.message);
+
+      const { data: publicUrlData } = supabase.storage.from("gallery").getPublicUrl(path);
+
+      const newImage: SiteImage = {
+        id: generateId("simg"),
+        siteId,
+        url: publicUrlData.publicUrl,
+        sortOrder: images.length,
+        createdAt: new Date().toISOString(),
+      };
+
+      const { error: insertErr } = await supabase.from("site_images").insert({
+        id: newImage.id,
+        site_id: siteId,
+        url: newImage.url,
+        sort_order: newImage.sortOrder,
+      });
+      if (insertErr) throw new Error(insertErr.message);
+
+      setImages((prev) => [...prev, newImage]);
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Failed to upload photo.");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  async function handleDeleteImage(image: SiteImage) {
+    const supabase = createClient();
+    const path = image.url.split("/gallery/")[1];
+    if (path) {
+      await supabase.storage.from("gallery").remove([path]);
+    }
+    await supabase.from("site_images").delete().eq("id", image.id);
+    setImages((prev) => prev.filter((i) => i.id !== image.id));
   }
 
   async function handleSave() {
@@ -181,6 +239,38 @@ export function ManageClient({ siteId }: { siteId: string }) {
             <button type="button" onClick={addService} className="rounded-lg border border-dashed border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:border-slate-400">
               + Add another service
             </button>
+          </section>
+
+          <section className="space-y-3 border-t border-slate-100 pt-4">
+            <h2 className="text-sm font-semibold text-slate-700">Gallery photos</h2>
+            <p className="text-xs text-slate-500">Uploaded photos replace the &quot;add later&quot; slots on your site.</p>
+            {images.length > 0 && (
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                {images.map((image) => (
+                  <div key={image.id} className="group relative aspect-square overflow-hidden rounded-lg border border-slate-200">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={image.url} alt="" className="h-full w-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteImage(image)}
+                      className="absolute right-1 top-1 rounded-full bg-black/60 px-2 py-0.5 text-xs text-white opacity-0 transition group-hover:opacity-100"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleUpload}
+              disabled={uploading}
+              className="text-sm"
+            />
+            {uploading && <p className="text-xs text-slate-500">Uploading…</p>}
+            {uploadError && <p className="text-xs text-red-600">{uploadError}</p>}
           </section>
 
           <section className="space-y-3 border-t border-slate-100 pt-4">

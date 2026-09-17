@@ -1,4 +1,4 @@
-import { OnboardingData, GeneratedSite } from "@/lib/types";
+import { OnboardingData, GeneratedSite, SiteImage } from "@/lib/types";
 import { ContactForm } from "./ContactForm";
 import { ScrollReveal } from "./ScrollReveal";
 import { QuoteCalculator } from "./QuoteCalculator";
@@ -8,9 +8,10 @@ interface SiteRendererProps {
   siteId: string;
   onboarding: OnboardingData;
   generated: GeneratedSite;
+  images?: SiteImage[];
 }
 
-export function SiteRenderer({ siteId, onboarding, generated }: SiteRendererProps) {
+export function SiteRenderer({ siteId, onboarding, generated, images = [] }: SiteRendererProps) {
   const { style, copy, gallery, emphasis } = generated;
 
   const cssVars = {
@@ -52,7 +53,7 @@ export function SiteRenderer({ siteId, onboarding, generated }: SiteRendererProp
 
         <div style={{ order: 20 - emphasis.gallery * 5 }}>
           <Reveal motion={style.motion}>
-            <Gallery copy={copy} gallery={gallery} sectionGapClass={sectionGapClass} />
+            <Gallery copy={copy} gallery={gallery} images={images} sectionGapClass={sectionGapClass} />
           </Reveal>
         </div>
 
@@ -188,12 +189,16 @@ function Services({
 function Gallery({
   copy,
   gallery,
+  images,
   sectionGapClass,
 }: {
   copy: GeneratedSite["copy"];
   gallery: GeneratedSite["gallery"];
+  images: SiteImage[];
   sectionGapClass: string;
 }) {
+  const remainingSlots = Math.max(0, gallery.length - images.length);
+
   return (
     <section id="gallery" className={`px-6 ${sectionGapClass}`}>
       <div className="mx-auto max-w-5xl">
@@ -204,7 +209,16 @@ function Gallery({
           {copy.galleryIntro}
         </p>
         <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
-          {gallery.map((slot) => (
+          {images.map((image) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={image.id}
+              src={image.url}
+              alt={image.caption || "Job photo"}
+              className="aspect-square rounded-[var(--radius)] object-cover"
+            />
+          ))}
+          {gallery.slice(0, remainingSlots).map((slot) => (
             <div
               key={slot.id}
               className="flex aspect-square flex-col items-center justify-center rounded-[var(--radius)] border-2 border-dashed p-3 text-center"

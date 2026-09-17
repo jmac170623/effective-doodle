@@ -5,7 +5,7 @@ import {
   OnboardingData,
   ToneProfileId,
 } from "./types";
-import { STYLE_TOKENS } from "./styleTokens";
+import { PALETTE_VARIANTS } from "./styleTokens";
 import { generateId } from "./idGen";
 
 function tradeNoun(trade: string): string {
@@ -292,7 +292,7 @@ export function generateSite(
   return {
     toneProfile,
     copy,
-    style: STYLE_TOKENS[toneProfile],
+    style: pickVariant(PALETTE_VARIANTS[toneProfile], `${onboarding.businessName}|palette`),
     gallery: buildGallery(onboarding),
     emphasis: { gallery: 1, services: 1, about: 1 },
   };

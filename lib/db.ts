@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { BillingStatus, FeedbackRound, GeneratedSite, OnboardingData, QuoteBreakdown, SiteRecord, SiteStatus } from "./types";
+import { BillingStatus, FeedbackRound, GeneratedSite, OnboardingData, QuoteBreakdown, SiteImage, SiteRecord, SiteStatus } from "./types";
 
 interface SiteRow {
   id: string;
@@ -108,6 +108,56 @@ export async function updateBillingStatusBySubscription(
     .from("sites")
     .update(update)
     .eq("stripe_subscription_id", params.stripeSubscriptionId);
+  if (error) throw new Error(error.message);
+}
+
+interface SiteImageRow {
+  id: string;
+  site_id: string;
+  url: string;
+  caption: string | null;
+  sort_order: number;
+  created_at: string;
+}
+
+function rowToSiteImage(row: SiteImageRow): SiteImage {
+  return {
+    id: row.id,
+    siteId: row.site_id,
+    url: row.url,
+    caption: row.caption ?? undefined,
+    sortOrder: row.sort_order,
+    createdAt: row.created_at,
+  };
+}
+
+export async function listSiteImages(supabase: SupabaseClient, siteId: string): Promise<SiteImage[]> {
+  const { data, error } = await supabase
+    .from("site_images")
+    .select("*")
+    .eq("site_id", siteId)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+  if (error) throw new Error(error.message);
+  return (data as SiteImageRow[] | null ?? []).map(rowToSiteImage);
+}
+
+export async function insertSiteImage(
+  supabase: SupabaseClient,
+  image: { id: string; siteId: string; url: string; caption?: string; sortOrder: number }
+): Promise<void> {
+  const { error } = await supabase.from("site_images").insert({
+    id: image.id,
+    site_id: image.siteId,
+    url: image.url,
+    caption: image.caption,
+    sort_order: image.sortOrder,
+  });
+  if (error) throw new Error(error.message);
+}
+
+export async function deleteSiteImage(supabase: SupabaseClient, imageId: string): Promise<void> {
+  const { error } = await supabase.from("site_images").delete().eq("id", imageId);
   if (error) throw new Error(error.message);
 }
 

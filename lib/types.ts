@@ -68,6 +68,15 @@ export interface GalleryPlaceholder {
   kind: "before" | "after" | "featured";
 }
 
+export interface SiteImage {
+  id: string;
+  siteId: string;
+  url: string;
+  caption?: string;
+  sortOrder: number;
+  createdAt: string;
+}
+
 export interface GeneratedCopy {
   heroHeadline: string;
   heroSubheadline: string;
@@ -135,6 +144,9 @@ export interface SiteRecord {
   billingStatus: BillingStatus;
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
+  // Attached by API routes that fetch it separately (site_images is its own
+  // table, not a column on sites) — absent unless the caller populated it.
+  images?: SiteImage[];
 }
 
 // ---- Quote tool ----

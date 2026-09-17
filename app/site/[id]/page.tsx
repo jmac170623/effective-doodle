@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getSite } from "@/lib/db";
+import { getSite, listSiteImages } from "@/lib/db";
 import { SiteRenderer } from "@/components/site/SiteRenderer";
 import { createClient } from "@/lib/supabase/server";
 
@@ -16,5 +16,9 @@ export default async function PublishedSitePage({
     notFound();
   }
 
-  return <SiteRenderer siteId={site.id} onboarding={site.onboarding} generated={site.generated} />;
+  const images = await listSiteImages(supabase, id);
+
+  return (
+    <SiteRenderer siteId={site.id} onboarding={site.onboarding} generated={site.generated} images={images} />
+  );
 }
