@@ -869,6 +869,8 @@
   let availableVoices = [];
   let selectedVoice = null;
   let lastAnswerText = "";
+  let awaitingSlotConfirmation = false;
+  const SCHEDULING_KEYS = ["availability", "viewing"];
 
   // ---------- DOM ----------
   const selectEl = document.getElementById("verticalSelect");
@@ -1273,6 +1275,51 @@
     return randomFrom(ackPhrases.generic);
   }
 
+  // ---------- Concrete slot offers ----------
+  // When the caller is asked about availability, offer real-sounding options
+  // instead of just moving on — matched against day/time-of-day keywords in their reply.
+  const slotBank = {
+    monday: ["Monday at 9:00am", "Monday at 1:30pm", "Monday at 4:00pm"],
+    tuesday: ["Tuesday at 10:00am", "Tuesday at 1:00pm", "Tuesday at 5:00pm"],
+    wednesday: ["Wednesday at 9:30am", "Wednesday at 2:00pm", "Wednesday at 4:30pm"],
+    thursday: ["Thursday at 10:30am", "Thursday at 2:30pm", "Thursday at 5:30pm"],
+    friday: ["Friday at 9:00am", "Friday at 12:30pm", "Friday at 3:00pm"],
+    saturday: ["Saturday at 9:30am", "Saturday at 11:00am", "Saturday at 1:00pm"],
+    sunday: ["Sunday at 10:00am", "Sunday at 12:00pm"],
+    midweek: ["Tuesday at 10:30am", "Wednesday at 2:00pm", "Thursday at 4:15pm"],
+    weekend: ["Saturday at 9:30am", "Saturday at 11:00am", "Sunday at 10:00am"],
+    morning: ["Monday at 9:00am", "Wednesday at 8:30am", "Friday at 10:00am"],
+    afternoon: ["Tuesday at 1:00pm", "Thursday at 2:30pm", "Friday at 3:00pm"],
+    evening: ["Monday at 5:30pm", "Wednesday at 6:00pm", "Thursday at 6:30pm"],
+    flexible: ["Tuesday at 10:00am", "Thursday at 2:00pm", "Saturday at 9:30am"]
+  };
+
+  function pickSlots(text) {
+    const t = text.toLowerCase();
+    const days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+    const matchedDay = days.find(d => t.includes(d));
+    if (matchedDay) return slotBank[matchedDay];
+    if (/midweek|mid-week|mid week/.test(t)) return slotBank.midweek;
+    if (/weekend/.test(t)) return slotBank.weekend;
+    if (/morning/.test(t)) return slotBank.morning;
+    if (/afternoon/.test(t)) return slotBank.afternoon;
+    if (/evening|after work|after 5/.test(t)) return slotBank.evening;
+    return slotBank.flexible;
+  }
+
+  const slotOfferPhrases = [
+    "I've got",
+    "Let me see... I've got",
+    "Looking at the diary, I've got"
+  ];
+
+  const slotConfirmPhrases = [
+    "Perfect, I've pencilled that in.",
+    "Great, that's booked in provisionally.",
+    "Lovely, I've noted that down.",
+    "Perfect, I'll get that held for you."
+  ];
+
   // ---------- Captions & transcript ----------
   function escapeHtml(str) {
     const div = document.createElement("div");
@@ -1343,6 +1390,7 @@
     questionIndex = -1;
     awaitingAnswer = false;
     lastAnswerText = "";
+    awaitingSlotConfirmation = false;
     userInput.value = "";
     botCaption.textContent = "";
     userCaption.textContent = "";
@@ -1402,6 +1450,9 @@
       const label = q.key.charAt(0).toUpperCase() + q.key.slice(1);
       rows += `<dt>${label}</dt><dd>${escapeHtml(val)}</dd>`;
     });
+    if (answers.chosenSlot && answers.chosenSlot.trim()) {
+      rows += `<dt>Confirmed slot</dt><dd>${escapeHtml(answers.chosenSlot)}</dd>`;
+    }
     box.innerHTML = `<h4>Call summary captured</h4><dl>${rows}</dl>`;
     document.querySelector(".call-stage").appendChild(box);
   }
@@ -1425,16 +1476,37 @@
     if (callState !== "active" || !awaitingAnswer || !text) return;
     stopListening();
     showUserCaption(text);
-
-    if (questionIndex >= 0 && questionIndex < currentConfig.questions.length) {
-      const key = currentConfig.questions[questionIndex].key;
-      answers[key] = text;
-    }
-    lastAnswerText = text;
-
     userInput.value = "";
     awaitingAnswer = false;
     disableReplyControls();
+
+    if (awaitingSlotConfirmation) {
+      answers.chosenSlot = text;
+      awaitingSlotConfirmation = false;
+      setTimeout(() => {
+        botSay(randomFrom(slotConfirmPhrases), () => setTimeout(advance, 400));
+      }, 500);
+      return;
+    }
+
+    const currentKey = (questionIndex >= 0 && questionIndex < currentConfig.questions.length)
+      ? currentConfig.questions[questionIndex].key
+      : null;
+    if (currentKey) answers[currentKey] = text;
+
+    if (currentKey && SCHEDULING_KEYS.includes(currentKey)) {
+      lastAnswerText = "";
+      setTimeout(() => {
+        const ack = pickAcknowledgment(text);
+        const slots = pickSlots(text);
+        const offerLine = `${randomFrom(slotOfferPhrases)} ${slots[0]}, ${slots[1]}, or ${slots[2]} — would any of those work, or shall I look at something else?`;
+        awaitingSlotConfirmation = true;
+        botSay(`${ack} ${offerLine}`);
+      }, 500);
+      return;
+    }
+
+    lastAnswerText = text;
     setTimeout(advance, 500);
   }
 
