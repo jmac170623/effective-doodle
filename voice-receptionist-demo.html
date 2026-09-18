@@ -1,0 +1,1545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Voice Receptionist — Live Demo</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --panel: #161923;
+    --panel-2: #1d2130;
+    --border: #2a2f42;
+    --accent: #5b8cff;
+    --accent-2: #7c5bff;
+    --accent-soft: rgba(91, 140, 255, 0.14);
+    --text: #eef1fb;
+    --text-dim: #9aa1b8;
+    --success: #37d399;
+    --danger: #ff5c5c;
+    --radius: 16px;
+    font-size: 16px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: radial-gradient(1200px 800px at 10% -10%, #1a2036 0%, transparent 55%),
+                radial-gradient(1000px 700px at 100% 0%, #241a36 0%, transparent 50%),
+                var(--bg);
+    color: var(--text);
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .app-shell {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 20px 60px;
+    min-height: 100%;
+  }
+
+  header.top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .brand .logo {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 6px 18px rgba(91, 140, 255, 0.35);
+    flex-shrink: 0;
+  }
+
+  .brand h1 {
+    font-size: 18px;
+    margin: 0;
+    letter-spacing: 0.2px;
+  }
+
+  .brand p {
+    margin: 2px 0 0;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 0 3px rgba(55, 211, 153, 0.18);
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+
+  .control-card h2 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    margin: 0 0 14px;
+  }
+
+  .field { margin-bottom: 18px; }
+
+  .field label {
+    display: block;
+    font-size: 12.5px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+
+  select, .toggle-row {
+    width: 100%;
+  }
+
+  select {
+    appearance: none;
+    background: var(--panel-2) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="14" height="9" viewBox="0 0 14 9"><path d="M1 1l6 6 6-6" stroke="%239aa1b8" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>') no-repeat right 14px center;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 34px 11px 12px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  select:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+
+  .biz-preview {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+  .biz-preview strong { color: var(--text); }
+
+  .hint {
+    margin: 6px 0 0;
+    font-size: 11.5px;
+    color: var(--text-dim);
+    line-height: 1.4;
+  }
+
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 13.5px;
+  }
+
+  .switch {
+    position: relative;
+    width: 40px;
+    height: 22px;
+    flex-shrink: 0;
+  }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute;
+    inset: 0;
+    background: #33384a;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .slider::before {
+    content: "";
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    left: 3px;
+    top: 3px;
+    background: #fff;
+    border-radius: 50%;
+    transition: 0.2s;
+  }
+  .switch input:checked + .slider { background: var(--accent); }
+  .switch input:checked + .slider::before { transform: translateX(18px); }
+
+  .btn {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.08s ease, opacity 0.15s ease;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #fff;
+    box-shadow: 0 8px 20px rgba(91, 140, 255, 0.3);
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    margin-top: 10px;
+  }
+  .btn-ghost:hover { color: var(--text); border-color: #3a4160; }
+
+  /* ---------- Call screen ---------- */
+  .call-card {
+    display: flex;
+    flex-direction: column;
+    height: 640px;
+    padding: 0;
+    overflow: hidden;
+    position: relative;
+    background: radial-gradient(600px 400px at 50% 0%, rgba(91,140,255,0.08), transparent 60%), var(--panel);
+  }
+
+  .call-status-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px 16px;
+    font-size: 12.5px;
+    color: var(--text-dim);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+  }
+  .call-status-bar .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--text-dim);
+  }
+  .call-status-bar.active .dot {
+    background: var(--success);
+    animation: pulse 1.6s infinite;
+  }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(55,211,153,0.5); }
+    70% { box-shadow: 0 0 0 6px rgba(55,211,153,0); }
+    100% { box-shadow: 0 0 0 0 rgba(55,211,153,0); }
+  }
+
+  .call-stage {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 24px 10px;
+    text-align: center;
+    min-height: 0;
+  }
+
+  .avatar-ring {
+    position: relative;
+    width: 128px;
+    height: 128px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 18px;
+    flex-shrink: 0;
+  }
+  .avatar-ring::before, .avatar-ring::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    opacity: 0;
+  }
+  .avatar-ring.ringing::before, .avatar-ring.ringing::after {
+    animation: ringPulse 1.6s ease-out infinite;
+  }
+  .avatar-ring.ringing::after { animation-delay: 0.5s; }
+  .avatar-ring.speaking::before {
+    animation: speakPulse 1s ease-out infinite;
+    opacity: 1;
+  }
+  @keyframes ringPulse {
+    0% { transform: scale(0.85); opacity: 0.7; }
+    100% { transform: scale(1.5); opacity: 0; }
+  }
+  @keyframes speakPulse {
+    0% { transform: scale(1); opacity: 0.6; border-color: var(--success); }
+    100% { transform: scale(1.35); opacity: 0; border-color: var(--success); }
+  }
+
+  .avatar-circle {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 42px;
+    box-shadow: 0 10px 30px rgba(91, 140, 255, 0.35);
+    z-index: 1;
+    transition: transform 0.15s ease;
+  }
+  .avatar-ring.speaking .avatar-circle { transform: scale(1.04); }
+
+  .call-stage h2 {
+    margin: 0 0 2px;
+    font-size: 19px;
+  }
+  .call-stage .call-sub {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+  .call-timer {
+    margin-top: 10px;
+    font-variant-numeric: tabular-nums;
+    font-size: 14px;
+    color: var(--success);
+    font-weight: 600;
+  }
+  .call-timer[hidden] { display: none; }
+
+  .captions {
+    width: 100%;
+    max-width: 460px;
+    margin-top: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 66px;
+  }
+
+  .caption-line {
+    font-size: 14.5px;
+    line-height: 1.5;
+    padding: 10px 14px;
+    border-radius: 12px;
+    animation: fadeIn 0.25s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .caption-line.bot {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .caption-line.bot::before {
+    content: "AI Receptionist";
+    display: block;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+  .caption-line.user {
+    background: var(--accent-soft);
+    border: 1px solid rgba(91,140,255,0.3);
+    color: var(--text);
+  }
+  .caption-line.user::before {
+    content: "You";
+    display: block;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+  .caption-line:empty { display: none; }
+
+  .typing-dots {
+    display: inline-flex;
+    gap: 4px;
+    padding: 2px 0;
+  }
+  .typing-dots span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-dim);
+    animation: bounce 1.2s infinite;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+    30% { transform: translateY(-4px); opacity: 1; }
+  }
+
+  /* Incoming call controls */
+  .call-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 56px;
+    padding: 26px 16px 30px;
+    border-top: 1px solid var(--border);
+  }
+  .call-actions[hidden] { display: none; }
+
+  .call-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-dim);
+    font-size: 12px;
+  }
+  .call-btn .circle {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: #fff;
+    transition: transform 0.1s ease;
+  }
+  .call-btn:active .circle { transform: scale(0.92); }
+  .call-btn.decline .circle { background: var(--danger); box-shadow: 0 8px 20px rgba(255,92,92,0.35); }
+  .call-btn.accept .circle { background: var(--success); box-shadow: 0 8px 20px rgba(55,211,153,0.35); animation: acceptBounce 1.4s infinite; }
+  @keyframes acceptBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+
+  /* In-call controls */
+  .in-call-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--panel-2);
+  }
+  .in-call-controls[hidden] { display: none; }
+
+  .in-call-controls input[type="text"] {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 14.5px;
+  }
+  .in-call-controls input[type="text"]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .in-call-controls input:disabled { opacity: 0.5; }
+
+  .icon-btn {
+    width: 46px;
+    height: 46px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 17px;
+  }
+  .icon-btn.send { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; }
+  .icon-btn.send:disabled { opacity: 0.4; cursor: not-allowed; }
+  .icon-btn.end-call { background: var(--danger); color: #fff; border-radius: 50%; margin-left: auto; }
+
+  .reply-area {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .mic-panel {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .mic-btn {
+    position: relative;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .mic-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .mic-btn.listening {
+    background: var(--success);
+    border-color: var(--success);
+    color: #fff;
+  }
+  .mic-ring {
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 2px solid var(--success);
+    opacity: 0;
+  }
+  .mic-btn.listening .mic-ring {
+    animation: speakPulse 1s ease-out infinite;
+    opacity: 1;
+  }
+
+  .mic-status {
+    margin: 0;
+    font-size: 12.5px;
+    color: var(--text-dim);
+  }
+
+  .link-btn {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-size: 12.5px;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+    white-space: nowrap;
+  }
+  .link-btn:disabled { opacity: 0.4; cursor: not-allowed; text-decoration: none; }
+
+  .type-panel {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+  }
+  .type-panel[hidden], .mic-panel[hidden] { display: none; }
+
+  .stt-note {
+    margin: 0;
+    padding: 8px 16px 0;
+    font-size: 11.5px;
+    color: var(--text-dim);
+  }
+  .stt-note[hidden] { display: none; }
+
+  /* Transcript */
+  .transcript {
+    border-top: 1px solid var(--border);
+    font-size: 12.5px;
+  }
+  .transcript summary {
+    padding: 10px 16px;
+    color: var(--text-dim);
+    cursor: pointer;
+    user-select: none;
+  }
+  .transcript summary:hover { color: var(--text); }
+  .transcript-log {
+    max-height: 130px;
+    overflow-y: auto;
+    padding: 0 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .transcript-log .t-line { color: var(--text-dim); }
+  .transcript-log .t-line b { color: var(--text); font-weight: 600; }
+
+  .summary-box {
+    margin: 14px auto 0;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(91,140,255,0.12), rgba(124,91,255,0.10));
+    border: 1px solid rgba(91,140,255,0.3);
+    font-size: 13.5px;
+    max-width: 460px;
+    width: 100%;
+  }
+  .summary-box h4 {
+    margin: 0 0 8px;
+    font-size: 12.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+  }
+  .summary-box dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; }
+  .summary-box dt { color: var(--text-dim); }
+  .summary-box dd { margin: 0; color: var(--text); font-weight: 500; }
+
+  footer.foot {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 12.5px;
+    margin-top: 24px;
+  }
+
+  .tag {
+    display: inline-block;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 600;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+</style>
+</head>
+<body>
+<div class="app-shell">
+
+  <header class="top">
+    <div class="brand">
+      <div class="logo">☎️</div>
+      <div>
+        <h1>AI Voice Receptionist<span class="tag">LIVE DEMO</span></h1>
+        <p>Scripted simulation — no calls are made, nothing leaves your browser</p>
+      </div>
+    </div>
+    <div class="status-pill"><span class="status-dot"></span> Demo environment ready</div>
+  </header>
+
+  <div class="layout">
+    <div class="card control-card">
+      <h2>Choose a business</h2>
+      <div class="field">
+        <label for="verticalSelect">Industry example</label>
+        <select id="verticalSelect"></select>
+      </div>
+
+      <div class="field">
+        <label>What it's calling for</label>
+        <div class="biz-preview" id="bizPreview"></div>
+      </div>
+
+      <div class="field">
+        <div class="toggle-row">
+          <span>🔊 Speak questions aloud</span>
+          <label class="switch">
+            <input type="checkbox" id="voiceToggle" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="field" id="voiceField">
+        <label for="voiceSelect">AI voice</label>
+        <select id="voiceSelect"></select>
+        <p class="hint">Voice quality depends on your browser/OS — Chrome and Edge usually sound the most natural. Try a few.</p>
+      </div>
+
+      <button class="btn btn-primary" id="restartBtn">📞 New Incoming Call</button>
+      <button class="btn btn-ghost" id="skipVoiceBtn">Replay last line aloud</button>
+    </div>
+
+    <div class="card call-card">
+      <div class="call-status-bar" id="callStatusBar">
+        <span class="dot"></span>
+        <span id="callStateLabel">Incoming call…</span>
+        <span class="call-timer" id="callTimer" hidden>00:00</span>
+      </div>
+
+      <div class="call-stage">
+        <div class="avatar-ring ringing" id="avatarRing">
+          <div class="avatar-circle" id="avatarCircle">🦷</div>
+        </div>
+        <h2 id="callerName">Seren Dental</h2>
+        <p class="call-sub" id="callerSub">Dentist · AI Receptionist</p>
+
+        <div class="captions" id="captions">
+          <div class="caption-line bot" id="botCaption"></div>
+          <div class="caption-line user" id="userCaption"></div>
+        </div>
+      </div>
+
+      <div class="call-actions" id="incomingActions">
+        <button class="call-btn decline" id="declineBtn">
+          <span class="circle">✕</span> Decline
+        </button>
+        <button class="call-btn accept" id="acceptBtn">
+          <span class="circle">📞</span> Accept
+        </button>
+      </div>
+
+      <div class="in-call-controls" id="inCallControls" hidden>
+        <div class="reply-area">
+          <div class="mic-panel" id="micPanel">
+            <button class="mic-btn" id="micBtn" aria-label="Tap to speak your answer" disabled>
+              <span class="mic-ring"></span>
+              <span>🎤</span>
+            </button>
+            <p class="mic-status" id="micStatus">Tap to answer</p>
+            <button class="link-btn" id="toggleTypeBtn" type="button">Type instead</button>
+          </div>
+
+          <div class="type-panel" id="typePanel" hidden>
+            <input type="text" id="userInput" placeholder="Type your reply and press Enter…" autocomplete="off" disabled>
+            <button class="icon-btn send" id="sendBtn" aria-label="Send" disabled>➤</button>
+            <button class="link-btn" id="useMicBtn" type="button" hidden>Use mic</button>
+          </div>
+        </div>
+        <button class="icon-btn end-call" id="endCallBtn" aria-label="End call">☎</button>
+      </div>
+      <p class="stt-note" id="sttNote" hidden>Speech recognition isn't supported in this browser (try Chrome or Edge) — using typed replies instead.</p>
+      <p class="stt-note" id="micHint">Speak clearly right after "Listening…" appears. Mic accuracy depends on your browser and microphone — Chrome on desktop tends to work best.</p>
+
+      <details class="transcript" id="transcriptDetails" hidden>
+        <summary>View full call transcript</summary>
+        <div class="transcript-log" id="transcriptLog"></div>
+      </details>
+    </div>
+  </div>
+
+  <footer class="foot">Sales demonstration tool · Scripted branching logic only · Powered by your browser's built-in speech engine</footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- Business configs ----------
+  const businessConfigs = [
+    {
+      id: "dentist",
+      name: "Seren Dental",
+      industry: "Dentist",
+      icon: "🦷",
+      greeting: "Thanks for calling Seren Dental! How can I help today?",
+      questions: [
+        { key: "reason", prompt: "Is this for a new appointment, or are you an existing patient?" },
+        { key: "concern", prompt: "What's the issue — pain, checkup, or a cosmetic enquiry?" },
+        { key: "availability", prompt: "What days generally work best for you?" },
+        { key: "contact", prompt: "Great — what's the best number to confirm your booking?" }
+      ],
+      closing: "Perfect, I've got everything I need — our team will confirm your appointment shortly. Thanks for calling Seren Dental!"
+    },
+    {
+      id: "vet",
+      name: "Willowbrook Vets",
+      industry: "Veterinary Clinic",
+      icon: "🐾",
+      greeting: "Hi there, thanks for calling Willowbrook Vets! What can I help with today?",
+      questions: [
+        { key: "pet", prompt: "What's your pet's name and species?" },
+        { key: "reason", prompt: "Is this a routine check-up, vaccination, or is your pet unwell or injured?" },
+        { key: "urgency", prompt: "On a scale of not urgent to emergency, how would you describe it right now?" },
+        { key: "availability", prompt: "What days or times suit you best for a visit?" },
+        { key: "contact", prompt: "Lastly, what's the best number to reach you on to confirm?" }
+      ],
+      closing: "Thank you — I've noted everything down and the clinic team will confirm your visit shortly. Give your pet a scratch behind the ears from us!"
+    },
+    {
+      id: "locksmith",
+      name: "RapidKey Locksmiths",
+      industry: "Locksmith (Urgent Call-Out)",
+      icon: "🔑",
+      greeting: "RapidKey Locksmiths, 24-hour call-out — what's happened?",
+      questions: [
+        { key: "situation", prompt: "Are you locked out, is a key broken in the lock, or has there been a break-in?" },
+        { key: "location", prompt: "What's the address you need us at?" },
+        { key: "propertyType", prompt: "Is this a home, a car, or a business premises?" },
+        { key: "safety", prompt: "Is everyone safe right now, and is the property secure?" },
+        { key: "contact", prompt: "What's the best number for our locksmith to call you on when they're 5 minutes out?" }
+      ],
+      closing: "Understood — I'm dispatching the nearest available locksmith now. They'll call you shortly and should be with you within the hour."
+    },
+    {
+      id: "salon",
+      name: "Lush & Co. Hair Studio",
+      industry: "Hair Salon",
+      icon: "💇",
+      greeting: "Hi! Thanks for calling Lush & Co. — how can I help you today?",
+      questions: [
+        { key: "service", prompt: "What service are you after — cut, colour, styling, or something else?" },
+        { key: "stylist", prompt: "Do you have a preferred stylist, or is anyone available fine?" },
+        { key: "availability", prompt: "What days or times work best for you this week?" },
+        { key: "firstVisit", prompt: "Have you visited us before, or will this be your first time?" },
+        { key: "contact", prompt: "What's the best number to text your booking confirmation to?" }
+      ],
+      closing: "Lovely — you're all set! We'll text over your appointment confirmation shortly. See you soon at Lush & Co.!"
+    },
+    {
+      id: "lettingAgent",
+      name: "Harbourview Lettings",
+      industry: "Letting Agent",
+      icon: "🏠",
+      greeting: "Good afternoon, Harbourview Lettings — how can I help you today?",
+      questions: [
+        { key: "reason", prompt: "Are you enquiring about a property to rent, or are you an existing tenant with a query?" },
+        { key: "details", prompt: "Could you tell me the area, budget, and number of bedrooms you're looking for?" },
+        { key: "timeline", prompt: "When are you looking to move in?" },
+        { key: "viewing", prompt: "Would you like us to arrange a viewing, and if so, what days suit you?" },
+        { key: "contact", prompt: "What's the best number and email to send the property details to?" }
+      ],
+      closing: "Brilliant, thank you — one of our letting agents will be in touch shortly with suitable properties and viewing times."
+    },
+    {
+      id: "physio",
+      name: "MoveWell Physiotherapy",
+      industry: "Physiotherapy Clinic",
+      icon: "🩺",
+      greeting: "Hi, thanks for calling MoveWell Physiotherapy — what can I help with today?",
+      questions: [
+        { key: "reason", prompt: "Is this for a new injury, an ongoing condition, or a follow-up session?" },
+        { key: "area", prompt: "Which part of the body is affected?" },
+        { key: "referral", prompt: "Do you have a referral from a GP or specialist, or is this self-referred?" },
+        { key: "availability", prompt: "What days and times work best for your first session?" },
+        { key: "contact", prompt: "What's the best number to confirm your appointment on?" }
+      ],
+      closing: "Great, that's everything we need — our reception team will confirm your session shortly. Take care until then!"
+    }
+  ];
+
+  // ---------- State ----------
+  let currentConfig = businessConfigs[0];
+  let questionIndex = -1; // -1 = greeting not yet sent
+  let answers = {};
+  let awaitingAnswer = false;
+  let lastSpokenText = "";
+  let callState = "incoming"; // incoming | active | ended
+  let timerInterval = null;
+  let callSeconds = 0;
+  let recognition = null;
+  let recognizing = false;
+  let sttSupported = false;
+  let replyMode = "mic"; // mic | type
+  let availableVoices = [];
+  let selectedVoice = null;
+  let lastAnswerText = "";
+  let awaitingSlotConfirmation = false;
+  const SCHEDULING_KEYS = ["availability", "viewing"];
+
+  // ---------- DOM ----------
+  const selectEl = document.getElementById("verticalSelect");
+  const bizPreview = document.getElementById("bizPreview");
+  const userInput = document.getElementById("userInput");
+  const sendBtn = document.getElementById("sendBtn");
+  const restartBtn = document.getElementById("restartBtn");
+  const skipVoiceBtn = document.getElementById("skipVoiceBtn");
+  const voiceToggle = document.getElementById("voiceToggle");
+  const voiceSelect = document.getElementById("voiceSelect");
+  const voiceField = document.getElementById("voiceField");
+  const callerName = document.getElementById("callerName");
+  const callerSub = document.getElementById("callerSub");
+  const avatarRing = document.getElementById("avatarRing");
+  const avatarCircle = document.getElementById("avatarCircle");
+  const callStatusBar = document.getElementById("callStatusBar");
+  const callStateLabel = document.getElementById("callStateLabel");
+  const callTimer = document.getElementById("callTimer");
+  const botCaption = document.getElementById("botCaption");
+  const userCaption = document.getElementById("userCaption");
+  const incomingActions = document.getElementById("incomingActions");
+  const inCallControls = document.getElementById("inCallControls");
+  const acceptBtn = document.getElementById("acceptBtn");
+  const declineBtn = document.getElementById("declineBtn");
+  const endCallBtn = document.getElementById("endCallBtn");
+  const transcriptDetails = document.getElementById("transcriptDetails");
+  const transcriptLog = document.getElementById("transcriptLog");
+  const micPanel = document.getElementById("micPanel");
+  const micBtn = document.getElementById("micBtn");
+  const micStatus = document.getElementById("micStatus");
+  const toggleTypeBtn = document.getElementById("toggleTypeBtn");
+  const typePanel = document.getElementById("typePanel");
+  const useMicBtn = document.getElementById("useMicBtn");
+  const sttNote = document.getElementById("sttNote");
+  const micHint = document.getElementById("micHint");
+
+  // ---------- Populate dropdown ----------
+  businessConfigs.forEach((cfg) => {
+    const opt = document.createElement("option");
+    opt.value = cfg.id;
+    opt.textContent = `${cfg.icon} ${cfg.name} — ${cfg.industry}`;
+    selectEl.appendChild(opt);
+  });
+
+  function updatePreview(cfg) {
+    bizPreview.innerHTML =
+      `<strong>${cfg.icon} ${cfg.name}</strong><br>${cfg.industry}<br><br>` +
+      `Asks ${cfg.questions.length} scripted questions, then confirms the booking automatically.`;
+    callerName.textContent = cfg.name;
+    callerSub.textContent = `${cfg.industry} · AI Receptionist`;
+    avatarCircle.textContent = cfg.icon;
+  }
+
+  updatePreview(currentConfig);
+
+  // ---------- Speech synthesis ----------
+  function loadVoices() {
+    if (!("speechSynthesis" in window)) {
+      voiceField.hidden = true;
+      return;
+    }
+    availableVoices = window.speechSynthesis.getVoices();
+    if (!availableVoices.length) return;
+
+    const englishVoices = availableVoices.filter(v => v.lang && v.lang.toLowerCase().startsWith("en"));
+    const voicesToList = englishVoices.length ? englishVoices : availableVoices;
+
+    voiceSelect.innerHTML = "";
+    voicesToList.forEach((v) => {
+      const opt = document.createElement("option");
+      opt.value = v.name;
+      opt.textContent = `${v.name} (${v.lang})${v.localService ? "" : " · online"}`;
+      voiceSelect.appendChild(opt);
+    });
+
+    // Prefer the more natural-sounding voices browsers ship, in rough order of quality.
+    const preferredPatterns = [
+      /natural/i, /neural/i, /online/i,
+      /aria/i, /jenny/i, /guy/i,
+      /google uk english female/i, /google us english/i,
+      /samantha/i, /daniel/i, /karen/i, /moira/i
+    ];
+    let best = null;
+    for (const pattern of preferredPatterns) {
+      best = voicesToList.find(v => pattern.test(v.name));
+      if (best) break;
+    }
+    const chosen = (selectedVoice && voicesToList.find(v => v.name === selectedVoice.name)) || best || voicesToList[0];
+    selectedVoice = chosen;
+    voiceSelect.value = chosen.name;
+  }
+
+  voiceSelect.addEventListener("change", () => {
+    selectedVoice = availableVoices.find(v => v.name === voiceSelect.value) || null;
+  });
+
+  if ("speechSynthesis" in window) {
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+  } else {
+    voiceField.hidden = true;
+  }
+
+  function speak(text, onStart, onEnd) {
+    lastSpokenText = text;
+    if (!voiceToggle.checked || !("speechSynthesis" in window)) {
+      if (onStart) onStart();
+      if (onEnd) setTimeout(onEnd, 600 + Math.min(text.length * 25, 1800));
+      return;
+    }
+    try {
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(text);
+      if (selectedVoice) utter.voice = selectedVoice;
+      utter.rate = 0.98;
+      utter.pitch = 1.0;
+      utter.volume = 1.0;
+      utter.onstart = () => { if (onStart) onStart(); };
+      utter.onend = () => { if (onEnd) onEnd(); };
+      utter.onerror = () => { if (onEnd) onEnd(); };
+      window.speechSynthesis.speak(utter);
+    } catch (e) {
+      if (onStart) onStart();
+      if (onEnd) setTimeout(onEnd, 800);
+    }
+  }
+
+  skipVoiceBtn.addEventListener("click", () => {
+    if (lastSpokenText) speak(lastSpokenText, setSpeaking, clearSpeaking);
+  });
+
+  function setSpeaking() { avatarRing.classList.add("speaking"); }
+  function clearSpeaking() { avatarRing.classList.remove("speaking"); }
+
+  // ---------- Speech recognition (microphone input) ----------
+  function initRecognition() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    sttSupported = !!SpeechRecognition;
+
+    if (!sttSupported) {
+      replyMode = "type";
+      sttNote.hidden = false;
+      micHint.hidden = true;
+      micPanel.hidden = true;
+      typePanel.hidden = false;
+      useMicBtn.hidden = true;
+      return;
+    }
+
+    recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = navigator.language || "en-US";
+
+    recognition.onstart = () => {
+      recognizing = true;
+      micBtn.classList.add("listening");
+      micStatus.textContent = "Listening…";
+    };
+
+    recognition.onresult = (event) => {
+      let interim = "";
+      let final = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) final += transcript;
+        else interim += transcript;
+      }
+      if (interim && !final) userCaption.textContent = interim;
+      if (final.trim()) processReply(final.trim());
+    };
+
+    recognition.onerror = (event) => {
+      recognizing = false;
+      micBtn.classList.remove("listening");
+      if (callState !== "active" || !awaitingAnswer) return;
+      if (event.error === "no-speech" || event.error === "aborted") {
+        micStatus.textContent = "Didn't catch that — tap to try again";
+      } else if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+        micStatus.textContent = "Microphone blocked — tap \"Type instead\"";
+      } else {
+        micStatus.textContent = "Tap to try again";
+      }
+    };
+
+    recognition.onend = () => {
+      recognizing = false;
+      micBtn.classList.remove("listening");
+    };
+  }
+
+  function startListening() {
+    if (!sttSupported || callState !== "active" || !awaitingAnswer || replyMode !== "mic") return;
+    try { recognition.start(); } catch (e) { /* already listening */ }
+  }
+
+  function stopListening() {
+    if (recognition && recognizing) {
+      try { recognition.stop(); } catch (e) { /* no-op */ }
+    }
+  }
+
+  function setReplyMode(mode) {
+    replyMode = mode;
+    if (mode === "mic") {
+      micPanel.hidden = false;
+      micHint.hidden = false;
+      typePanel.hidden = true;
+      userInput.disabled = true;
+      sendBtn.disabled = true;
+    } else {
+      micPanel.hidden = true;
+      micHint.hidden = true;
+      typePanel.hidden = false;
+      useMicBtn.hidden = !sttSupported;
+      stopListening();
+    }
+    if (callState === "active" && awaitingAnswer) enableReplyControls();
+  }
+
+  toggleTypeBtn.addEventListener("click", () => setReplyMode("type"));
+  useMicBtn.addEventListener("click", () => setReplyMode("mic"));
+
+  micBtn.addEventListener("click", () => {
+    if (callState !== "active" || !awaitingAnswer) return;
+    if (recognizing) stopListening();
+    else startListening();
+  });
+
+  function enableReplyControls() {
+    if (replyMode === "mic" && sttSupported) {
+      micBtn.disabled = false;
+      micStatus.textContent = "Tap to answer";
+      startListening();
+    } else {
+      userInput.disabled = false;
+      sendBtn.disabled = false;
+      userInput.focus();
+    }
+  }
+
+  function disableReplyControls() {
+    micBtn.disabled = true;
+    userInput.disabled = true;
+    sendBtn.disabled = true;
+    stopListening();
+  }
+
+  // ---------- Timer ----------
+  function formatTime(totalSeconds) {
+    const m = Math.floor(totalSeconds / 60).toString().padStart(2, "0");
+    const s = (totalSeconds % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+  }
+
+  function startTimer() {
+    stopTimer();
+    callSeconds = 0;
+    callTimer.textContent = "00:00";
+    callTimer.hidden = false;
+    timerInterval = setInterval(() => {
+      callSeconds++;
+      callTimer.textContent = formatTime(callSeconds);
+    }, 1000);
+  }
+
+  function stopTimer() {
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = null;
+  }
+
+  // ---------- Contextual acknowledgments ----------
+  // Lightweight keyword matching so replies feel heard, without any real AI/API call.
+  // Categories are checked in priority order (most specific/urgent first) in pickAcknowledgment().
+  const ackPhrases = {
+    emergency: [
+      "Oh no, that sounds urgent — let's get this sorted quickly.",
+      "Okay, that needs sorting straight away.",
+      "Right, let's get you help as fast as we can.",
+      "Understood, we'll treat this as a priority.",
+      "Okay, let's not waste any time on this one."
+    ],
+    complaint: [
+      "I'm really sorry to hear that.",
+      "Oh no, I do apologise for that.",
+      "That's not the experience we want you to have — I'll flag this for the team.",
+      "I'm sorry about that, let's get it put right."
+    ],
+    concern: [
+      "Sorry to hear that.",
+      "Ah, that's not fun — let's get you sorted.",
+      "Okay, thanks for letting me know.",
+      "I'm sorry you're dealing with that.",
+      "Okay, that sounds uncomfortable — let's get you seen."
+    ],
+    budget: [
+      "No problem, our team can go through the costs with you when they call.",
+      "Sure, we'll cover all the pricing details on the follow-up call.",
+      "Good question — someone from the team will run through that with you."
+    ],
+    returning: [
+      "Welcome back, lovely to hear from you again.",
+      "Great to have you back with us.",
+      "Ah, good to hear from you again."
+    ],
+    firstTime: [
+      "Welcome, glad you got in touch.",
+      "Lovely, we'll take good care of you.",
+      "Great, thanks for trying us out."
+    ],
+    flexible: [
+      "Great, that gives us a bit more flexibility.",
+      "Perfect, that's helpful to know.",
+      "Good to know, that opens things up a bit."
+    ],
+    gratitude: [
+      "You're very welcome.",
+      "Not a problem at all.",
+      "Happy to help."
+    ],
+    positive: [
+      "Great, thanks for that.",
+      "Perfect, got it.",
+      "Lovely, thank you.",
+      "That's great to hear."
+    ],
+    uncertain: [
+      "No worries, we can figure that out together.",
+      "That's alright, we can work it out as we go.",
+      "No problem, take your time."
+    ],
+    generic: [
+      "Got it, thanks.",
+      "Understood.",
+      "Noted, thank you.",
+      "Okay, perfect.",
+      "Thanks for that.",
+      "Alright, thank you.",
+      "Okay, got that down."
+    ]
+  };
+
+  const ackKeywords = {
+    emergency: [
+      "emergency", "urgent", "urgently", "break-in", "broken in", "burglary", "burgled", "stolen",
+      "locked out", "lock out", "asap", "as soon as possible", "right now", "immediately", "trapped",
+      "flooding", "flooded", "can't get in", "cant get in", "gas leak", "fire", "collapsed", "won't wake up",
+      "wont wake up", "severe", "critical", "life threatening"
+    ],
+    complaint: [
+      "unhappy", "not happy", "annoyed", "frustrated", "angry", "upset", "disappointed", "complaint",
+      "complain", "terrible", "awful", "ridiculous", "unacceptable", "waited too long", "no one called",
+      "still hasn't", "still has not", "poor service", "let down"
+    ],
+    concern: [
+      "pain", "hurts", "hurting", "hurt", "injured", "injury", "ache", "aching", "sore", "swollen",
+      "swelling", "bleeding", "unwell", "sick", "poorly", "broken", "infection", "infected", "worried",
+      "concerned", "nervous", "anxious", "scared", "limping", "can't move", "cant move", "not eating",
+      "vomiting", "fever"
+    ],
+    budget: [
+      "how much", "cost", "costs", "price", "pricing", "afford", "expensive", "cheap", "cheapest",
+      "budget", "quote", "fee", "fees", "charge", "charges", "deposit", "rent", "per month", "a month"
+    ],
+    returning: [
+      "been here before", "existing patient", "existing customer", "regular", "usual", "last time",
+      "again", "as always", "you did my", "previous appointment", "returning customer", "loyal customer"
+    ],
+    firstTime: [
+      "first time", "never been", "new patient", "new customer", "just moved", "haven't used",
+      "havent used", "recommended by", "found you online", "saw your ad", "first visit"
+    ],
+    flexible: [
+      "whenever", "any day", "anytime", "any time", "flexible", "no preference", "either works",
+      "weekend", "weekday", "evenings", "mornings", "afternoon", "as soon as possible", "not fussy",
+      "open to"
+    ],
+    gratitude: [
+      "thank you", "thanks", "cheers", "appreciate it", "much appreciated", "great, thanks"
+    ],
+    positive: [
+      "checkup", "check-up", "routine", "cosmetic", "vaccination", "colour", "color", "style", "great",
+      "fantastic", "excellent", "perfect", "no rush", "not urgent", "just a general", "just wondering",
+      "just enquiring", "just enquiry"
+    ],
+    uncertain: [
+      "not sure", "don't know", "dont know", "no idea", "not certain", "maybe", "possibly", "i think",
+      "not 100%", "unsure", "hard to say"
+    ]
+  };
+
+  function randomFrom(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  function pickAcknowledgment(text) {
+    const t = text.toLowerCase();
+    const priority = ["emergency", "complaint", "concern", "budget", "returning", "firstTime", "flexible", "gratitude", "positive", "uncertain"];
+    for (const category of priority) {
+      if (ackKeywords[category].some(w => t.includes(w))) return randomFrom(ackPhrases[category]);
+    }
+    return randomFrom(ackPhrases.generic);
+  }
+
+  // ---------- Concrete slot offers ----------
+  // When the caller is asked about availability, offer real-sounding options
+  // instead of just moving on — matched against day/time-of-day keywords in their reply.
+  const slotBank = {
+    monday: ["Monday at 9:00am", "Monday at 1:30pm", "Monday at 4:00pm"],
+    tuesday: ["Tuesday at 10:00am", "Tuesday at 1:00pm", "Tuesday at 5:00pm"],
+    wednesday: ["Wednesday at 9:30am", "Wednesday at 2:00pm", "Wednesday at 4:30pm"],
+    thursday: ["Thursday at 10:30am", "Thursday at 2:30pm", "Thursday at 5:30pm"],
+    friday: ["Friday at 9:00am", "Friday at 12:30pm", "Friday at 3:00pm"],
+    saturday: ["Saturday at 9:30am", "Saturday at 11:00am", "Saturday at 1:00pm"],
+    sunday: ["Sunday at 10:00am", "Sunday at 12:00pm"],
+    midweek: ["Tuesday at 10:30am", "Wednesday at 2:00pm", "Thursday at 4:15pm"],
+    weekend: ["Saturday at 9:30am", "Saturday at 11:00am", "Sunday at 10:00am"],
+    morning: ["Monday at 9:00am", "Wednesday at 8:30am", "Friday at 10:00am"],
+    afternoon: ["Tuesday at 1:00pm", "Thursday at 2:30pm", "Friday at 3:00pm"],
+    evening: ["Monday at 5:30pm", "Wednesday at 6:00pm", "Thursday at 6:30pm"],
+    flexible: ["Tuesday at 10:00am", "Thursday at 2:00pm", "Saturday at 9:30am"]
+  };
+
+  function pickSlots(text) {
+    const t = text.toLowerCase();
+    const days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+    const matchedDay = days.find(d => t.includes(d));
+    if (matchedDay) return slotBank[matchedDay];
+    if (/midweek|mid-week|mid week/.test(t)) return slotBank.midweek;
+    if (/weekend/.test(t)) return slotBank.weekend;
+    if (/morning/.test(t)) return slotBank.morning;
+    if (/afternoon/.test(t)) return slotBank.afternoon;
+    if (/evening|after work|after 5/.test(t)) return slotBank.evening;
+    return slotBank.flexible;
+  }
+
+  const slotOfferPhrases = [
+    "I've got",
+    "Let me see... I've got",
+    "Looking at the diary, I've got"
+  ];
+
+  const slotConfirmPhrases = [
+    "Perfect, I've pencilled that in.",
+    "Great, that's booked in provisionally.",
+    "Lovely, I've noted that down.",
+    "Perfect, I'll get that held for you."
+  ];
+
+  // ---------- Captions & transcript ----------
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function logTranscript(sender, text) {
+    const line = document.createElement("div");
+    line.className = "t-line";
+    line.innerHTML = `<b>${sender === "bot" ? "AI:" : "You:"}</b> ${escapeHtml(text)}`;
+    transcriptLog.appendChild(line);
+    transcriptLog.scrollTop = transcriptLog.scrollHeight;
+  }
+
+  function showBotCaption(text) {
+    botCaption.textContent = text;
+    userCaption.textContent = "";
+    logTranscript("bot", text);
+  }
+
+  function showUserCaption(text) {
+    userCaption.textContent = text;
+    logTranscript("user", text);
+  }
+
+  function showTyping() {
+    botCaption.innerHTML = '<span class="typing-dots"><span></span><span></span><span></span></span>';
+    userCaption.textContent = "";
+  }
+
+  // ---------- Call state transitions ----------
+  function setCallState(state) {
+    callState = state;
+    if (state === "incoming") {
+      callStatusBar.classList.remove("active");
+      callStateLabel.textContent = "Incoming call…";
+      callTimer.hidden = true;
+      avatarRing.classList.add("ringing");
+      avatarRing.classList.remove("speaking");
+      incomingActions.hidden = false;
+      inCallControls.hidden = true;
+      transcriptDetails.hidden = true;
+      disableReplyControls();
+    } else if (state === "active") {
+      callStatusBar.classList.add("active");
+      callStateLabel.textContent = "Call in progress";
+      avatarRing.classList.remove("ringing");
+      incomingActions.hidden = true;
+      inCallControls.hidden = false;
+      transcriptDetails.hidden = false;
+    } else if (state === "ended") {
+      callStatusBar.classList.remove("active");
+      callStateLabel.textContent = "Call ended";
+      avatarRing.classList.remove("ringing", "speaking");
+      incomingActions.hidden = true;
+      inCallControls.hidden = true;
+      disableReplyControls();
+      stopTimer();
+    }
+  }
+
+  function resetCallScreen() {
+    window.speechSynthesis && window.speechSynthesis.cancel();
+    stopListening();
+    stopTimer();
+    answers = {};
+    questionIndex = -1;
+    awaitingAnswer = false;
+    lastAnswerText = "";
+    awaitingSlotConfirmation = false;
+    userInput.value = "";
+    botCaption.textContent = "";
+    userCaption.textContent = "";
+    transcriptLog.innerHTML = "";
+    const existingSummary = document.querySelector(".summary-box");
+    if (existingSummary) existingSummary.remove();
+    setReplyMode(sttSupported ? "mic" : "type");
+    setCallState("incoming");
+  }
+
+  function acceptCall() {
+    setCallState("active");
+    startTimer();
+    botSay(currentConfig.greeting, () => {
+      setTimeout(advance, 400);
+    });
+  }
+
+  function declineCall() {
+    window.speechSynthesis && window.speechSynthesis.cancel();
+    stopListening();
+    callStateLabel.textContent = "Call declined";
+    avatarRing.classList.remove("ringing");
+  }
+
+  function endCall() {
+    window.speechSynthesis && window.speechSynthesis.cancel();
+    stopListening();
+    setCallState("ended");
+    renderSummary();
+  }
+
+  function botSay(text, callback) {
+    awaitingAnswer = false;
+    disableReplyControls();
+    showTyping();
+    const thinkDelay = 450 + Math.min(text.length * 8, 500);
+    setTimeout(() => {
+      if (callState !== "active") return;
+      showBotCaption(text);
+      speak(text, setSpeaking, () => {
+        clearSpeaking();
+        if (callState !== "active") return;
+        awaitingAnswer = true;
+        enableReplyControls();
+        if (callback) callback();
+      });
+    }, thinkDelay);
+  }
+
+  function renderSummary() {
+    const box = document.createElement("div");
+    box.className = "summary-box";
+    let rows = "";
+    currentConfig.questions.forEach(q => {
+      const val = answers[q.key] && answers[q.key].trim() ? answers[q.key] : "—";
+      const label = q.key.charAt(0).toUpperCase() + q.key.slice(1);
+      rows += `<dt>${label}</dt><dd>${escapeHtml(val)}</dd>`;
+    });
+    if (answers.chosenSlot && answers.chosenSlot.trim()) {
+      rows += `<dt>Confirmed slot</dt><dd>${escapeHtml(answers.chosenSlot)}</dd>`;
+    }
+    box.innerHTML = `<h4>Call summary captured</h4><dl>${rows}</dl>`;
+    document.querySelector(".call-stage").appendChild(box);
+  }
+
+  function advance() {
+    if (callState !== "active") return;
+    const ack = lastAnswerText ? pickAcknowledgment(lastAnswerText) + " " : "";
+    lastAnswerText = "";
+    questionIndex++;
+    if (questionIndex < currentConfig.questions.length) {
+      const q = currentConfig.questions[questionIndex];
+      botSay(ack + q.prompt);
+    } else {
+      botSay(ack + currentConfig.closing, () => {
+        setTimeout(endCall, 1200);
+      });
+    }
+  }
+
+  function processReply(text) {
+    if (callState !== "active" || !awaitingAnswer || !text) return;
+    stopListening();
+    showUserCaption(text);
+    userInput.value = "";
+    awaitingAnswer = false;
+    disableReplyControls();
+
+    if (awaitingSlotConfirmation) {
+      answers.chosenSlot = text;
+      awaitingSlotConfirmation = false;
+      setTimeout(() => {
+        botSay(randomFrom(slotConfirmPhrases), () => setTimeout(advance, 400));
+      }, 500);
+      return;
+    }
+
+    const currentKey = (questionIndex >= 0 && questionIndex < currentConfig.questions.length)
+      ? currentConfig.questions[questionIndex].key
+      : null;
+    if (currentKey) answers[currentKey] = text;
+
+    if (currentKey && SCHEDULING_KEYS.includes(currentKey)) {
+      lastAnswerText = "";
+      setTimeout(() => {
+        const ack = pickAcknowledgment(text);
+        const slots = pickSlots(text);
+        const offerLine = `${randomFrom(slotOfferPhrases)} ${slots[0]}, ${slots[1]}, or ${slots[2]} — would any of those work, or shall I look at something else?`;
+        awaitingSlotConfirmation = true;
+        botSay(`${ack} ${offerLine}`);
+      }, 500);
+      return;
+    }
+
+    lastAnswerText = text;
+    setTimeout(advance, 500);
+  }
+
+  // ---------- Events ----------
+  sendBtn.addEventListener("click", () => processReply(userInput.value.trim()));
+  userInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") processReply(userInput.value.trim());
+  });
+
+  acceptBtn.addEventListener("click", acceptCall);
+  declineBtn.addEventListener("click", declineCall);
+  endCallBtn.addEventListener("click", endCall);
+
+  restartBtn.addEventListener("click", resetCallScreen);
+
+  selectEl.addEventListener("change", () => {
+    currentConfig = businessConfigs.find(c => c.id === selectEl.value) || businessConfigs[0];
+    updatePreview(currentConfig);
+    resetCallScreen();
+  });
+
+  voiceToggle.addEventListener("change", () => {
+    if (!voiceToggle.checked && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      clearSpeaking();
+    }
+  });
+
+  // ---------- Init ----------
+  initRecognition();
+  setReplyMode(sttSupported ? "mic" : "type");
+  setCallState("incoming");
+})();
+</script>
+</body>
+</html>
