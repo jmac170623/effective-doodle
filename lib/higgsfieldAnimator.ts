@@ -28,11 +28,25 @@
  * table, and the /api/sites/[id]/animations + /hero-animation routes are
  * all already wired to call these.
  */
+// Lighter-touch than the hero transformation — this runs up to 3 times
+// per site for free, so it intentionally uses a shorter duration to keep
+// the real Higgsfield cost down: 5s at 2K on minimax_h3 = 10 credits per
+// generation (checked live via generate_video get_cost:true), same model
+// as the hero function since it was the cheapest option even for a
+// single-photo animation (cheaper than grok_video_v15's 22.5 credits/5s).
+const GALLERY_ANIMATION_DURATION_SECONDS = 5;
+const GALLERY_ANIMATION_RESOLUTION = "2K";
+
 export async function animatePhoto(imageUrl: string): Promise<{ videoUrl: string } | null> {
   if (!process.env.HIGGSFIELD_API_KEY) return null;
 
-  // TODO: real Higgsfield API call goes here once credentials/docs exist.
-  console.warn(`Higgsfield integration not yet implemented — skipped animating ${imageUrl}.`);
+  // TODO: real Higgsfield API call goes here once credentials/docs exist —
+  // model: minimax_h3, medias: start_image=imageUrl (single-photo, no
+  // end_image — subtle motion rather than a transformation).
+  console.warn(
+    `Higgsfield integration not yet implemented — skipped animating ${imageUrl} ` +
+      `(intended: ${GALLERY_ANIMATION_DURATION_SECONDS}s at ${GALLERY_ANIMATION_RESOLUTION}).`
+  );
   return null;
 }
 
