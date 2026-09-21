@@ -31,6 +31,19 @@ export async function POST(
   }
 
   const existingAnimations = await listSiteAnimations(supabase, id);
+
+  // One-shot by design: a hero transformation is a single deliberate,
+  // premium generation per site, not something to regenerate on a whim (and
+  // regenerating would burn a credit each time). Once one exists — even a
+  // still-processing one — further requests are refused outright.
+  const existingHero = existingAnimations.find((a) => a.isHero && a.status !== "failed");
+  if (existingHero) {
+    return NextResponse.json(
+      { error: "This site's hero animation has already been generated — it can only be created once." },
+      { status: 409 }
+    );
+  }
+
   const eligibility = checkAnimationEligibility(existingAnimations, site.animationCredits);
   if (!eligibility.allowed) {
     return NextResponse.json(

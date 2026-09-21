@@ -36,25 +36,42 @@ export async function animatePhoto(imageUrl: string): Promise<{ videoUrl: string
   return null;
 }
 
+// This runs exactly once per site (enforced in the hero-animation route,
+// not here) — a single deliberate, premium generation rather than something
+// regenerated repeatedly. That's the justification for spending more per
+// generation than the single-photo animator: there's no "try again cheaper"
+// path, so it should look as good as the model can produce the first time.
+const HERO_TRANSFORMATION_DURATION_SECONDS = 10; // 20 credits on minimax_h3, vs. 10 for the 5s default — see cost note below.
+const HERO_TRANSFORMATION_RESOLUTION = "2K";
+const HERO_TRANSFORMATION_PROMPT =
+  "A smooth, cinematic professional time-lapse transformation showing this construction/renovation project progressing through its stages to completion. Natural, realistic camera movement, consistent lighting and perspective across the transition, no jarring cuts.";
+
 /**
  * Generates one transformation video across ordered stage photos (e.g.
  * before/during/after), rather than animating a single image. stageUrls
  * must be in chronological order — the intended real implementation maps
  * the first to start_image, the last to end_image, and any in between to
- * image_references.
+ * image_references, passes HERO_TRANSFORMATION_PROMPT as the prompt, and
+ * requests HERO_TRANSFORMATION_DURATION_SECONDS at HERO_TRANSFORMATION_RESOLUTION.
  *
  * Recommended model: minimax_h3 — checked live via Higgsfield's own cost
  * preflight (generate_video get_cost:true), it's both the cheapest option
  * that supports start_image+end_image transformation AND cheaper than the
- * single-photo-only alternatives: 10 credits per 5s/2K generation, vs.
- * 12.5 (minimax_h3_max), 22.5 (grok_video_v15, single-photo only), 27.5
- * (flux_3_video "storyboard"), or 35 (seedance_2_5).
+ * single-photo-only alternatives at the same duration: 10 credits per
+ * 5s/2K generation (20 at the 10s duration used here), vs. 12.5
+ * (minimax_h3_max), 22.5 (grok_video_v15, single-photo only), 27.5
+ * (flux_3_video "storyboard"), or 35 (seedance_2_5) at 5s.
  */
 export async function animateHeroTransformation(stageUrls: string[]): Promise<{ videoUrl: string } | null> {
   if (!process.env.HIGGSFIELD_API_KEY) return null;
   if (stageUrls.length < 2) return null;
 
-  // TODO: real Higgsfield API call goes here once credentials/docs exist.
-  console.warn(`Higgsfield integration not yet implemented — skipped hero transformation across ${stageUrls.length} stages.`);
+  // TODO: real Higgsfield API call goes here once credentials/docs exist —
+  // model: minimax_h3, medias: start_image=stageUrls[0], end_image=stageUrls[last],
+  // image_references=stageUrls.slice(1,-1).
+  console.warn(
+    `Higgsfield integration not yet implemented — skipped hero transformation across ${stageUrls.length} stages ` +
+      `(intended: ${HERO_TRANSFORMATION_DURATION_SECONDS}s at ${HERO_TRANSFORMATION_RESOLUTION}, prompt: "${HERO_TRANSFORMATION_PROMPT}").`
+  );
   return null;
 }

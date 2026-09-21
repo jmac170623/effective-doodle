@@ -257,6 +257,10 @@ export function ManageClient({ siteId }: { siteId: string }) {
   }
 
   async function handleAnimateHero() {
+    const confirmed = window.confirm(
+      "This generates your hero animation once — it can't be regenerated afterwards. Make sure you're happy with your stage photos and their order first. Continue?"
+    );
+    if (!confirmed) return;
     setAnimatingHero(true);
     setHeroAnimationError("");
     try {
@@ -448,6 +452,10 @@ export function ManageClient({ siteId }: { siteId: string }) {
                   >
                     {animatingHero ? "Generating…" : "Generate Hero Animation"}
                   </button>
+                  <p className="text-xs text-slate-500">
+                    One-time, cinematic-quality generation — this can only be done once per site, so double-check
+                    your stage photos and their order before generating.
+                  </p>
                   {!eligibility.allowed && (
                     <p className="text-xs text-slate-500">No free animations or credits left for this site.</p>
                   )}
