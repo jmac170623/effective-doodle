@@ -1,4 +1,4 @@
-import { OnboardingData, GeneratedSite, SiteImage } from "@/lib/types";
+import { OnboardingData, GeneratedSite, SiteAnimation, SiteImage } from "@/lib/types";
 import { ContactForm } from "./ContactForm";
 import { ScrollReveal } from "./ScrollReveal";
 import { QuoteCalculator } from "./QuoteCalculator";
@@ -9,9 +9,10 @@ interface SiteRendererProps {
   onboarding: OnboardingData;
   generated: GeneratedSite;
   images?: SiteImage[];
+  animations?: SiteAnimation[];
 }
 
-export function SiteRenderer({ siteId, onboarding, generated, images = [] }: SiteRendererProps) {
+export function SiteRenderer({ siteId, onboarding, generated, images = [], animations = [] }: SiteRendererProps) {
   const { style, copy, gallery, emphasis } = generated;
 
   const cssVars = {
@@ -53,7 +54,7 @@ export function SiteRenderer({ siteId, onboarding, generated, images = [] }: Sit
 
         <div style={{ order: 20 - emphasis.gallery * 5 }}>
           <Reveal motion={style.motion}>
-            <Gallery copy={copy} gallery={gallery} images={images} sectionGapClass={sectionGapClass} />
+            <Gallery copy={copy} gallery={gallery} images={images} animations={animations} sectionGapClass={sectionGapClass} />
           </Reveal>
         </div>
 
@@ -190,11 +191,13 @@ function Gallery({
   copy,
   gallery,
   images,
+  animations,
   sectionGapClass,
 }: {
   copy: GeneratedSite["copy"];
   gallery: GeneratedSite["gallery"];
   images: SiteImage[];
+  animations: SiteAnimation[];
   sectionGapClass: string;
 }) {
   const remainingSlots = Math.max(0, gallery.length - images.length);
@@ -209,15 +212,32 @@ function Gallery({
           {copy.galleryIntro}
         </p>
         <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
-          {images.map((image) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              key={image.id}
-              src={image.url}
-              alt={image.caption || "Job photo"}
-              className="aspect-square rounded-[var(--radius)] object-cover"
-            />
-          ))}
+          {images.map((image) => {
+            const animation = animations.find((a) => a.imageId === image.id && a.status === "completed" && a.videoUrl);
+            if (animation?.videoUrl) {
+              return (
+                <video
+                  key={image.id}
+                  src={animation.videoUrl}
+                  poster={image.url}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  className="aspect-square rounded-[var(--radius)] object-cover"
+                />
+              );
+            }
+            return (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={image.id}
+                src={image.url}
+                alt={image.caption || "Job photo"}
+                className="aspect-square rounded-[var(--radius)] object-cover"
+              />
+            );
+          })}
           {gallery.slice(0, remainingSlots).map((slot) => (
             <div
               key={slot.id}

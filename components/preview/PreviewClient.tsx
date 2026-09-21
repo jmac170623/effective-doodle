@@ -150,7 +150,13 @@ function PreviewClientInner({ siteId }: { siteId: string }) {
       </div>
 
       <div className="mx-auto max-w-5xl border-x border-slate-200 bg-white shadow-sm">
-        <SiteRenderer siteId={site.id} onboarding={site.onboarding} generated={site.generated} images={site.images ?? []} />
+        <SiteRenderer
+          siteId={site.id}
+          onboarding={site.onboarding}
+          generated={site.generated}
+          images={site.images ?? []}
+          animations={site.animations ?? []}
+        />
       </div>
 
       <div className="mx-auto max-w-5xl px-6 py-10">

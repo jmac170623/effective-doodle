@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { SiteImage, SiteRecord, ToneProfileId } from "@/lib/types";
+import { SiteAnimation, SiteImage, SiteRecord, ToneProfileId } from "@/lib/types";
 import { TONE_PROFILES } from "@/lib/toneProfiles";
+import { FREE_ANIMATION_CAP, checkAnimationEligibility } from "@/lib/animationLimits";
 import { createClient } from "@/lib/supabase/client";
 import { generateId } from "@/lib/idGen";
 
@@ -43,6 +44,11 @@ export function ManageClient({ siteId }: { siteId: string }) {
   const [uploadError, setUploadError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [animations, setAnimations] = useState<SiteAnimation[]>([]);
+  const [animatingId, setAnimatingId] = useState<string | null>(null);
+  const [animationErrors, setAnimationErrors] = useState<Record<string, string>>({});
+  const [buyingAnimationCredit, setBuyingAnimationCredit] = useState(false);
+
   useEffect(() => {
     let cancelled = false;
     fetch(`/api/sites/${siteId}`)
@@ -70,6 +76,7 @@ export function ManageClient({ siteId }: { siteId: string }) {
         setDayRate(data.onboarding.dayRate ? String(data.onboarding.dayRate) : "");
         setToneProfile(data.generated.toneProfile);
         setImages(data.images ?? []);
+        setAnimations(data.animations ?? []);
       })
       .catch((err) => {
         if (!cancelled) setLoadError(err instanceof Error ? err.message : "Failed to load site.");
@@ -139,6 +146,54 @@ export function ManageClient({ siteId }: { siteId: string }) {
     }
     await supabase.from("site_images").delete().eq("id", image.id);
     setImages((prev) => prev.filter((i) => i.id !== image.id));
+  }
+
+  async function handleAnimate(imageId: string) {
+    setAnimatingId(imageId);
+    setAnimationErrors((prev) => ({ ...prev, [imageId]: "" }));
+    try {
+      const res = await fetch(`/api/sites/${siteId}/animations`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to animate photo.");
+      }
+      setAnimations((prev) => [
+        ...prev,
+        {
+          id: generateId("anim"),
+          siteId,
+          imageId,
+          status: "completed",
+          videoUrl: data.videoUrl,
+          usedCredit: false,
+          createdAt: new Date().toISOString(),
+        },
+      ]);
+    } catch (err) {
+      setAnimationErrors((prev) => ({ ...prev, [imageId]: err instanceof Error ? err.message : "Failed to animate photo." }));
+    } finally {
+      setAnimatingId(null);
+    }
+  }
+
+  async function handleBuyAnimationCredit() {
+    setBuyingAnimationCredit(true);
+    try {
+      const res = await fetch(`/api/sites/${siteId}/animations/checkout`, { method: "POST" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to start checkout.");
+      }
+      const { url } = await res.json();
+      window.location.href = url;
+    } catch (err) {
+      setBuyingAnimationCredit(false);
+      setAnimationErrors((prev) => ({ ...prev, _checkout: err instanceof Error ? err.message : "Failed to start checkout." }));
+    }
   }
 
   async function handleSave() {
@@ -250,23 +305,72 @@ export function ManageClient({ siteId }: { siteId: string }) {
           <section className="space-y-3 border-t border-slate-100 pt-4">
             <h2 className="text-sm font-semibold text-slate-700">Gallery photos</h2>
             <p className="text-xs text-slate-500">Uploaded photos replace the &quot;add later&quot; slots on your site.</p>
-            {images.length > 0 && (
-              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                {images.map((image) => (
-                  <div key={image.id} className="group relative aspect-square overflow-hidden rounded-lg border border-slate-200">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={image.url} alt="" className="h-full w-full object-cover" />
+            {images.length > 0 && (() => {
+              const eligibility = checkAnimationEligibility(animations, site.animationCredits);
+              return (
+                <>
+                  <p className="text-xs text-slate-500">
+                    {eligibility.allowed
+                      ? eligibility.usesCredit
+                        ? "Free animations used up — animating another photo will use a purchased credit."
+                        : `${eligibility.freeRemaining} of ${FREE_ANIMATION_CAP} free animations remaining.`
+                      : "You've used all your free animations and have no credits left."}
+                  </p>
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                    {images.map((image) => {
+                      const animation = animations.find((a) => a.imageId === image.id && a.status !== "failed");
+                      return (
+                        <div key={image.id} className="group relative aspect-square overflow-hidden rounded-lg border border-slate-200">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={image.url} alt="" className="h-full w-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteImage(image)}
+                            className="absolute right-1 top-1 rounded-full bg-black/60 px-2 py-0.5 text-xs text-white opacity-0 transition group-hover:opacity-100"
+                          >
+                            ✕
+                          </button>
+                          {animation?.status === "completed" ? (
+                            <span className="absolute bottom-1 left-1 rounded bg-emerald-600/90 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                              Animated
+                            </span>
+                          ) : animation?.status === "processing" ? (
+                            <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                              Animating…
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleAnimate(image.id)}
+                              disabled={animatingId === image.id || !eligibility.allowed}
+                              className="absolute bottom-1 left-1 right-1 truncate rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white opacity-0 transition group-hover:opacity-100 disabled:opacity-100"
+                            >
+                              {animatingId === image.id ? "Animating…" : "Animate this photo"}
+                            </button>
+                          )}
+                          {animationErrors[image.id] && (
+                            <p className="absolute inset-x-0 bottom-0 bg-red-600/90 px-1 py-0.5 text-[9px] text-white">
+                              {animationErrors[image.id]}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {!eligibility.allowed && (
                     <button
                       type="button"
-                      onClick={() => handleDeleteImage(image)}
-                      className="absolute right-1 top-1 rounded-full bg-black/60 px-2 py-0.5 text-xs text-white opacity-0 transition group-hover:opacity-100"
+                      onClick={handleBuyAnimationCredit}
+                      disabled={buyingAnimationCredit}
+                      className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:border-slate-400 disabled:opacity-50"
                     >
-                      ✕
+                      {buyingAnimationCredit ? "Redirecting to checkout…" : "Buy 1 More Animation"}
                     </button>
-                  </div>
-                ))}
-              </div>
-            )}
+                  )}
+                  {animationErrors._checkout && <p className="text-xs text-red-600">{animationErrors._checkout}</p>}
+                </>
+              );
+            })()}
             <input
               ref={fileInputRef}
               type="file"

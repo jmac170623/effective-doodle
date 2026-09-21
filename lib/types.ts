@@ -155,9 +155,11 @@ export interface SiteRecord {
   animationCredits: number;
   // Paid AI-edit credits beyond the free-per-site cap (see lib/editLimits.ts).
   editCredits: number;
-  // Attached by API routes that fetch it separately (site_images is its own
-  // table, not a column on sites) — absent unless the caller populated it.
+  // Attached by API routes that fetch it separately (site_images and
+  // site_animations are their own tables) — absent unless the caller
+  // populated them.
   images?: SiteImage[];
+  animations?: SiteAnimation[];
 }
 
 // ---- Higgsfield photo-to-video animations ----

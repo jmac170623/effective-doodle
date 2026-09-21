@@ -45,6 +45,15 @@ style of the generated site.
   truth: it flips a site to `published` on successful checkout and back to
   `draft` if the subscription lapses.
 
+- **Photo-to-video animation (UI wired, backend not yet live)** — the manage
+  dashboard has an "Animate this photo" button per uploaded photo, gated at 3
+  free animations per site then a one-time Stripe credit
+  (`lib/animationLimits.ts`, `app/api/sites/[id]/animations`), and the public
+  site renders a completed animation as a looping video instead of a static
+  image. The actual Higgsfield API call (`lib/higgsfieldAnimator.ts`) is a
+  documented placeholder — everything works end-to-end except the animation
+  itself, which needs a real `HIGGSFIELD_API_KEY` and API docs to implement.
+
 Out of scope for now (follow-up work): the full post-launch content-editing
 dashboard. The data model (`lib/types.ts`) leaves room for it — every site
 is keyed by a stable `siteId`.
