@@ -45,23 +45,27 @@ style of the generated site.
   truth: it flips a site to `published` on successful checkout and back to
   `draft` if the subscription lapses.
 
-- **Photo-to-video animation (UI wired, backend not yet live)** — the manage
-  dashboard has an "Animate this photo" button per uploaded photo, gated at 3
-  free animations per site then a one-time Stripe credit
-  (`lib/animationLimits.ts`, `app/api/sites/[id]/animations`), and the public
-  site renders a completed animation as a looping video instead of a static
-  image. The actual Higgsfield API call (`lib/higgsfieldAnimator.ts`) is a
-  documented placeholder — everything works end-to-end except the animation
-  itself, which needs a real `HIGGSFIELD_API_KEY` and API docs to implement.
-- **Hero "main display image" + staged transformation (UI wired, backend not
-  yet live)** — a dedicated onboarding question (and matching manage
-  dashboard section) collects ordered "stage" photos (before/during/after)
-  for one showcase job, stored in `site_hero_stages`. The last stage renders
-  full-bleed as the homepage's hero background. `app/api/sites/[id]/hero-
-  animation` uses the same animation cap/credits as gallery photos to
+- **Photo-to-video animation** — the manage dashboard has an "Animate this
+  photo" button per uploaded photo, gated at 3 free animations per site then
+  a one-time Stripe credit (`lib/animationLimits.ts`,
+  `app/api/sites/[id]/animations`), and the public site renders a completed
+  animation as a looping video instead of a static image. The Higgsfield API
+  call (`lib/higgsfieldAnimator.ts#animatePhoto`) is real — it calls
+  `minimax/h3/image-to-video` via the `@higgsfield/client` SDK and needs a
+  real `HF_CREDENTIALS` value (see `.env.example`) to run; without it,
+  generation is skipped gracefully and the static photo is kept.
+- **Hero "main display image" + staged transformation (UI wired, animation
+  still a placeholder)** — a dedicated onboarding question (and matching
+  manage dashboard section) collects ordered "stage" photos (before/during/
+  after) for one showcase job, stored in `site_hero_stages`. The last stage
+  renders full-bleed as the homepage's hero background. `app/api/sites/[id]/
+  hero-animation` uses the same animation cap/credits as gallery photos to
   generate one transformation video across the stages
-  (`lib/higgsfieldAnimator.ts#animateHeroTransformation` — same
-  not-yet-implemented placeholder, generates exactly once per site). Once a
+  (`lib/higgsfieldAnimator.ts#animateHeroTransformation` — still a documented
+  placeholder: the multi-image input field name for a `minimax/h3`-style
+  multi-stage/keyframes call hasn't been confirmed against a real code
+  sample yet, so it deliberately returns null rather than guess on a one-shot
+  generation; `animatePhoto` above is fully implemented). Once a
   video exists, `HeroScrubVideo` binds its playback position to scroll
   progress, so scrolling visually advances through the job's phases instead
   of autoplaying. Checked live against Higgsfield's model catalog:

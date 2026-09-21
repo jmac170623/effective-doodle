@@ -1,53 +1,56 @@
+import { config, higgsfield } from "@higgsfield/client/v2";
+
 /**
- * Placeholder for the real Higgsfield photo-to-video integration.
+ * Real Higgsfield photo-to-video integration for single-photo animation.
  *
- * This is intentionally a stub, not a best-guess implementation: Higgsfield's
- * actual developer REST API (auth scheme, endpoint for submitting a job, how
- * to poll for or receive the result) hasn't been verified against real docs
- * or a real API key yet. Faking a plausible-looking request here would fail
- * silently in production in a way that's hard to distinguish from a real
- * bug — an honest "not configured yet" is safer than a guess.
- *
- * What HAS been verified (via Higgsfield's own model catalog, models_explore
- * with input=image/type=video): there is no mode that invents a plausible
- * build history from a single finished photo. What's real:
- *  - Single-photo animation (subtle motion/camera movement, no narrative) —
- *    e.g. models tagged "image-to-video" with just a start_image role, such
- *    as Grok Video 1.5 or Seedance 2.5's omni_reference mode.
- *  - Multi-photo transformation — models like minimax_h3, minimax_h3_max
- *    and flux_3_video accept medias with roles start_image + end_image (and
- *    flux_3_video is explicitly tagged "storyboard" for more than two), and
- *    generate one video that genuinely transitions between the supplied
- *    stage photos. This is what powers animateHeroTransformation below.
- *
- * Once a HIGGSFIELD_API_KEY and the real REST API shape are available,
- * replace the bodies of these functions with the actual requests (see
- * lib/aiCopywriter.ts for the established pattern: try the real call,
- * return null on any failure so callers can degrade gracefully). Nothing
- * elsewhere needs to change — lib/animationLimits.ts, the site_animations
- * table, and the /api/sites/[id]/animations + /hero-animation routes are
- * all already wired to call these.
+ * Verified against the installed @higgsfield/client v0.2.6 source (not just
+ * the dashboard's docs sample, which showed a different response shape than
+ * what the SDK actually returns — see node_modules/@higgsfield/client/dist/v2/client.js):
+ *  - Auth: HF_CREDENTIALS env var, format "KEY_ID:KEY_SECRET".
+ *  - higgsfield.subscribe(endpoint, { input, withPolling: true }) POSTs
+ *    `input` directly to `/{endpoint}` and polls GET /requests/{id}/status
+ *    until status is 'completed' | 'failed' | 'nsfw'.
+ *  - Real response shape: { status, video?: { url } } — not the
+ *    `result.isCompleted` / `result.jobs[0]` shape the dashboard's copy-paste
+ *    example showed.
+ *  - Endpoint "minimax/h3/image-to-video" with input
+ *    { prompt, image_url, duration, resolution, aspect_ratio, aigc_watermark }
+ *    is the confirmed single-photo shape (from the dashboard's own
+ *    model-specific code sample for this exact model).
  */
-// Lighter-touch than the hero transformation — this runs up to 3 times
-// per site for free, so it intentionally uses a shorter duration to keep
-// the real Higgsfield cost down: 5s at 2K on minimax_h3 = 10 credits per
-// generation (checked live via generate_video get_cost:true), same model
-// as the hero function since it was the cheapest option even for a
-// single-photo animation (cheaper than grok_video_v15's 22.5 credits/5s).
+
+// Lighter-touch than the hero transformation — this runs up to 3 times per
+// site for free, so it intentionally uses a shorter duration to keep the
+// real Higgsfield cost down. At $0.0715/s on minimax_h3 (45% off, checked
+// live in the dashboard), 5s costs ~$0.36 per generation.
 const GALLERY_ANIMATION_DURATION_SECONDS = 5;
 const GALLERY_ANIMATION_RESOLUTION = "2K";
+const GALLERY_ANIMATION_PROMPT =
+  "Subtle, realistic camera motion and natural ambient movement bringing this photo to life — no narrative change to the scene, no unrelated objects or people, no text.";
 
 export async function animatePhoto(imageUrl: string): Promise<{ videoUrl: string } | null> {
-  if (!process.env.HIGGSFIELD_API_KEY) return null;
+  if (!process.env.HF_CREDENTIALS) return null;
 
-  // TODO: real Higgsfield API call goes here once credentials/docs exist —
-  // model: minimax_h3, medias: start_image=imageUrl (single-photo, no
-  // end_image — subtle motion rather than a transformation).
-  console.warn(
-    `Higgsfield integration not yet implemented — skipped animating ${imageUrl} ` +
-      `(intended: ${GALLERY_ANIMATION_DURATION_SECONDS}s at ${GALLERY_ANIMATION_RESOLUTION}).`
-  );
-  return null;
+  try {
+    config({ credentials: process.env.HF_CREDENTIALS });
+    const result = await higgsfield.subscribe("minimax/h3/image-to-video", {
+      input: {
+        prompt: GALLERY_ANIMATION_PROMPT,
+        image_url: imageUrl,
+        duration: GALLERY_ANIMATION_DURATION_SECONDS,
+        resolution: GALLERY_ANIMATION_RESOLUTION,
+        aspect_ratio: "auto",
+        aigc_watermark: false,
+      },
+      withPolling: true,
+    });
+
+    if (result.status !== "completed" || !result.video?.url) return null;
+    return { videoUrl: result.video.url };
+  } catch (error) {
+    console.error("Higgsfield animatePhoto failed, falling back gracefully:", error);
+    return null;
+  }
 }
 
 // This runs exactly once per site (enforced in the hero-animation route,
@@ -60,12 +63,10 @@ export async function animatePhoto(imageUrl: string): Promise<{ videoUrl: string
 // middle value. Up to 4 stage photos can be supplied, and a shorter
 // duration risks compressing each stage's transition into too little time
 // to register — the reference ad the user targeted dwells on each of its
-// ~4 stages for several real seconds. The gap between 15s (30 credits) and
-// a shorter 10s (20 credits) is only 10 credits for a generation that only
-// ever happens once per site, so there's little reason to undercut it.
-// Whether minimax_h3 actually distributes time evenly across more than two
-// stage photos is unverified — untestable until a real API key exists.
-const HERO_TRANSFORMATION_DURATION_SECONDS = 15; // 30 credits on minimax_h3 (its maximum duration) — see cost note below.
+// ~4 stages for several real seconds. At $0.0715/s (45% off), 15s costs
+// ~$1.07 per generation — a small price for a generation that only ever
+// happens once per site.
+const HERO_TRANSFORMATION_DURATION_SECONDS = 15;
 const HERO_TRANSFORMATION_RESOLUTION = "2K";
 // Target quality bar: a real "QuickSite" competitor ad the user shared —
 // fixed camera angle on one property, morphing through the job's stages
@@ -76,29 +77,29 @@ const HERO_TRANSFORMATION_PROMPT =
 
 /**
  * Generates one transformation video across ordered stage photos (e.g.
- * before/during/after), rather than animating a single image. stageUrls
- * must be in chronological order — the intended real implementation maps
- * the first to start_image, the last to end_image, and any in between to
- * image_references, passes HERO_TRANSFORMATION_PROMPT as the prompt, and
- * requests HERO_TRANSFORMATION_DURATION_SECONDS at HERO_TRANSFORMATION_RESOLUTION.
+ * before/during/after), rather than animating a single image.
  *
- * Recommended model: minimax_h3 — checked live via Higgsfield's own cost
- * preflight (generate_video get_cost:true), it's both the cheapest option
- * that supports start_image+end_image transformation AND cheaper than the
- * single-photo-only alternatives at the same duration: 10 credits per
- * 5s/2K generation (30 at the 15s duration used here), vs. 12.5
- * (minimax_h3_max), 22.5 (grok_video_v15, single-photo only), 27.5
- * (flux_3_video "storyboard"), or 35 (seedance_2_5) at 5s.
+ * Endpoint prefix ("minimax/h3/...") and auth/polling/response handling are
+ * verified (same as animatePhoto above). What's NOT yet verified: the input
+ * field name(s) for supplying more than one photo — the dashboard's own
+ * code samples only showed the single-image "minimax/h3/image-to-video"
+ * shape (`image_url: string`). The model's own catalog description calls it
+ * "multimodal video generation with keyframes or image/video/audio
+ * references", which strongly implies a distinct keyframes-capable
+ * endpoint/input exists, but its exact shape hasn't been confirmed against
+ * a real code sample yet. Faking that field name here would risk a
+ * confusing 422 on the one-shot generation — left as null until confirmed.
  */
 export async function animateHeroTransformation(stageUrls: string[]): Promise<{ videoUrl: string } | null> {
-  if (!process.env.HIGGSFIELD_API_KEY) return null;
+  if (!process.env.HF_CREDENTIALS) return null;
   if (stageUrls.length < 2) return null;
 
-  // TODO: real Higgsfield API call goes here once credentials/docs exist —
-  // model: minimax_h3, medias: start_image=stageUrls[0], end_image=stageUrls[last],
-  // image_references=stageUrls.slice(1,-1).
+  // TODO: real Higgsfield API call goes here once the multi-image input
+  // shape is confirmed — likely a "minimax/h3/keyframes"-style endpoint
+  // (see comment above), reusing the same config()/subscribe()/polling
+  // pattern as animatePhoto, with HERO_TRANSFORMATION_PROMPT/DURATION/RESOLUTION.
   console.warn(
-    `Higgsfield integration not yet implemented — skipped hero transformation across ${stageUrls.length} stages ` +
+    `Higgsfield hero transformation input shape not yet confirmed — skipped across ${stageUrls.length} stages ` +
       `(intended: ${HERO_TRANSFORMATION_DURATION_SECONDS}s at ${HERO_TRANSFORMATION_RESOLUTION}, prompt: "${HERO_TRANSFORMATION_PROMPT}").`
   );
   return null;
