@@ -55,7 +55,17 @@ export async function animatePhoto(imageUrl: string): Promise<{ videoUrl: string
 // regenerated repeatedly. That's the justification for spending more per
 // generation than the single-photo animator: there's no "try again cheaper"
 // path, so it should look as good as the model can produce the first time.
-const HERO_TRANSFORMATION_DURATION_SECONDS = 10; // 20 credits on minimax_h3, vs. 10 for the 5s default — see cost note below.
+//
+// Duration is pinned to minimax_h3's actual maximum (15s), not a guessed
+// middle value. Up to 4 stage photos can be supplied, and a shorter
+// duration risks compressing each stage's transition into too little time
+// to register — the reference ad the user targeted dwells on each of its
+// ~4 stages for several real seconds. The gap between 15s (30 credits) and
+// a shorter 10s (20 credits) is only 10 credits for a generation that only
+// ever happens once per site, so there's little reason to undercut it.
+// Whether minimax_h3 actually distributes time evenly across more than two
+// stage photos is unverified — untestable until a real API key exists.
+const HERO_TRANSFORMATION_DURATION_SECONDS = 15; // 30 credits on minimax_h3 (its maximum duration) — see cost note below.
 const HERO_TRANSFORMATION_RESOLUTION = "2K";
 // Target quality bar: a real "QuickSite" competitor ad the user shared —
 // fixed camera angle on one property, morphing through the job's stages
@@ -76,7 +86,7 @@ const HERO_TRANSFORMATION_PROMPT =
  * preflight (generate_video get_cost:true), it's both the cheapest option
  * that supports start_image+end_image transformation AND cheaper than the
  * single-photo-only alternatives at the same duration: 10 credits per
- * 5s/2K generation (20 at the 10s duration used here), vs. 12.5
+ * 5s/2K generation (30 at the 15s duration used here), vs. 12.5
  * (minimax_h3_max), 22.5 (grok_video_v15, single-photo only), 27.5
  * (flux_3_video "storyboard"), or 35 (seedance_2_5) at 5s.
  */

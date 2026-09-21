@@ -66,14 +66,15 @@ style of the generated site.
   progress, so scrolling visually advances through the job's phases instead
   of autoplaying. Checked live against Higgsfield's model catalog:
   `minimax_h3` is the cheapest model that supports start/end-frame
-  transformation — **20 credits** per hero animation (10s at 2K, tuned for
-  quality since it only runs once) and **10 credits** per single gallery
-  photo animation (5s at 2K, up to 3 free per site). Worst case, a single
-  site using every free slot costs **50 credits** (1 hero + 3 gallery) —
-  so the $19/mo Starter plan (270 credits) covers roughly 5 sites/month at
-  full free-tier usage, not a large number once you have real customer
-  volume; budget for Plus ($59/mo, 1,200 credits, ~24 sites/month at full
-  usage) once traction picks up.
+  transformation — **30 credits** per hero animation (15s at 2K, its
+  actual maximum duration, since up to 4 stage photos need real time each
+  to register and this only ever runs once per site) and **10 credits**
+  per single gallery photo animation (5s at 2K, up to 3 free per site).
+  Worst case, a single site using every free slot costs **60 credits**
+  (1 hero + 3 gallery) — so the $19/mo Starter plan (270 credits) covers
+  roughly 4-5 sites/month at full free-tier usage, not a large number once
+  you have real customer volume; budget for Plus ($59/mo, 1,200 credits,
+  ~20 sites/month at full usage) once traction picks up.
 
 Out of scope for now (follow-up work): the full post-launch content-editing
 dashboard. The data model (`lib/types.ts`) leaves room for it — every site
