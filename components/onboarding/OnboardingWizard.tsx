@@ -3,6 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { QUIZ_QUESTIONS } from "@/lib/toneProfiles";
+import { createClient } from "@/lib/supabase/client";
+import { generateId } from "@/lib/idGen";
+
+const MAX_ONBOARDING_PHOTOS = 8;
 
 interface ServiceDraft {
   name: string;
@@ -57,14 +61,38 @@ const INITIAL_STATE: WizardState = {
   priority: "",
 };
 
-const STEP_LABELS = ["Basic Info", "Contact", "Services", "About You", "Your Style"];
+const STEP_LABELS = ["Basic Info", "Contact", "Services", "About You", "Photos", "Your Style"];
+
+interface PhotoDraft {
+  id: string;
+  file: File;
+  previewUrl: string;
+}
 
 export function OnboardingWizard() {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [state, setState] = useState<WizardState>(INITIAL_STATE);
+  const [photos, setPhotos] = useState<PhotoDraft[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [error, setError] = useState("");
+
+  function addPhotos(files: FileList | null) {
+    if (!files) return;
+    const next = Array.from(files)
+      .slice(0, Math.max(0, MAX_ONBOARDING_PHOTOS - photos.length))
+      .map((file) => ({ id: generateId("photo"), file, previewUrl: URL.createObjectURL(file) }));
+    setPhotos((prev) => [...prev, ...next]);
+  }
+
+  function removePhoto(id: string) {
+    setPhotos((prev) => {
+      const target = prev.find((p) => p.id === id);
+      if (target) URL.revokeObjectURL(target.previewUrl);
+      return prev.filter((p) => p.id !== id);
+    });
+  }
 
   function update<K extends keyof WizardState>(key: K, value: WizardState[K]) {
     setState((s) => ({ ...s, [key]: value }));
@@ -81,6 +109,8 @@ export function OnboardingWizard() {
       case 3:
         return state.aboutText.trim().length > 0;
       case 4:
+        return true; // Photos are optional.
+      case 5:
         return Boolean(state.feeling && state.phrase && state.oneWordDescriptor && state.priority);
       default:
         return true;
@@ -133,10 +163,37 @@ export function OnboardingWizard() {
       }
 
       const data = await res.json();
+
+      if (photos.length > 0) {
+        setUploadingPhotos(true);
+        const supabase = createClient();
+        // Best-effort: a failed photo upload shouldn't block the site the
+        // owner just paid attention to build — skip it and move on.
+        for (let i = 0; i < photos.length; i++) {
+          const { file } = photos[i];
+          try {
+            const ext = file.name.split(".").pop() || "jpg";
+            const path = `${data.id}/${generateId("img")}.${ext}`;
+            const { error: uploadErr } = await supabase.storage.from("gallery").upload(path, file);
+            if (uploadErr) throw uploadErr;
+            const { data: publicUrlData } = supabase.storage.from("gallery").getPublicUrl(path);
+            await supabase.from("site_images").insert({
+              id: generateId("simg"),
+              site_id: data.id,
+              url: publicUrlData.publicUrl,
+              sort_order: i,
+            });
+          } catch {
+            // Continue with the remaining photos.
+          }
+        }
+      }
+
       router.push(`/preview/${data.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
       setSubmitting(false);
+      setUploadingPhotos(false);
     }
   }
 
@@ -151,7 +208,8 @@ export function OnboardingWizard() {
         {step === 1 && <ContactStep state={state} update={update} />}
         {step === 2 && <ServicesStep state={state} update={update} />}
         {step === 3 && <AboutStep state={state} update={update} />}
-        {step === 4 && <QuizStep state={state} update={update} />}
+        {step === 4 && <PhotosStep photos={photos} onAdd={addPhotos} onRemove={removePhoto} />}
+        {step === 5 && <QuizStep state={state} update={update} />}
 
         {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
 
@@ -180,7 +238,7 @@ export function OnboardingWizard() {
               disabled={!canAdvance() || submitting}
               className="rounded-lg bg-slate-900 px-6 py-2 text-sm font-semibold text-white disabled:opacity-40"
             >
-              {submitting ? "Building your site…" : "Generate My Website"}
+              {uploadingPhotos ? "Uploading your photos…" : submitting ? "Building your site…" : "Generate My Website"}
             </button>
           )}
         </div>
@@ -437,6 +495,62 @@ function AboutStep({
       <p className="text-xs text-slate-500">
         These two are optional but genuinely help — the more specific and personal your answers, the less generic your site will sound.
       </p>
+    </div>
+  );
+}
+
+function PhotosStep({
+  photos,
+  onAdd,
+  onRemove,
+}: {
+  photos: PhotoDraft[];
+  onAdd: (files: FileList | null) => void;
+  onRemove: (id: string) => void;
+}) {
+  return (
+    <div className="space-y-4">
+      <h2 className="text-lg font-semibold">Show off your work (optional)</h2>
+      <p className="text-sm text-slate-500">
+        Upload photos of jobs you&apos;ve done and we&apos;ll build them straight into your site&apos;s gallery — no
+        placeholder &quot;add later&quot; slots. You can always add or change photos afterwards too.
+      </p>
+
+      {photos.length > 0 && (
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+          {photos.map((photo) => (
+            <div key={photo.id} className="group relative aspect-square overflow-hidden rounded-lg border border-slate-200">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={photo.previewUrl} alt="" className="h-full w-full object-cover" />
+              <button
+                type="button"
+                onClick={() => onRemove(photo.id)}
+                className="absolute right-1 top-1 rounded-full bg-black/60 px-1.5 py-0.5 text-xs text-white opacity-0 group-hover:opacity-100"
+                aria-label="Remove photo"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {photos.length < MAX_ONBOARDING_PHOTOS && (
+        <label className="block cursor-pointer rounded-lg border border-dashed border-slate-300 px-4 py-6 text-center text-sm font-medium text-slate-600 hover:border-slate-400">
+          + Add photos
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              onAdd(e.target.files);
+              e.target.value = "";
+            }}
+          />
+        </label>
+      )}
+      <p className="text-xs text-slate-500">Up to {MAX_ONBOARDING_PHOTOS} photos.</p>
     </div>
   );
 }
