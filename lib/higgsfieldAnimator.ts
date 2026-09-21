@@ -43,8 +43,12 @@ export async function animatePhoto(imageUrl: string): Promise<{ videoUrl: string
 // path, so it should look as good as the model can produce the first time.
 const HERO_TRANSFORMATION_DURATION_SECONDS = 10; // 20 credits on minimax_h3, vs. 10 for the 5s default — see cost note below.
 const HERO_TRANSFORMATION_RESOLUTION = "2K";
+// Target quality bar: a real "QuickSite" competitor ad the user shared —
+// fixed camera angle on one property, morphing through the job's stages
+// (e.g. overgrown -> landscaped -> furnished -> dusk with lighting on),
+// polished real-estate/landscaping-ad quality, no jarring cuts.
 const HERO_TRANSFORMATION_PROMPT =
-  "A smooth, cinematic professional time-lapse transformation showing this construction/renovation project progressing through its stages to completion. Natural, realistic camera movement, consistent lighting and perspective across the transition, no jarring cuts.";
+  "A smooth, cinematic professional transformation of this exact property/job, shot from a single fixed camera angle that stays locked throughout — the framing must not shift or drift. Progress naturally through the supplied stage photos in order, as if time is passing on this one scene: consistent perspective and geometry throughout, with lighting evolving realistically stage to stage (including a shift toward golden-hour or dusk lighting with any exterior/feature lighting switching on if the final stage suggests evening). Photorealistic, polished real-estate/landscaping advertisement quality. No jarring cuts, no camera pans or zooms, no unrelated objects or people appearing.";
 
 /**
  * Generates one transformation video across ordered stage photos (e.g.
