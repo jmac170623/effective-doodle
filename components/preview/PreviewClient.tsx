@@ -156,6 +156,7 @@ function PreviewClientInner({ siteId }: { siteId: string }) {
           generated={site.generated}
           images={site.images ?? []}
           animations={site.animations ?? []}
+          heroStages={site.heroStages ?? []}
         />
       </div>
 

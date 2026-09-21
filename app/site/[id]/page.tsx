@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getSite, listSiteAnimations, listSiteImages } from "@/lib/db";
+import { getSite, listHeroStages, listSiteAnimations, listSiteImages } from "@/lib/db";
 import { SiteRenderer } from "@/components/site/SiteRenderer";
 import { createClient } from "@/lib/supabase/server";
 
@@ -16,9 +16,10 @@ export default async function PublishedSitePage({
     notFound();
   }
 
-  const [images, animations] = await Promise.all([
+  const [images, animations, heroStages] = await Promise.all([
     listSiteImages(supabase, id),
     listSiteAnimations(supabase, id),
+    listHeroStages(supabase, id),
   ]);
 
   return (
@@ -28,6 +29,7 @@ export default async function PublishedSitePage({
       generated={site.generated}
       images={images}
       animations={animations}
+      heroStages={heroStages}
     />
   );
 }

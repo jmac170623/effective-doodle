@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { AnimationStatus, BillingStatus, FeedbackRound, GeneratedSite, OnboardingData, QuoteBreakdown, SiteAnimation, SiteImage, SiteRecord, SiteStatus } from "./types";
+import { AnimationStatus, BillingStatus, FeedbackRound, GeneratedSite, HeroStage, OnboardingData, QuoteBreakdown, SiteAnimation, SiteImage, SiteRecord, SiteStatus } from "./types";
 
 interface SiteRow {
   id: string;
@@ -165,6 +165,52 @@ export async function deleteSiteImage(supabase: SupabaseClient, imageId: string)
   if (error) throw new Error(error.message);
 }
 
+interface HeroStageRow {
+  id: string;
+  site_id: string;
+  url: string;
+  stage_order: number;
+  created_at: string;
+}
+
+function rowToHeroStage(row: HeroStageRow): HeroStage {
+  return {
+    id: row.id,
+    siteId: row.site_id,
+    url: row.url,
+    stageOrder: row.stage_order,
+    createdAt: row.created_at,
+  };
+}
+
+export async function listHeroStages(supabase: SupabaseClient, siteId: string): Promise<HeroStage[]> {
+  const { data, error } = await supabase
+    .from("site_hero_stages")
+    .select("*")
+    .eq("site_id", siteId)
+    .order("stage_order", { ascending: true });
+  if (error) throw new Error(error.message);
+  return (data as HeroStageRow[] | null ?? []).map(rowToHeroStage);
+}
+
+export async function insertHeroStage(
+  supabase: SupabaseClient,
+  stage: { id: string; siteId: string; url: string; stageOrder: number }
+): Promise<void> {
+  const { error } = await supabase.from("site_hero_stages").insert({
+    id: stage.id,
+    site_id: stage.siteId,
+    url: stage.url,
+    stage_order: stage.stageOrder,
+  });
+  if (error) throw new Error(error.message);
+}
+
+export async function deleteHeroStage(supabase: SupabaseClient, stageId: string): Promise<void> {
+  const { error } = await supabase.from("site_hero_stages").delete().eq("id", stageId);
+  if (error) throw new Error(error.message);
+}
+
 export async function insertLead(
   supabase: SupabaseClient,
   lead: { id: string; siteId: string; createdAt: string; name: string; email: string; message: string }
@@ -209,7 +255,8 @@ export async function insertQuote(
 interface SiteAnimationRow {
   id: string;
   site_id: string;
-  image_id: string;
+  image_id: string | null;
+  is_hero: boolean;
   status: AnimationStatus;
   video_url: string | null;
   used_credit: boolean;
@@ -220,7 +267,8 @@ function rowToSiteAnimation(row: SiteAnimationRow): SiteAnimation {
   return {
     id: row.id,
     siteId: row.site_id,
-    imageId: row.image_id,
+    imageId: row.image_id ?? undefined,
+    isHero: row.is_hero,
     status: row.status,
     videoUrl: row.video_url ?? undefined,
     usedCredit: row.used_credit,
@@ -240,12 +288,13 @@ export async function listSiteAnimations(supabase: SupabaseClient, siteId: strin
 
 export async function insertSiteAnimation(
   supabase: SupabaseClient,
-  animation: { id: string; siteId: string; imageId: string; usedCredit: boolean }
+  animation: { id: string; siteId: string; imageId?: string; isHero?: boolean; usedCredit: boolean }
 ): Promise<void> {
   const { error } = await supabase.from("site_animations").insert({
     id: animation.id,
     site_id: animation.siteId,
     image_id: animation.imageId,
+    is_hero: animation.isHero ?? false,
     status: "processing",
     used_credit: animation.usedCredit,
   });

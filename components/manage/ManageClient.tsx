@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { SiteAnimation, SiteImage, SiteRecord, ToneProfileId } from "@/lib/types";
+import { HeroStage, SiteAnimation, SiteImage, SiteRecord, ToneProfileId } from "@/lib/types";
 import { TONE_PROFILES } from "@/lib/toneProfiles";
 import { FREE_ANIMATION_CAP, checkAnimationEligibility } from "@/lib/animationLimits";
 import { createClient } from "@/lib/supabase/client";
@@ -49,6 +49,14 @@ export function ManageClient({ siteId }: { siteId: string }) {
   const [animationErrors, setAnimationErrors] = useState<Record<string, string>>({});
   const [buyingAnimationCredit, setBuyingAnimationCredit] = useState(false);
 
+  const [heroStages, setHeroStages] = useState<HeroStage[]>([]);
+  const [uploadingHeroStage, setUploadingHeroStage] = useState(false);
+  const [heroUploadError, setHeroUploadError] = useState("");
+  const [animatingHero, setAnimatingHero] = useState(false);
+  const [heroAnimationError, setHeroAnimationError] = useState("");
+  const heroFileInputRef = useRef<HTMLInputElement>(null);
+  const MAX_HERO_STAGES = 4;
+
   useEffect(() => {
     let cancelled = false;
     fetch(`/api/sites/${siteId}`)
@@ -77,6 +85,7 @@ export function ManageClient({ siteId }: { siteId: string }) {
         setToneProfile(data.generated.toneProfile);
         setImages(data.images ?? []);
         setAnimations(data.animations ?? []);
+        setHeroStages(data.heroStages ?? []);
       })
       .catch((err) => {
         if (!cancelled) setLoadError(err instanceof Error ? err.message : "Failed to load site.");
@@ -167,6 +176,7 @@ export function ManageClient({ siteId }: { siteId: string }) {
           id: generateId("anim"),
           siteId,
           imageId,
+          isHero: false,
           status: "completed",
           videoUrl: data.videoUrl,
           usedCredit: false,
@@ -193,6 +203,84 @@ export function ManageClient({ siteId }: { siteId: string }) {
     } catch (err) {
       setBuyingAnimationCredit(false);
       setAnimationErrors((prev) => ({ ...prev, _checkout: err instanceof Error ? err.message : "Failed to start checkout." }));
+    }
+  }
+
+  async function handleUploadHeroStage(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file || heroStages.length >= MAX_HERO_STAGES) return;
+    setUploadingHeroStage(true);
+    setHeroUploadError("");
+    try {
+      const supabase = createClient();
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `${siteId}/hero-${generateId("img")}.${ext}`;
+
+      const { error: uploadErr } = await supabase.storage.from("gallery").upload(path, file);
+      if (uploadErr) throw new Error(uploadErr.message);
+
+      const { data: publicUrlData } = supabase.storage.from("gallery").getPublicUrl(path);
+
+      const newStage: HeroStage = {
+        id: generateId("stage"),
+        siteId,
+        url: publicUrlData.publicUrl,
+        stageOrder: heroStages.length,
+        createdAt: new Date().toISOString(),
+      };
+
+      const { error: insertErr } = await supabase.from("site_hero_stages").insert({
+        id: newStage.id,
+        site_id: siteId,
+        url: newStage.url,
+        stage_order: newStage.stageOrder,
+      });
+      if (insertErr) throw new Error(insertErr.message);
+
+      setHeroStages((prev) => [...prev, newStage]);
+    } catch (err) {
+      setHeroUploadError(err instanceof Error ? err.message : "Failed to upload photo.");
+    } finally {
+      setUploadingHeroStage(false);
+      if (heroFileInputRef.current) heroFileInputRef.current.value = "";
+    }
+  }
+
+  async function handleRemoveHeroStage(stage: HeroStage) {
+    const supabase = createClient();
+    const path = stage.url.split("/gallery/")[1];
+    if (path) {
+      await supabase.storage.from("gallery").remove([path]);
+    }
+    await supabase.from("site_hero_stages").delete().eq("id", stage.id);
+    setHeroStages((prev) => prev.filter((s) => s.id !== stage.id));
+  }
+
+  async function handleAnimateHero() {
+    setAnimatingHero(true);
+    setHeroAnimationError("");
+    try {
+      const res = await fetch(`/api/sites/${siteId}/hero-animation`, { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to generate hero animation.");
+      }
+      setAnimations((prev) => [
+        ...prev,
+        {
+          id: generateId("anim"),
+          siteId,
+          isHero: true,
+          status: "completed",
+          videoUrl: data.videoUrl,
+          usedCredit: false,
+          createdAt: new Date().toISOString(),
+        },
+      ]);
+    } catch (err) {
+      setHeroAnimationError(err instanceof Error ? err.message : "Failed to generate hero animation.");
+    } finally {
+      setAnimatingHero(false);
     }
   }
 
@@ -300,6 +388,73 @@ export function ManageClient({ siteId }: { siteId: string }) {
             <button type="button" onClick={addService} className="rounded-lg border border-dashed border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:border-slate-400">
               + Add another service
             </button>
+          </section>
+
+          <section className="space-y-3 border-t border-slate-100 pt-4">
+            <h2 className="text-sm font-semibold text-slate-700">Main display image</h2>
+            <p className="text-xs text-slate-500">
+              The big background image on your homepage. Add a sequence (before → during → after) to generate a
+              transformation animation that plays as visitors scroll.
+            </p>
+            {heroStages.length > 0 && (
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {heroStages.map((stage, index) => (
+                  <div key={stage.id} className="group relative aspect-square overflow-hidden rounded-lg border border-slate-200">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={stage.url} alt="" className="h-full w-full object-cover" />
+                    <span className="absolute left-1 top-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                      {index === 0 ? "Start" : index === heroStages.length - 1 ? "Finished" : `Stage ${index + 1}`}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveHeroStage(stage)}
+                      className="absolute right-1 top-1 rounded-full bg-black/60 px-2 py-0.5 text-xs text-white opacity-0 transition group-hover:opacity-100"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {heroStages.length < MAX_HERO_STAGES && (
+              <input
+                ref={heroFileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleUploadHeroStage}
+                disabled={uploadingHeroStage}
+                className="text-sm"
+              />
+            )}
+            {uploadingHeroStage && <p className="text-xs text-slate-500">Uploading…</p>}
+            {heroUploadError && <p className="text-xs text-red-600">{heroUploadError}</p>}
+
+            {heroStages.length >= 2 && (() => {
+              const heroAnimation = animations.find((a) => a.isHero && a.status !== "failed");
+              const eligibility = checkAnimationEligibility(animations, site.animationCredits);
+              if (heroAnimation?.status === "completed") {
+                return <p className="text-xs font-medium text-emerald-600">Hero animation generated ✓</p>;
+              }
+              if (heroAnimation?.status === "processing") {
+                return <p className="text-xs text-slate-500">Generating…</p>;
+              }
+              return (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleAnimateHero}
+                    disabled={animatingHero || !eligibility.allowed}
+                    className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:border-slate-400 disabled:opacity-50"
+                  >
+                    {animatingHero ? "Generating…" : "Generate Hero Animation"}
+                  </button>
+                  {!eligibility.allowed && (
+                    <p className="text-xs text-slate-500">No free animations or credits left for this site.</p>
+                  )}
+                  {heroAnimationError && <p className="text-xs text-red-600">{heroAnimationError}</p>}
+                </>
+              );
+            })()}
           </section>
 
           <section className="space-y-3 border-t border-slate-100 pt-4">

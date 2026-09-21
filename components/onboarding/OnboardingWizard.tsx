@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { generateId } from "@/lib/idGen";
 
 const MAX_ONBOARDING_PHOTOS = 8;
+const MAX_HERO_STAGES = 4;
 
 interface ServiceDraft {
   name: string;
@@ -74,6 +75,7 @@ export function OnboardingWizard() {
   const [step, setStep] = useState(0);
   const [state, setState] = useState<WizardState>(INITIAL_STATE);
   const [photos, setPhotos] = useState<PhotoDraft[]>([]);
+  const [heroStages, setHeroStages] = useState<PhotoDraft[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [error, setError] = useState("");
@@ -91,6 +93,33 @@ export function OnboardingWizard() {
       const target = prev.find((p) => p.id === id);
       if (target) URL.revokeObjectURL(target.previewUrl);
       return prev.filter((p) => p.id !== id);
+    });
+  }
+
+  function addHeroStages(files: FileList | null) {
+    if (!files) return;
+    const next = Array.from(files)
+      .slice(0, Math.max(0, MAX_HERO_STAGES - heroStages.length))
+      .map((file) => ({ id: generateId("stage"), file, previewUrl: URL.createObjectURL(file) }));
+    setHeroStages((prev) => [...prev, ...next]);
+  }
+
+  function removeHeroStage(id: string) {
+    setHeroStages((prev) => {
+      const target = prev.find((p) => p.id === id);
+      if (target) URL.revokeObjectURL(target.previewUrl);
+      return prev.filter((p) => p.id !== id);
+    });
+  }
+
+  function moveHeroStage(id: string, direction: -1 | 1) {
+    setHeroStages((prev) => {
+      const index = prev.findIndex((p) => p.id === id);
+      const swapWith = index + direction;
+      if (index < 0 || swapWith < 0 || swapWith >= prev.length) return prev;
+      const next = [...prev];
+      [next[index], next[swapWith]] = [next[swapWith], next[index]];
+      return next;
     });
   }
 
@@ -164,11 +193,29 @@ export function OnboardingWizard() {
 
       const data = await res.json();
 
-      if (photos.length > 0) {
+      if (photos.length > 0 || heroStages.length > 0) {
         setUploadingPhotos(true);
         const supabase = createClient();
         // Best-effort: a failed photo upload shouldn't block the site the
         // owner just paid attention to build — skip it and move on.
+        for (let i = 0; i < heroStages.length; i++) {
+          const { file } = heroStages[i];
+          try {
+            const ext = file.name.split(".").pop() || "jpg";
+            const path = `${data.id}/hero-${generateId("img")}.${ext}`;
+            const { error: uploadErr } = await supabase.storage.from("gallery").upload(path, file);
+            if (uploadErr) throw uploadErr;
+            const { data: publicUrlData } = supabase.storage.from("gallery").getPublicUrl(path);
+            await supabase.from("site_hero_stages").insert({
+              id: generateId("stage"),
+              site_id: data.id,
+              url: publicUrlData.publicUrl,
+              stage_order: i,
+            });
+          } catch {
+            // Continue with the remaining stage photos.
+          }
+        }
         for (let i = 0; i < photos.length; i++) {
           const { file } = photos[i];
           try {
@@ -208,7 +255,17 @@ export function OnboardingWizard() {
         {step === 1 && <ContactStep state={state} update={update} />}
         {step === 2 && <ServicesStep state={state} update={update} />}
         {step === 3 && <AboutStep state={state} update={update} />}
-        {step === 4 && <PhotosStep photos={photos} onAdd={addPhotos} onRemove={removePhoto} />}
+        {step === 4 && (
+          <PhotosStep
+            photos={photos}
+            onAdd={addPhotos}
+            onRemove={removePhoto}
+            heroStages={heroStages}
+            onAddHeroStage={addHeroStages}
+            onRemoveHeroStage={removeHeroStage}
+            onMoveHeroStage={moveHeroStage}
+          />
+        )}
         {step === 5 && <QuizStep state={state} update={update} />}
 
         {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
@@ -503,54 +560,135 @@ function PhotosStep({
   photos,
   onAdd,
   onRemove,
+  heroStages,
+  onAddHeroStage,
+  onRemoveHeroStage,
+  onMoveHeroStage,
 }: {
   photos: PhotoDraft[];
   onAdd: (files: FileList | null) => void;
   onRemove: (id: string) => void;
+  heroStages: PhotoDraft[];
+  onAddHeroStage: (files: FileList | null) => void;
+  onRemoveHeroStage: (id: string) => void;
+  onMoveHeroStage: (id: string, direction: -1 | 1) => void;
 }) {
   return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-semibold">Show off your work (optional)</h2>
-      <p className="text-sm text-slate-500">
-        Upload photos of jobs you&apos;ve done and we&apos;ll build them straight into your site&apos;s gallery — no
-        placeholder &quot;add later&quot; slots. You can always add or change photos afterwards too.
-      </p>
+    <div className="space-y-8">
+      <div className="space-y-4">
+        <h2 className="text-lg font-semibold">Your main display image (optional)</h2>
+        <p className="text-sm text-slate-500">
+          This becomes the big background image on your homepage — pick the job you&apos;re most proud of. Upload
+          just the finished shot, or upload it as a sequence (before → during → after) and we can turn it into an
+          animation that plays as visitors scroll down the page, once that&apos;s set up.
+        </p>
 
-      {photos.length > 0 && (
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-          {photos.map((photo) => (
-            <div key={photo.id} className="group relative aspect-square overflow-hidden rounded-lg border border-slate-200">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={photo.previewUrl} alt="" className="h-full w-full object-cover" />
-              <button
-                type="button"
-                onClick={() => onRemove(photo.id)}
-                className="absolute right-1 top-1 rounded-full bg-black/60 px-1.5 py-0.5 text-xs text-white opacity-0 group-hover:opacity-100"
-                aria-label="Remove photo"
-              >
-                ✕
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+        {heroStages.length > 0 && (
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {heroStages.map((stage, index) => (
+              <div key={stage.id} className="group relative aspect-square overflow-hidden rounded-lg border border-slate-200">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={stage.previewUrl} alt="" className="h-full w-full object-cover" />
+                <span className="absolute left-1 top-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                  {index === 0 ? "Start" : index === heroStages.length - 1 ? "Finished" : `Stage ${index + 1}`}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => onRemoveHeroStage(stage.id)}
+                  className="absolute right-1 top-1 rounded-full bg-black/60 px-1.5 py-0.5 text-xs text-white opacity-0 group-hover:opacity-100"
+                  aria-label="Remove"
+                >
+                  ✕
+                </button>
+                <div className="absolute inset-x-1 bottom-1 flex justify-between opacity-0 group-hover:opacity-100">
+                  <button
+                    type="button"
+                    onClick={() => onMoveHeroStage(stage.id, -1)}
+                    disabled={index === 0}
+                    className="rounded bg-black/60 px-1.5 py-0.5 text-xs text-white disabled:opacity-30"
+                    aria-label="Move earlier"
+                  >
+                    ←
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onMoveHeroStage(stage.id, 1)}
+                    disabled={index === heroStages.length - 1}
+                    className="rounded bg-black/60 px-1.5 py-0.5 text-xs text-white disabled:opacity-30"
+                    aria-label="Move later"
+                  >
+                    →
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
-      {photos.length < MAX_ONBOARDING_PHOTOS && (
-        <label className="block cursor-pointer rounded-lg border border-dashed border-slate-300 px-4 py-6 text-center text-sm font-medium text-slate-600 hover:border-slate-400">
-          + Add photos
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            className="hidden"
-            onChange={(e) => {
-              onAdd(e.target.files);
-              e.target.value = "";
-            }}
-          />
-        </label>
-      )}
-      <p className="text-xs text-slate-500">Up to {MAX_ONBOARDING_PHOTOS} photos.</p>
+        {heroStages.length < MAX_HERO_STAGES && (
+          <label className="block cursor-pointer rounded-lg border border-dashed border-slate-300 px-4 py-6 text-center text-sm font-medium text-slate-600 hover:border-slate-400">
+            + Add {heroStages.length > 0 ? "another stage photo" : "your main display image"}
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                onAddHeroStage(e.target.files);
+                e.target.value = "";
+              }}
+            />
+          </label>
+        )}
+        <p className="text-xs text-slate-500">
+          Up to {MAX_HERO_STAGES} photos, in order. Add at least 2 (e.g. before and after) if you want the
+          scroll animation later — one photo alone just becomes a static background image.
+        </p>
+      </div>
+
+      <div className="space-y-4 border-t border-slate-100 pt-6">
+        <h2 className="text-lg font-semibold">More photos for your gallery (optional)</h2>
+        <p className="text-sm text-slate-500">
+          Upload other photos of jobs you&apos;ve done and we&apos;ll build them straight into your site&apos;s
+          gallery — no placeholder &quot;add later&quot; slots. You can always add or change photos afterwards too.
+        </p>
+
+        {photos.length > 0 && (
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+            {photos.map((photo) => (
+              <div key={photo.id} className="group relative aspect-square overflow-hidden rounded-lg border border-slate-200">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={photo.previewUrl} alt="" className="h-full w-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => onRemove(photo.id)}
+                  className="absolute right-1 top-1 rounded-full bg-black/60 px-1.5 py-0.5 text-xs text-white opacity-0 group-hover:opacity-100"
+                  aria-label="Remove photo"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {photos.length < MAX_ONBOARDING_PHOTOS && (
+          <label className="block cursor-pointer rounded-lg border border-dashed border-slate-300 px-4 py-6 text-center text-sm font-medium text-slate-600 hover:border-slate-400">
+            + Add photos
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                onAdd(e.target.files);
+                e.target.value = "";
+              }}
+            />
+          </label>
+        )}
+        <p className="text-xs text-slate-500">Up to {MAX_ONBOARDING_PHOTOS} photos.</p>
+      </div>
     </div>
   );
 }

@@ -53,6 +53,21 @@ style of the generated site.
   image. The actual Higgsfield API call (`lib/higgsfieldAnimator.ts`) is a
   documented placeholder — everything works end-to-end except the animation
   itself, which needs a real `HIGGSFIELD_API_KEY` and API docs to implement.
+- **Hero "main display image" + staged transformation (UI wired, backend not
+  yet live)** — a dedicated onboarding question (and matching manage
+  dashboard section) collects ordered "stage" photos (before/during/after)
+  for one showcase job, stored in `site_hero_stages`. The last stage renders
+  full-bleed as the homepage's hero background. `app/api/sites/[id]/hero-
+  animation` uses the same animation cap/credits as gallery photos to
+  generate one transformation video across the stages
+  (`lib/higgsfieldAnimator.ts#animateHeroTransformation` — same
+  not-yet-implemented placeholder). Once a video exists, `HeroScrubVideo`
+  binds its playback position to scroll progress, so scrolling visually
+  advances through the job's phases instead of autoplaying. Checked live
+  against Higgsfield's model catalog: `minimax_h3` (start/end-frame
+  transformation, 2K, 5s) is both the cheapest option and the one that
+  supports this — 10 credits per generation, so a $19/mo Starter plan (270
+  credits) covers ~27 animations/month.
 
 Out of scope for now (follow-up work): the full post-launch content-editing
 dashboard. The data model (`lib/types.ts`) leaves room for it — every site
@@ -113,7 +128,7 @@ through the questionnaire.
 
 ## Setting up Stripe billing
 
-1. **Run the new migrations** (`0002_materials.sql` through `0007_edit_credits.sql`,
+1. **Run the new migrations** (`0002_materials.sql` through `0008_hero_stages.sql`,
    in order, in the Supabase SQL editor) if you haven't already.
 2. **Create a Price in Stripe**: Dashboard → Product catalog → add a product
    (e.g. "Site Retainer") with a recurring monthly price. Copy its Price ID

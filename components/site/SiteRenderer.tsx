@@ -1,6 +1,7 @@
-import { OnboardingData, GeneratedSite, SiteAnimation, SiteImage } from "@/lib/types";
+import { OnboardingData, GeneratedSite, HeroStage, SiteAnimation, SiteImage } from "@/lib/types";
 import { ContactForm } from "./ContactForm";
 import { ScrollReveal } from "./ScrollReveal";
+import { HeroScrubVideo } from "./HeroScrubVideo";
 import { QuoteCalculator } from "./QuoteCalculator";
 import { matchTradeCategory, defaultDayRate } from "@/lib/quoteCategories";
 
@@ -10,9 +11,11 @@ interface SiteRendererProps {
   generated: GeneratedSite;
   images?: SiteImage[];
   animations?: SiteAnimation[];
+  heroStages?: HeroStage[];
 }
 
-export function SiteRenderer({ siteId, onboarding, generated, images = [], animations = [] }: SiteRendererProps) {
+export function SiteRenderer({ siteId, onboarding, generated, images = [], animations = [], heroStages = [] }: SiteRendererProps) {
+  const heroAnimation = animations.find((a) => a.isHero && a.status === "completed" && a.videoUrl);
   const { style, copy, gallery, emphasis } = generated;
 
   const cssVars = {
@@ -43,7 +46,12 @@ export function SiteRenderer({ siteId, onboarding, generated, images = [], anima
     >
       <Nav businessName={onboarding.businessName} phone={onboarding.phone} />
 
-      <Hero copy={copy} sectionGapClass={sectionGapClass} />
+      <Hero
+        copy={copy}
+        heroStages={heroStages}
+        heroVideoUrl={heroAnimation?.videoUrl}
+        sectionGapClass={sectionGapClass}
+      />
 
       <div className="flex flex-col">
         <div style={{ order: 10 - emphasis.services * 5 }}>
@@ -110,25 +118,58 @@ function Nav({ businessName, phone }: { businessName: string; phone: string }) {
   );
 }
 
-function Hero({ copy, sectionGapClass }: { copy: GeneratedSite["copy"]; sectionGapClass: string }) {
+function Hero({
+  copy,
+  heroStages,
+  heroVideoUrl,
+  sectionGapClass,
+}: {
+  copy: GeneratedSite["copy"];
+  heroStages: HeroStage[];
+  heroVideoUrl?: string;
+  sectionGapClass: string;
+}) {
+  // The last stage (e.g. "after"/finished) is the compelling shot to lead
+  // with; earlier stages only come into play once the transformation video
+  // exists, at which point the whole sequence plays as the visitor scrolls.
+  const backgroundImageUrl = heroStages.length > 0 ? heroStages[heroStages.length - 1].url : undefined;
+
   return (
-    <section className={`px-6 text-center ${sectionGapClass}`}>
-      <h1
-        className="mx-auto max-w-3xl text-4xl font-extrabold leading-tight sm:text-5xl"
-        style={{ fontFamily: "var(--font-heading)" }}
-      >
-        {copy.heroHeadline}
-      </h1>
-      <p className="mx-auto mt-4 max-w-xl text-lg" style={{ color: "var(--color-muted)" }}>
-        {copy.heroSubheadline}
-      </p>
-      <a
-        href="#contact"
-        className="mt-8 inline-block rounded-[var(--radius)] px-8 py-3 text-base font-semibold text-white shadow-sm transition hover:opacity-90"
-        style={{ backgroundColor: "var(--color-primary)" }}
-      >
-        {copy.heroCta}
-      </a>
+    <section
+      className={`relative overflow-hidden px-6 text-center ${sectionGapClass} ${
+        backgroundImageUrl ? "flex min-h-[70vh] flex-col items-center justify-center" : ""
+      }`}
+    >
+      {backgroundImageUrl &&
+        (heroVideoUrl ? (
+          <HeroScrubVideo src={heroVideoUrl} posterUrl={backgroundImageUrl} className="absolute inset-0" />
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={backgroundImageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        ))}
+      {backgroundImageUrl && <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10" />}
+
+      <div className="relative">
+        <h1
+          className={`mx-auto max-w-3xl text-4xl font-extrabold leading-tight sm:text-5xl ${backgroundImageUrl ? "text-white" : ""}`}
+          style={{ fontFamily: "var(--font-heading)" }}
+        >
+          {copy.heroHeadline}
+        </h1>
+        <p
+          className={`mx-auto mt-4 max-w-xl text-lg ${backgroundImageUrl ? "text-white/90" : ""}`}
+          style={backgroundImageUrl ? undefined : { color: "var(--color-muted)" }}
+        >
+          {copy.heroSubheadline}
+        </p>
+        <a
+          href="#contact"
+          className="mt-8 inline-block rounded-[var(--radius)] px-8 py-3 text-base font-semibold text-white shadow-sm transition hover:opacity-90"
+          style={{ backgroundColor: "var(--color-primary)" }}
+        >
+          {copy.heroCta}
+        </a>
+      </div>
     </section>
   );
 }

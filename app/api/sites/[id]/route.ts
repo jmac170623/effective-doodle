@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSite, listSiteAnimations, listSiteImages, updateSite } from "@/lib/db";
+import { getSite, listHeroStages, listSiteAnimations, listSiteImages, updateSite } from "@/lib/db";
 import { createClient } from "@/lib/supabase/server";
 import { validateOnboardingPatch } from "@/lib/validateOnboarding";
 import { generateSite } from "@/lib/siteGenerator";
@@ -16,11 +16,12 @@ export async function GET(
   if (!site) {
     return NextResponse.json({ error: "Site not found." }, { status: 404 });
   }
-  const [images, animations] = await Promise.all([
+  const [images, animations, heroStages] = await Promise.all([
     listSiteImages(supabase, id),
     listSiteAnimations(supabase, id),
+    listHeroStages(supabase, id),
   ]);
-  return NextResponse.json({ ...site, images, animations });
+  return NextResponse.json({ ...site, images, animations, heroStages });
 }
 
 const VALID_TONES: ToneProfileId[] = ["friendly", "no-nonsense", "premium", "approachable"];

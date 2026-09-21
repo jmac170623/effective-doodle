@@ -155,24 +155,41 @@ export interface SiteRecord {
   animationCredits: number;
   // Paid AI-edit credits beyond the free-per-site cap (see lib/editLimits.ts).
   editCredits: number;
-  // Attached by API routes that fetch it separately (site_images and
-  // site_animations are their own tables) — absent unless the caller
-  // populated them.
+  // Attached by API routes that fetch it separately (site_images,
+  // site_animations and site_hero_stages are their own tables) — absent
+  // unless the caller populated them.
   images?: SiteImage[];
   animations?: SiteAnimation[];
+  heroStages?: HeroStage[];
+}
+
+// ---- Hero "main display image" + staged transformation ----
+// Ordered before/during/after photos of one job, used both as the
+// homepage's full-bleed background (the last stage) and as the input to a
+// Higgsfield transformation video that morphs between them.
+
+export interface HeroStage {
+  id: string;
+  siteId: string;
+  url: string;
+  stageOrder: number;
+  createdAt: string;
 }
 
 // ---- Higgsfield photo-to-video animations ----
 // Each site gets a small number of free animations (see FREE_ANIMATION_CAP
 // in lib/animationLimits.ts); beyond that, animating a photo consumes a
-// purchased credit (one-time Stripe payment) instead.
+// purchased credit (one-time Stripe payment) instead. A hero transformation
+// (isHero: true) animates the ordered HeroStage photos instead of a single
+// gallery photo, so imageId is absent for those rows.
 
 export type AnimationStatus = "processing" | "completed" | "failed";
 
 export interface SiteAnimation {
   id: string;
   siteId: string;
-  imageId: string;
+  imageId?: string;
+  isHero: boolean;
   status: AnimationStatus;
   videoUrl?: string;
   usedCredit: boolean;
