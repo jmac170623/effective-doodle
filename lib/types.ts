@@ -130,6 +130,9 @@ export interface FeedbackRound {
   createdAt: string;
   message: string;
   adjustmentsSummary: string[];
+  // Whether this round consumed a paid edit credit rather than a free one
+  // (see lib/editLimits.ts). Absent on rounds created before this field existed.
+  usedCredit?: boolean;
 }
 
 export type SiteStatus = "draft" | "published";
@@ -150,6 +153,8 @@ export interface SiteRecord {
   stripeSubscriptionId?: string;
   // Paid animation credits beyond the free-per-site cap (see lib/animationLimits.ts).
   animationCredits: number;
+  // Paid AI-edit credits beyond the free-per-site cap (see lib/editLimits.ts).
+  editCredits: number;
   // Attached by API routes that fetch it separately (site_images is its own
   // table, not a column on sites) — absent unless the caller populated it.
   images?: SiteImage[];

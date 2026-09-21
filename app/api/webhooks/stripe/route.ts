@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { activateSiteBilling, addAnimationCredits, updateBillingStatusBySubscription } from "@/lib/db";
+import { activateSiteBilling, addAnimationCredits, addEditCredits, updateBillingStatusBySubscription } from "@/lib/db";
 import { BillingStatus } from "@/lib/types";
 
 export async function POST(request: NextRequest) {
@@ -31,6 +31,14 @@ export async function POST(request: NextRequest) {
         const credits = Number.parseInt(session.metadata.credits ?? "1", 10);
         if (siteId && credits > 0) {
           await addAnimationCredits(supabase, siteId, credits);
+        }
+        break;
+      }
+
+      if (session.mode === "payment" && session.metadata?.type === "edit_credit") {
+        const credits = Number.parseInt(session.metadata.credits ?? "1", 10);
+        if (siteId && credits > 0) {
+          await addEditCredits(supabase, siteId, credits);
         }
         break;
       }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSite, updateSite } from "@/lib/db";
+import { consumeEditCredit, getSite, updateSite } from "@/lib/db";
 import { applyFeedback } from "@/lib/feedback";
+import { checkEditEligibility } from "@/lib/editLimits";
 import { generateId } from "@/lib/idGen";
 import { FeedbackRound } from "@/lib/types";
 import { createClient } from "@/lib/supabase/server";
@@ -32,6 +33,15 @@ export async function POST(
     return NextResponse.json({ error: "Feedback message is required." }, { status: 400 });
   }
 
+  // Each edit is a real Claude API call, so free ones are capped per site.
+  const eligibility = checkEditEligibility(site.feedbackHistory.length, site.editCredits);
+  if (!eligibility.allowed) {
+    return NextResponse.json(
+      { error: "You've used all your free edits for this site. Buy more to keep editing.", editCapReached: true },
+      { status: 402 }
+    );
+  }
+
   const { generated, toneProfile, summary } = await applyFeedback(
     site.onboarding,
     site.generated,
@@ -44,6 +54,7 @@ export async function POST(
     createdAt: new Date().toISOString(),
     message,
     adjustmentsSummary: summary,
+    usedCredit: eligibility.usesCredit,
   };
 
   const updated = {
@@ -54,6 +65,9 @@ export async function POST(
   };
 
   await updateSite(supabase, updated);
+  if (eligibility.usesCredit) {
+    await consumeEditCredit(supabase, id, site.editCredits);
+  }
 
   return NextResponse.json(updated);
 }

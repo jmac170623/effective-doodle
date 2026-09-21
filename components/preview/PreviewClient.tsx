@@ -17,6 +17,7 @@ function PreviewClientInner({ siteId }: { siteId: string }) {
   const pollAttempts = useRef(0);
 
   const checkoutResult = searchParams.get("checkout");
+  const editCheckoutResult = searchParams.get("editCheckout");
 
   async function loadSite() {
     const res = await fetch(`/api/sites/${siteId}`);
@@ -136,6 +137,16 @@ function PreviewClientInner({ siteId }: { siteId: string }) {
             Payment received — activating your site…
           </p>
         )}
+        {editCheckoutResult === "success" && (
+          <p className="mx-auto mt-2 max-w-5xl text-sm text-emerald-600">
+            Payment received — your extra edit credit will appear below in a moment (refresh if it&apos;s not there yet).
+          </p>
+        )}
+        {editCheckoutResult === "cancelled" && (
+          <p className="mx-auto mt-2 max-w-5xl text-sm text-amber-600">
+            Checkout was cancelled — no charge was made.
+          </p>
+        )}
       </div>
 
       <div className="mx-auto max-w-5xl border-x border-slate-200 bg-white shadow-sm">
@@ -143,7 +154,12 @@ function PreviewClientInner({ siteId }: { siteId: string }) {
       </div>
 
       <div className="mx-auto max-w-5xl px-6 py-10">
-        <FeedbackPanel siteId={siteId} feedbackHistory={site.feedbackHistory} onUpdated={setSite} />
+        <FeedbackPanel
+          siteId={siteId}
+          feedbackHistory={site.feedbackHistory}
+          editCredits={site.editCredits}
+          onUpdated={setSite}
+        />
       </div>
     </div>
   );

@@ -14,6 +14,7 @@ interface SiteRow {
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
   animation_credits: number;
+  edit_credits: number;
 }
 
 function rowToRecord(row: SiteRow): SiteRecord {
@@ -30,6 +31,7 @@ function rowToRecord(row: SiteRow): SiteRecord {
     stripeCustomerId: row.stripe_customer_id ?? undefined,
     stripeSubscriptionId: row.stripe_subscription_id ?? undefined,
     animationCredits: row.animation_credits,
+    editCredits: row.edit_credits,
   };
 }
 
@@ -278,5 +280,22 @@ export async function consumeAnimationCredit(supabase: SupabaseClient, siteId: s
 // one-time animation-credit payment.
 export async function addAnimationCredits(supabase: SupabaseClient, siteId: string, count: number): Promise<void> {
   const { error } = await supabase.rpc("increment_animation_credits", { p_site_id: siteId, p_count: count });
+  if (error) throw new Error(error.message);
+}
+
+// Consumes one purchased AI-edit credit — called when a feedback edit is
+// applied past the free cap (see lib/editLimits.ts).
+export async function consumeEditCredit(supabase: SupabaseClient, siteId: string, currentCredits: number): Promise<void> {
+  const { error } = await supabase
+    .from("sites")
+    .update({ edit_credits: Math.max(0, currentCredits - 1) })
+    .eq("id", siteId);
+  if (error) throw new Error(error.message);
+}
+
+// Called by the Stripe webhook (service-role client) after a successful
+// one-time edit-credit payment.
+export async function addEditCredits(supabase: SupabaseClient, siteId: string, count: number): Promise<void> {
+  const { error } = await supabase.rpc("increment_edit_credits", { p_site_id: siteId, p_count: count });
   if (error) throw new Error(error.message);
 }

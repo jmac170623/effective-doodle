@@ -1,6 +1,7 @@
 import { generateSite } from "./siteGenerator";
 import { STYLE_TOKENS } from "./styleTokens";
-import { GeneratedSite, OnboardingData, ToneProfileId } from "./types";
+import { FeedbackPatch, interpretFeedbackWithAI } from "./aiFeedback";
+import { GeneratedSite, OnboardingData, SectionEmphasis, ToneProfileId } from "./types";
 
 const TONE_SHIFT_WARMER: ToneProfileId[] = ["friendly", "approachable"];
 const TONE_SHIFT_SERIOUS: ToneProfileId[] = ["premium", "no-nonsense"];
@@ -31,7 +32,78 @@ interface FeedbackResult {
   summary: string[];
 }
 
+/**
+ * Interprets free-text feedback and applies it to the site. Tries the
+ * AI interpreter first (see lib/aiFeedback.ts) — it understands feedback
+ * far more broadly than keyword matching ever could. Falls back to the
+ * rule-based adjuster below if no ANTHROPIC_API_KEY is configured or the
+ * AI call fails, so feedback never just silently does nothing.
+ */
 export async function applyFeedback(
+  onboarding: OnboardingData,
+  currentGenerated: GeneratedSite,
+  currentTone: ToneProfileId,
+  message: string
+): Promise<FeedbackResult> {
+  const patch = await interpretFeedbackWithAI(onboarding, currentGenerated, currentTone, message);
+  if (patch) {
+    return applyFeedbackPatch(onboarding, currentGenerated, currentTone, patch);
+  }
+  return applyFeedbackWithRules(onboarding, currentGenerated, currentTone, message);
+}
+
+function adjustEmphasis(value: number, change: "increase" | "decrease" | "unchanged"): number {
+  if (change === "increase") return value + 1;
+  if (change === "decrease") return Math.max(0, value - 1);
+  return value;
+}
+
+async function applyFeedbackPatch(
+  onboarding: OnboardingData,
+  currentGenerated: GeneratedSite,
+  currentTone: ToneProfileId,
+  patch: FeedbackPatch
+): Promise<FeedbackResult> {
+  const nextTone = patch.toneProfile !== "unchanged" ? patch.toneProfile : currentTone;
+
+  const base =
+    nextTone !== currentTone
+      ? await generateSite(onboarding, nextTone)
+      : { ...currentGenerated, style: { ...currentGenerated.style }, copy: { ...currentGenerated.copy } };
+
+  const copy = { ...base.copy };
+  for (const [field, value] of Object.entries(patch.copy)) {
+    if (value !== "unchanged") {
+      (copy as Record<string, string>)[field] = value;
+    }
+  }
+
+  const style = { ...base.style };
+  if (patch.colorPrimary !== "unchanged" && /^#[0-9a-fA-F]{3,8}$/.test(patch.colorPrimary)) {
+    style.colorPrimary = patch.colorPrimary;
+  }
+  if (patch.colorAccent !== "unchanged" && /^#[0-9a-fA-F]{3,8}$/.test(patch.colorAccent)) {
+    style.colorAccent = patch.colorAccent;
+  }
+  if (patch.motion !== "unchanged") {
+    style.motion = patch.motion;
+  }
+
+  const emphasis: SectionEmphasis = {
+    gallery: adjustEmphasis(base.emphasis.gallery, patch.galleryEmphasis),
+    services: adjustEmphasis(base.emphasis.services, patch.servicesEmphasis),
+    about: adjustEmphasis(base.emphasis.about, patch.aboutEmphasis),
+  };
+
+  const generated: GeneratedSite = { ...base, copy, style, emphasis };
+  const summary = patch.summary.length > 0
+    ? patch.summary
+    : ["Noted your feedback — no automatic changes matched, but it's saved for the next revision."];
+
+  return { generated, toneProfile: nextTone, summary };
+}
+
+async function applyFeedbackWithRules(
   onboarding: OnboardingData,
   currentGenerated: GeneratedSite,
   currentTone: ToneProfileId,

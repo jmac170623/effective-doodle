@@ -23,10 +23,14 @@ style of the generated site.
   filling in the same template. If `ANTHROPIC_API_KEY` isn't set or the call
   fails for any reason, generation falls back to the deterministic template
   copy automatically.
-- **Preview + feedback loop** (`/preview/[id]`, owner-only) — renders the
+- **Preview + AI feedback loop** (`/preview/[id]`, owner-only) — renders the
   generated site and lets the owner describe what they don't like in plain
-  English; a rule-based adjuster (`lib/feedback.ts`) shifts tone, colors, copy
-  length, or section emphasis in response, across multiple rounds.
+  English. Claude (`lib/aiFeedback.ts`) interprets the feedback and decides
+  what to change — tone, colors, motion, section emphasis, or specific copy
+  fields — across multiple rounds. Each site gets 5 free AI edits, then a
+  one-time Stripe payment buys more (`lib/editLimits.ts`). If
+  `ANTHROPIC_API_KEY` isn't set or the call fails, falls back to a rule-based
+  keyword adjuster (`lib/feedback.ts`) so feedback never just does nothing.
 - **My Sites** (`/sites`) — every account's dashboard-lite: lists their sites
   (draft or published) with links back into preview or the live page.
 - **Instant quote calculator** — every generated site gets a "Get an Instant
@@ -100,21 +104,26 @@ through the questionnaire.
 
 ## Setting up Stripe billing
 
-1. **Run the new migrations** (`0002_materials.sql`, `0003_quotes.sql`,
-   `0004_billing.sql` — in that order, in the Supabase SQL editor) if you
-   haven't already.
+1. **Run the new migrations** (`0002_materials.sql` through `0007_edit_credits.sql`,
+   in order, in the Supabase SQL editor) if you haven't already.
 2. **Create a Price in Stripe**: Dashboard → Product catalog → add a product
    (e.g. "Site Retainer") with a recurring monthly price. Copy its Price ID
    (`price_...`).
-3. **Get your Stripe secret key**: Dashboard → Developers → API keys → copy
+3. **(Optional) Create two more one-off Prices** for the pay-as-you-go
+   credits: "Extra AI Edit" and "Extra Animation" (each a one-time price, not
+   recurring). Only needed once someone actually hits the free caps
+   (`lib/editLimits.ts`, `lib/animationLimits.ts`) — safe to skip for now.
+4. **Get your Stripe secret key**: Dashboard → Developers → API keys → copy
    the **Secret key** (`sk_...`).
-4. **Get your Supabase service-role key**: Supabase → Project Settings → API
+5. **Get your Supabase service-role key**: Supabase → Project Settings → API
    → copy the **service_role** secret (not the anon/publishable one — this
    one bypasses Row Level Security and must never be exposed client-side).
-5. **Add four env vars** (locally in `.env.local`, and in Vercel → Settings →
+6. **Add the env vars** (locally in `.env.local`, and in Vercel → Settings →
    Environment Variables): `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`,
-   `SUPABASE_SERVICE_ROLE_KEY`, and `STRIPE_WEBHOOK_SECRET` (from step 6).
-6. **Register the webhook**: Stripe Dashboard → Developers → Webhooks → add
+   `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_WEBHOOK_SECRET` (from the next step),
+   and — if you created them in step 3 — `STRIPE_EDIT_PRICE_ID` and
+   `STRIPE_ANIMATION_PRICE_ID`.
+7. **Register the webhook**: Stripe Dashboard → Developers → Webhooks → add
    endpoint → URL `https://<your-domain>/api/webhooks/stripe` → listen for
    `checkout.session.completed`, `customer.subscription.updated`, and
    `customer.subscription.deleted`. Copy the endpoint's **Signing secret**

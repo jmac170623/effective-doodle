@@ -1,26 +1,34 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { FREE_EDIT_CAP, checkEditEligibility } from "@/lib/editLimits";
 import { FeedbackRound, SiteRecord } from "@/lib/types";
 
 export function FeedbackPanel({
   siteId,
   feedbackHistory,
+  editCredits,
   onUpdated,
 }: {
   siteId: string;
   feedbackHistory: FeedbackRound[];
+  editCredits: number;
   onUpdated: (site: SiteRecord) => void;
 }) {
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [buyingCredit, setBuyingCredit] = useState(false);
   const [error, setError] = useState("");
+  const [capReached, setCapReached] = useState(false);
+
+  const eligibility = checkEditEligibility(feedbackHistory.length, editCredits);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!message.trim()) return;
     setSubmitting(true);
     setError("");
+    setCapReached(false);
     try {
       const res = await fetch(`/api/sites/${siteId}/feedback`, {
         method: "POST",
@@ -29,6 +37,7 @@ export function FeedbackPanel({
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
+        if (data.editCapReached) setCapReached(true);
         throw new Error(data.error || "Failed to apply feedback.");
       }
       const updated = await res.json();
@@ -41,29 +50,71 @@ export function FeedbackPanel({
     }
   }
 
+  async function handleBuyCredit() {
+    setBuyingCredit(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/sites/${siteId}/edits/checkout`, { method: "POST" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to start checkout.");
+      }
+      const { url } = await res.json();
+      window.location.href = url;
+    } catch (err) {
+      setBuyingCredit(false);
+      setError(err instanceof Error ? err.message : "Failed to start checkout.");
+    }
+  }
+
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <h2 className="text-lg font-semibold text-slate-900">Anything you don&apos;t like or want changed?</h2>
       <p className="mt-1 text-sm text-slate-500">
-        Tell us in plain English — e.g. &quot;make it feel more professional&quot;, &quot;too much blue&quot;, or &quot;shorten the about section&quot;. We&apos;ll update the preview above.
+        Tell us in plain English — e.g. &quot;make it feel more professional&quot;, &quot;too much blue&quot;, or &quot;shorten the about section&quot;. Our AI will figure out what to change and update the preview above.
       </p>
-      <form onSubmit={handleSubmit} className="mt-4 space-y-3">
-        <textarea
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
-          rows={3}
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="Type your feedback here…"
-        />
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <button
-          type="submit"
-          disabled={submitting || !message.trim()}
-          className="rounded-lg bg-slate-900 px-5 py-2 text-sm font-semibold text-white disabled:opacity-40"
-        >
-          {submitting ? "Updating…" : "Update My Site"}
-        </button>
-      </form>
+      <p className="mt-1 text-xs text-slate-400">
+        {eligibility.allowed
+          ? eligibility.usesCredit
+            ? "Free edits used up — this edit will use a purchased credit."
+            : `${eligibility.freeRemaining} of ${FREE_EDIT_CAP} free edits remaining.`
+          : "You've used all your free edits and have no credits left."}
+      </p>
+
+      {capReached ? (
+        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <p className="text-sm font-medium text-amber-900">
+            You&apos;ve used all {FREE_EDIT_CAP} free edits for this site.
+          </p>
+          <p className="mt-1 text-sm text-amber-800">Buy one more credit to keep editing.</p>
+          <button
+            type="button"
+            onClick={handleBuyCredit}
+            disabled={buyingCredit}
+            className="mt-3 rounded-lg bg-slate-900 px-5 py-2 text-sm font-semibold text-white disabled:opacity-40"
+          >
+            {buyingCredit ? "Redirecting to checkout…" : "Buy 1 More Edit"}
+          </button>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="mt-4 space-y-3">
+          <textarea
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
+            rows={3}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Type your feedback here…"
+          />
+          {error && <p className="text-sm text-red-600">{error}</p>}
+          <button
+            type="submit"
+            disabled={submitting || !message.trim()}
+            className="rounded-lg bg-slate-900 px-5 py-2 text-sm font-semibold text-white disabled:opacity-40"
+          >
+            {submitting ? "Updating…" : "Update My Site"}
+          </button>
+        </form>
+      )}
 
       {feedbackHistory.length > 0 && (
         <div className="mt-6 border-t border-slate-100 pt-4">
