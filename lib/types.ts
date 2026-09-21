@@ -201,9 +201,19 @@ export interface QuoteLineItem {
   merchantLabel: string;
 }
 
+// A customer-entered area (e.g. "Kitchen", "Hallway") — the quote tool sums
+// these into a total area rather than asking the customer to pick a
+// materials quantity or a coarse small/medium/large size themselves.
+export interface QuoteSection {
+  id: string;
+  label: string;
+  areaSqm: number;
+}
+
 export interface QuoteBreakdown {
   category: TradeCategory;
-  jobSize: JobSize;
+  sections: QuoteSection[];
+  areaSqm: number;
   lineItems: QuoteLineItem[];
   materialsTotal: number;
   labourDays: number;

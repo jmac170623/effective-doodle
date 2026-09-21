@@ -5,10 +5,24 @@ import { buildQuoteBreakdown } from "@/lib/quoteEngine";
 import { defaultDayRate } from "@/lib/quoteCategories";
 import { generateId } from "@/lib/idGen";
 import { createClient } from "@/lib/supabase/server";
-import { JobSize, TradeCategory } from "@/lib/types";
+import { QuoteSection, TradeCategory } from "@/lib/types";
 
 const VALID_CATEGORIES: TradeCategory[] = ["plumbing", "electrical", "tiling", "painting", "general"];
-const VALID_JOB_SIZES: JobSize[] = ["small", "medium", "large"];
+
+function parseSections(input: unknown): QuoteSection[] | null {
+  if (!Array.isArray(input)) return null;
+  const sections: QuoteSection[] = [];
+  for (const raw of input) {
+    const areaSqm = Number(raw?.areaSqm);
+    if (!Number.isFinite(areaSqm) || areaSqm < 0) return null;
+    sections.push({
+      id: typeof raw?.id === "string" && raw.id ? raw.id : generateId("section"),
+      label: typeof raw?.label === "string" ? raw.label.trim().slice(0, 60) : "",
+      areaSqm,
+    });
+  }
+  return sections;
+}
 
 export async function POST(
   request: NextRequest,
@@ -22,8 +36,7 @@ export async function POST(
   const customerPhone = typeof body?.customerPhone === "string" ? body.customerPhone.trim() : undefined;
   const serviceName = typeof body?.serviceName === "string" ? body.serviceName.trim() : "";
   const category = body?.category as TradeCategory;
-  const jobSize = body?.jobSize as JobSize;
-  const quantities = (body?.quantities && typeof body.quantities === "object" ? body.quantities : {}) as Record<string, number>;
+  const sections = parseSections(body?.sections);
 
   if (!customerName || !customerEmail || !serviceName) {
     return NextResponse.json({ error: "Name, email and service are required." }, { status: 400 });
@@ -31,8 +44,8 @@ export async function POST(
   if (!VALID_CATEGORIES.includes(category)) {
     return NextResponse.json({ error: "Invalid category." }, { status: 400 });
   }
-  if (!VALID_JOB_SIZES.includes(jobSize)) {
-    return NextResponse.json({ error: "Invalid job size." }, { status: 400 });
+  if (!sections || sections.length === 0 || sections.every((s) => s.areaSqm <= 0)) {
+    return NextResponse.json({ error: "Enter at least one area to quote." }, { status: 400 });
   }
 
   const supabase = await createClient();
@@ -43,9 +56,9 @@ export async function POST(
 
   const dayRate = site.onboarding.dayRate ?? defaultDayRate(category);
   const materials = await getMaterialsByCategory(supabase, category);
-  // Recomputed server-side from the shared catalog rather than trusting
-  // client-submitted totals — the breakdown is what the tradesperson sees.
-  const breakdown = buildQuoteBreakdown(category, jobSize, materials, quantities, dayRate);
+  // Recomputed server-side from the shared catalog and the customer's own
+  // entered areas rather than trusting a client-submitted total.
+  const breakdown = buildQuoteBreakdown(category, sections, materials, dayRate);
 
   await insertQuote(supabase, {
     id: generateId("quote"),

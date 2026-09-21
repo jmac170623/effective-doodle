@@ -251,10 +251,10 @@ function QuoteSection({
     <section id="quote" className={`px-6 ${sectionGapClass}`}>
       <div className="mx-auto max-w-5xl">
         <h2 className="text-2xl font-bold sm:text-3xl" style={{ fontFamily: "var(--font-heading)" }}>
-          Get an Instant Quote
+          Get a Quote
         </h2>
         <p className="mt-2 max-w-xl" style={{ color: "var(--color-muted)" }}>
-          Pick a service and job size for a real, itemized estimate — no waiting around for a callback.
+          Enter the size of each area for a real, itemized estimate — no waiting around for a callback.
         </p>
         <div className="mt-8">
           <QuoteCalculator
