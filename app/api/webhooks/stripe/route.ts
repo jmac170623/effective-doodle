@@ -1,9 +1,78 @@
 import { NextRequest, NextResponse } from "next/server";
 import type Stripe from "stripe";
-import { getStripe } from "@/lib/stripe";
+import { getStripe, refundDomainPurchase } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { activateSiteBilling, addAnimationCredits, addEditCredits, updateBillingStatusBySubscription } from "@/lib/db";
+import {
+  activateSiteBilling,
+  addAnimationCredits,
+  addEditCredits,
+  getDomainPurchase,
+  updateBillingStatusBySubscription,
+  updateDomainPurchaseStatus,
+  updateSiteDomain,
+} from "@/lib/db";
+import { addDomainToProject, buyDomain } from "@/lib/vercelDomains";
 import { BillingStatus } from "@/lib/types";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+// Buys the domain for real via Vercel's registrar (the customer has
+// already paid at this point) and attaches it to the project. If the
+// Vercel purchase fails after a successful Stripe charge, refunds the
+// customer automatically rather than leaving them paying for nothing —
+// this is the one place real money can be lost if it's ever removed.
+async function handleDomainPurchase(
+  supabase: SupabaseClient,
+  domainPurchaseId: string,
+  paymentIntentId: string | undefined
+): Promise<void> {
+  const purchase = await getDomainPurchase(supabase, domainPurchaseId);
+  // Already handled (webhook retry) or unknown — idempotent no-op.
+  if (!purchase || purchase.status !== "pending_payment") return;
+
+  await updateDomainPurchaseStatus(supabase, {
+    id: domainPurchaseId,
+    status: "purchasing",
+    stripePaymentIntentId: paymentIntentId,
+  });
+
+  try {
+    const order = await buyDomain({
+      domain: purchase.domain,
+      years: purchase.years,
+      expectedPriceUsd: purchase.expectedPriceUsd,
+      contact: purchase.contact,
+    });
+
+    const attach = await addDomainToProject(purchase.domain);
+
+    await updateSiteDomain(supabase, {
+      siteId: purchase.siteId,
+      customDomain: purchase.domain,
+      domainStatus: attach.verified ? "active" : "pending_dns",
+      domainSource: "purchased",
+    });
+
+    await updateDomainPurchaseStatus(supabase, {
+      id: domainPurchaseId,
+      status: "completed",
+      vercelOrderId: order.orderId,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Domain purchase failed.";
+    console.error(`Domain purchase failed for ${purchase.domain} (purchase ${domainPurchaseId}):`, error);
+
+    await updateDomainPurchaseStatus(supabase, { id: domainPurchaseId, status: "failed", errorMessage: message });
+
+    if (paymentIntentId) {
+      try {
+        await refundDomainPurchase(paymentIntentId);
+        await updateDomainPurchaseStatus(supabase, { id: domainPurchaseId, status: "refunded" });
+      } catch (refundError) {
+        console.error(`Failed to refund domain purchase ${domainPurchaseId} after Vercel purchase failure:`, refundError);
+      }
+    }
+  }
+}
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -39,6 +108,16 @@ export async function POST(request: NextRequest) {
         const credits = Number.parseInt(session.metadata.credits ?? "1", 10);
         if (siteId && credits > 0) {
           await addEditCredits(supabase, siteId, credits);
+        }
+        break;
+      }
+
+      if (session.mode === "payment" && session.metadata?.type === "domain_purchase") {
+        const domainPurchaseId = session.metadata.domainPurchaseId;
+        const paymentIntentId =
+          typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id;
+        if (domainPurchaseId) {
+          await handleDomainPurchase(supabase, domainPurchaseId, paymentIntentId);
         }
         break;
       }

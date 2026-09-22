@@ -36,6 +36,8 @@ interface WizardState {
   phrase: string;
   oneWordDescriptor: string;
   priority: string;
+  domainChoice: "have" | "buy" | "later";
+  domainValue: string;
 }
 
 const INITIAL_STATE: WizardState = {
@@ -60,9 +62,11 @@ const INITIAL_STATE: WizardState = {
   phrase: "",
   oneWordDescriptor: "",
   priority: "",
+  domainChoice: "later",
+  domainValue: "",
 };
 
-const STEP_LABELS = ["Basic Info", "Contact", "Services", "About You", "Photos", "Your Style"];
+const STEP_LABELS = ["Basic Info", "Contact", "Services", "About You", "Photos", "Domain", "Your Style"];
 
 interface PhotoDraft {
   id: string;
@@ -140,6 +144,8 @@ export function OnboardingWizard() {
       case 4:
         return true; // Photos are optional.
       case 5:
+        return state.domainChoice === "later" || state.domainValue.trim().length > 0;
+      case 6:
         return Boolean(state.feeling && state.phrase && state.oneWordDescriptor && state.priority);
       default:
         return true;
@@ -178,6 +184,10 @@ export function OnboardingWizard() {
           oneWordDescriptor: state.oneWordDescriptor,
           priority: state.priority,
         },
+        domain:
+          state.domainChoice === "later"
+            ? undefined
+            : { choice: state.domainChoice, value: state.domainValue.trim() },
       };
 
       const res = await fetch("/api/sites", {
@@ -266,7 +276,8 @@ export function OnboardingWizard() {
             onMoveHeroStage={moveHeroStage}
           />
         )}
-        {step === 5 && <QuizStep state={state} update={update} />}
+        {step === 5 && <DomainStep state={state} update={update} />}
+        {step === 6 && <QuizStep state={state} update={update} />}
 
         {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
 
@@ -753,6 +764,78 @@ function PhotosStep({
         )}
         <p className="text-xs text-slate-500">Up to {MAX_ONBOARDING_PHOTOS} photos.</p>
       </div>
+    </div>
+  );
+}
+
+function DomainStep({
+  state,
+  update,
+}: {
+  state: WizardState;
+  update: <K extends keyof WizardState>(key: K, value: WizardState[K]) => void;
+}) {
+  const options: { value: WizardState["domainChoice"]; label: string; helper: string }[] = [
+    { value: "have", label: "I already have a domain", helper: "We'll connect it to your new site." },
+    { value: "buy", label: "I'd like to buy one", helper: "Search and buy a domain — you'll pay for this separately after your site is generated." },
+    { value: "later", label: "I'll sort this out later", helper: "Your site works fine without one for now — you can add a domain any time from your dashboard." },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-lg font-semibold">Do you have a domain for your website?</h2>
+      <p className="text-sm text-slate-500">
+        A domain is the web address customers type to find you (e.g. &quot;williamsplumbing.co.uk&quot;) — without
+        one, your site is only reachable at a generic web address.
+      </p>
+
+      <div className="space-y-2">
+        {options.map((opt) => (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => update("domainChoice", opt.value)}
+            className={`block w-full rounded-lg border px-4 py-3 text-left text-sm ${
+              state.domainChoice === opt.value
+                ? "border-slate-900 bg-slate-900 text-white"
+                : "border-slate-300 text-slate-700 hover:border-slate-400"
+            }`}
+          >
+            <span className="block font-medium">{opt.label}</span>
+            <span className={`block text-xs ${state.domainChoice === opt.value ? "text-slate-300" : "text-slate-500"}`}>
+              {opt.helper}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {state.domainChoice === "have" && (
+        <Field label="Your domain">
+          <input
+            className={inputClass}
+            placeholder="e.g. williamsplumbing.co.uk"
+            value={state.domainValue}
+            onChange={(e) => update("domainValue", e.target.value)}
+          />
+        </Field>
+      )}
+
+      {state.domainChoice === "buy" && (
+        <Field label="What domain would you like to search for?">
+          <input
+            className={inputClass}
+            placeholder="e.g. williamsplumbing.com"
+            value={state.domainValue}
+            onChange={(e) => update("domainValue", e.target.value)}
+          />
+        </Field>
+      )}
+      {state.domainChoice === "buy" && (
+        <p className="text-xs text-slate-500">
+          Note: UK domains (.uk / .co.uk) currently can&apos;t be bought through this tool — buy those with your
+          usual registrar and connect them here instead. .com, .net, .org and most other endings work fine.
+        </p>
+      )}
     </div>
   );
 }

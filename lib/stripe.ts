@@ -34,3 +34,35 @@ export async function cancelSiteSubscription(subscriptionId: string): Promise<vo
     throw error;
   }
 }
+
+// ---- Domain purchases ----
+// Charged in USD regardless of the site retainer's currency: Vercel's
+// registrar always quotes in USD, and applying a markup on top of that
+// avoids guessing an FX rate for a GBP price. Percentage is configurable
+// since the right margin depends on how much FX/registrar-price movement
+// you want to absorb between quote time and the (rare) renewal.
+const DOMAIN_MARKUP_PERCENT = Number(process.env.DOMAIN_MARKUP_PERCENT ?? "30");
+
+export function computeDomainRetailPriceUsd(vercelPriceUsd: number): number {
+  return Math.round(vercelPriceUsd * (1 + DOMAIN_MARKUP_PERCENT / 100) * 100) / 100;
+}
+
+// Domain prices vary per-domain, so this uses ad-hoc price_data rather than
+// a preset Stripe Price (unlike the fixed animation/edit credit prices).
+export function buildDomainCheckoutLineItem(domain: string, retailPriceUsd: number): Stripe.Checkout.SessionCreateParams.LineItem {
+  return {
+    quantity: 1,
+    price_data: {
+      currency: "usd",
+      unit_amount: Math.round(retailPriceUsd * 100),
+      product_data: { name: `Domain registration: ${domain}` },
+    },
+  };
+}
+
+// Best-effort refund when a Stripe payment succeeded but the Vercel domain
+// purchase that followed it failed — the customer should never be left
+// paying for a domain they don't have.
+export async function refundDomainPurchase(paymentIntentId: string): Promise<void> {
+  await getStripe().refunds.create({ payment_intent: paymentIntentId });
+}

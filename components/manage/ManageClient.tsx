@@ -61,6 +61,40 @@ export function ManageClient({ siteId }: { siteId: string }) {
   const heroFileInputRef = useRef<HTMLInputElement>(null);
   const MAX_HERO_STAGES = 4;
 
+  const [domainInput, setDomainInput] = useState("");
+  const [connectingDomain, setConnectingDomain] = useState(false);
+  const [domainConnectError, setDomainConnectError] = useState("");
+  const [domainVerification, setDomainVerification] = useState<
+    { type: string; domain: string; value: string; reason: string }[] | null
+  >(null);
+  const [checkingDomainStatus, setCheckingDomainStatus] = useState(false);
+
+  const [domainSearch, setDomainSearch] = useState("");
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
+  const [availabilityError, setAvailabilityError] = useState("");
+  const [availabilityResult, setAvailabilityResult] = useState<{
+    domain: string;
+    available: boolean;
+    retailPriceUsd?: number;
+    years?: number;
+    unsupported?: boolean;
+    message?: string;
+  } | null>(null);
+  const [showRegistrantForm, setShowRegistrantForm] = useState(false);
+  const [contact, setContact] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    address1: "",
+    city: "",
+    state: "",
+    zip: "",
+    country: "GB",
+  });
+  const [buyingDomain, setBuyingDomain] = useState(false);
+  const [buyDomainError, setBuyDomainError] = useState("");
+
   useEffect(() => {
     let cancelled = false;
     fetch(`/api/sites/${siteId}`)
@@ -90,6 +124,8 @@ export function ManageClient({ siteId }: { siteId: string }) {
         setImages(data.images ?? []);
         setAnimations(data.animations ?? []);
         setHeroStages(data.heroStages ?? []);
+        setDomainSearch(data.desiredDomain ?? "");
+        setContact((prev) => ({ ...prev, email: data.onboarding.email }));
       })
       .catch((err) => {
         if (!cancelled) setLoadError(err instanceof Error ? err.message : "Failed to load site.");
@@ -325,6 +361,81 @@ export function ManageClient({ siteId }: { siteId: string }) {
       setSaveError(err instanceof Error ? err.message : "Failed to save changes.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleConnectDomain() {
+    setConnectingDomain(true);
+    setDomainConnectError("");
+    setDomainVerification(null);
+    try {
+      const res = await fetch(`/api/sites/${siteId}/domain`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ domain: domainInput }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Failed to connect this domain.");
+      setSite((prev) =>
+        prev
+          ? { ...prev, customDomain: data.domain, domainStatus: data.verified ? "active" : "pending_dns", domainSource: "connected" }
+          : prev
+      );
+      setDomainVerification(data.verification ?? null);
+    } catch (err) {
+      setDomainConnectError(err instanceof Error ? err.message : "Failed to connect this domain.");
+    } finally {
+      setConnectingDomain(false);
+    }
+  }
+
+  async function handleCheckDomainStatus() {
+    if (!site) return;
+    setCheckingDomainStatus(true);
+    try {
+      const res = await fetch(`/api/sites/${siteId}/domain`);
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setSite((prev) => (prev ? { ...prev, domainStatus: data.status } : prev));
+      }
+    } finally {
+      setCheckingDomainStatus(false);
+    }
+  }
+
+  async function handleCheckAvailability() {
+    setCheckingAvailability(true);
+    setAvailabilityError("");
+    setAvailabilityResult(null);
+    setShowRegistrantForm(false);
+    try {
+      const res = await fetch(`/api/domains/availability?domain=${encodeURIComponent(domainSearch)}`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Failed to check availability.");
+      setAvailabilityResult(data);
+    } catch (err) {
+      setAvailabilityError(err instanceof Error ? err.message : "Failed to check availability.");
+    } finally {
+      setCheckingAvailability(false);
+    }
+  }
+
+  async function handleBuyDomain() {
+    if (!availabilityResult?.available) return;
+    setBuyingDomain(true);
+    setBuyDomainError("");
+    try {
+      const res = await fetch(`/api/sites/${siteId}/domain/purchase`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ domain: availabilityResult.domain, contact }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Failed to start domain purchase.");
+      window.location.href = data.url;
+    } catch (err) {
+      setBuyDomainError(err instanceof Error ? err.message : "Failed to start domain purchase.");
+      setBuyingDomain(false);
     }
   }
 
@@ -650,6 +761,218 @@ export function ManageClient({ siteId }: { siteId: string }) {
           >
             {saving ? "Saving…" : "Save Changes"}
           </button>
+        </div>
+
+        <div className="mt-6 space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Domain</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              {site.customDomain
+                ? "Your site's custom domain."
+                : "Connect a domain you already own, or buy a new one."}
+            </p>
+          </div>
+
+          {site.customDomain ? (
+            <div className="space-y-3 rounded-lg border border-slate-200 p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-slate-900">{site.customDomain}</p>
+                  <p className="text-xs text-slate-500">
+                    {site.domainStatus === "active" && "✅ Active"}
+                    {site.domainStatus === "pending_dns" && "⏳ Waiting on DNS"}
+                    {site.domainStatus === "error" && "❌ Error"}
+                    {" · "}
+                    {site.domainSource === "purchased" ? "Bought through this site" : "Connected"}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCheckDomainStatus}
+                  disabled={checkingDomainStatus}
+                  className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-slate-400 disabled:opacity-50"
+                >
+                  {checkingDomainStatus ? "Checking…" : "Check status"}
+                </button>
+              </div>
+
+              {site.domainStatus === "pending_dns" && (
+                <div className="rounded-lg bg-amber-50 p-3 text-xs text-amber-800">
+                  <p className="font-medium">DNS not detected yet.</p>
+                  {domainVerification && domainVerification.length > 0 ? (
+                    <ul className="mt-1 space-y-1">
+                      {domainVerification.map((v, i) => (
+                        <li key={i}>
+                          Add a <span className="font-mono">{v.type}</span> record for{" "}
+                          <span className="font-mono">{v.domain}</span> pointing to{" "}
+                          <span className="font-mono">{v.value}</span>.
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-1">
+                      At your domain registrar, add either: an <span className="font-mono">A</span> record pointing
+                      to <span className="font-mono">76.76.21.21</span> (for the bare domain), or a{" "}
+                      <span className="font-mono">CNAME</span> record pointing to{" "}
+                      <span className="font-mono">cname.vercel-dns.com</span> (for a &quot;www&quot; subdomain). DNS
+                      changes can take a few hours to take effect.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="space-y-2 rounded-lg border border-slate-200 p-4">
+                <h3 className="text-sm font-semibold text-slate-700">I already have a domain</h3>
+                <div className="flex gap-2">
+                  <input
+                    className={inputClass}
+                    placeholder="e.g. williamsplumbing.co.uk"
+                    value={domainInput}
+                    onChange={(e) => setDomainInput(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleConnectDomain}
+                    disabled={connectingDomain || !domainInput.trim()}
+                    className="shrink-0 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                  >
+                    {connectingDomain ? "Connecting…" : "Connect"}
+                  </button>
+                </div>
+                {domainConnectError && <p className="text-xs text-red-600">{domainConnectError}</p>}
+              </div>
+
+              <div className="space-y-3 rounded-lg border border-slate-200 p-4">
+                <h3 className="text-sm font-semibold text-slate-700">Search &amp; buy a domain</h3>
+                <p className="text-xs text-slate-500">
+                  UK domains (.uk / .co.uk) aren&apos;t available through this yet — buy those with your usual
+                  registrar and connect them above instead.
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    className={inputClass}
+                    placeholder="e.g. williamsplumbing.com"
+                    value={domainSearch}
+                    onChange={(e) => setDomainSearch(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCheckAvailability}
+                    disabled={checkingAvailability || !domainSearch.trim()}
+                    className="shrink-0 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:border-slate-400 disabled:opacity-50"
+                  >
+                    {checkingAvailability ? "Checking…" : "Check availability"}
+                  </button>
+                </div>
+                {availabilityError && <p className="text-xs text-red-600">{availabilityError}</p>}
+
+                {availabilityResult && (
+                  <div className="rounded-lg bg-slate-50 p-3 text-sm">
+                    {availabilityResult.available ? (
+                      <p>
+                        <span className="font-medium text-emerald-700">{availabilityResult.domain} is available</span>{" "}
+                        — ${availabilityResult.retailPriceUsd?.toFixed(2)}/year
+                      </p>
+                    ) : (
+                      <p className="text-slate-600">
+                        {availabilityResult.domain} isn&apos;t available
+                        {availabilityResult.unsupported ? " through this tool (unsupported ending)." : "."}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {availabilityResult?.available && !showRegistrantForm && (
+                  <button
+                    type="button"
+                    onClick={() => setShowRegistrantForm(true)}
+                    className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+                  >
+                    Buy this domain
+                  </button>
+                )}
+
+                {showRegistrantForm && availabilityResult?.available && (
+                  <div className="space-y-3 border-t border-slate-100 pt-4">
+                    <p className="text-xs text-slate-500">
+                      Domain registration legally requires these details (ICANN WHOIS rules) — they&apos;re sent
+                      straight to the registrar, not stored anywhere else.
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        className={inputClass}
+                        placeholder="First name"
+                        value={contact.firstName}
+                        onChange={(e) => setContact({ ...contact, firstName: e.target.value })}
+                      />
+                      <input
+                        className={inputClass}
+                        placeholder="Last name"
+                        value={contact.lastName}
+                        onChange={(e) => setContact({ ...contact, lastName: e.target.value })}
+                      />
+                      <input
+                        className={inputClass}
+                        placeholder="Email"
+                        value={contact.email}
+                        onChange={(e) => setContact({ ...contact, email: e.target.value })}
+                      />
+                      <input
+                        className={inputClass}
+                        placeholder="Phone (e.g. +447700900123)"
+                        value={contact.phone}
+                        onChange={(e) => setContact({ ...contact, phone: e.target.value })}
+                      />
+                      <input
+                        className={`${inputClass} col-span-2`}
+                        placeholder="Address"
+                        value={contact.address1}
+                        onChange={(e) => setContact({ ...contact, address1: e.target.value })}
+                      />
+                      <input
+                        className={inputClass}
+                        placeholder="City"
+                        value={contact.city}
+                        onChange={(e) => setContact({ ...contact, city: e.target.value })}
+                      />
+                      <input
+                        className={inputClass}
+                        placeholder="County/State"
+                        value={contact.state}
+                        onChange={(e) => setContact({ ...contact, state: e.target.value })}
+                      />
+                      <input
+                        className={inputClass}
+                        placeholder="Postcode"
+                        value={contact.zip}
+                        onChange={(e) => setContact({ ...contact, zip: e.target.value })}
+                      />
+                      <input
+                        className={inputClass}
+                        placeholder="Country (2-letter, e.g. GB)"
+                        maxLength={2}
+                        value={contact.country}
+                        onChange={(e) => setContact({ ...contact, country: e.target.value.toUpperCase() })}
+                      />
+                    </div>
+                    {buyDomainError && <p className="text-xs text-red-600">{buyDomainError}</p>}
+                    <button
+                      type="button"
+                      onClick={handleBuyDomain}
+                      disabled={buyingDomain}
+                      className="w-full rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                    >
+                      {buyingDomain
+                        ? "Starting checkout…"
+                        : `Continue to payment — $${availabilityResult.retailPriceUsd?.toFixed(2)}`}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="mt-6 space-y-3 rounded-2xl border border-red-200 bg-red-50 p-6">

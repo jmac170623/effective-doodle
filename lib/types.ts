@@ -161,6 +161,51 @@ export interface SiteRecord {
   images?: SiteImage[];
   animations?: SiteAnimation[];
   heroStages?: HeroStage[];
+
+  // Custom domain — either connected (customer already owns it) or bought
+  // through Vercel's Domain Registrar API (see lib/vercelDomains.ts).
+  customDomain?: string;
+  domainStatus: DomainStatus;
+  domainSource?: DomainSource;
+  // What the owner typed in onboarding when they said they'd like to buy a
+  // domain but hadn't paid yet — prefills the manage dashboard's search box.
+  desiredDomain?: string;
+}
+
+// ---- Custom domains ----
+
+export type DomainStatus = "none" | "pending_dns" | "active" | "error";
+export type DomainSource = "connected" | "purchased";
+
+export type DomainPurchaseStatus = "pending_payment" | "purchasing" | "completed" | "failed" | "refunded";
+
+export interface DomainRegistrantContact {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  address1: string;
+  city: string;
+  state: string;
+  zip: string;
+  country: string;
+}
+
+export interface DomainPurchase {
+  id: string;
+  siteId: string;
+  domain: string;
+  years: number;
+  expectedPriceUsd: number;
+  chargedPriceUsd: number;
+  contact: DomainRegistrantContact;
+  status: DomainPurchaseStatus;
+  stripeCheckoutSessionId?: string;
+  stripePaymentIntentId?: string;
+  vercelOrderId?: string;
+  errorMessage?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // ---- Hero "main display image" + staged transformation ----

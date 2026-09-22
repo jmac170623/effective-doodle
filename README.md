@@ -58,6 +58,45 @@ style of the generated site.
   `app/api/webhooks/stripe/route.ts`). The Stripe webhook is the source of
   truth: it flips a site to `published` on successful checkout and back to
   `draft` if the subscription lapses.
+- **Custom domains** — a real onboarding question ("Do you have a domain?")
+  and a matching manage-dashboard section (`lib/vercelDomains.ts`, the
+  `/api/sites/[id]/domain*` routes, `proxy.ts`) let an owner either connect
+  a domain they already own, or buy a new one, using Vercel's real Domains
+  Registrar REST API — not a placeholder. Once a domain is `active`,
+  `proxy.ts` transparently rewrites requests on that hostname to the site's
+  page (multi-tenant routing on a single deployment), and a request to an
+  unrecognized custom domain gets a "not connected" page rather than
+  accidentally serving this app's own marketing homepage.
+  - **Connect a domain you own** — free; attaches it to the Vercel project
+    (`addDomainToProject`) and shows the DNS record(s) to add if it isn't
+    already verified.
+  - **Buy a domain** (real money) — the customer pays via Stripe (domain
+    cost + `DOMAIN_MARKUP_PERCENT`, default 30%, charged in USD since
+    Vercel's registrar always quotes in USD), then the Stripe webhook buys
+    the domain for real via Vercel's registrar and attaches it — see
+    `handleDomainPurchase` in `app/api/webhooks/stripe/route.ts`. **The
+    money flow**: the customer's Stripe payment goes to your own Stripe
+    account; the actual domain purchase is a *separate* charge against
+    whatever card is on file for the Vercel account `VERCEL_API_TOKEN`
+    belongs to — i.e. buying a domain for a customer spends real money
+    from your own Vercel account every time, and the markup is what you
+    earn on top of that cost. If the Vercel purchase fails after the
+    Stripe charge succeeds, the customer is refunded automatically
+    (`refundDomainPurchase`) rather than left paying for nothing — verify
+    that behavior with a real end-to-end test before relying on it.
+    Domain registration legally requires WHOIS registrant details (name,
+    address, email, phone), collected in the purchase form and sent
+    straight to the registrar, not stored beyond the `domain_purchases`
+    audit row. **Real constraint found during development**: Vercel's
+    registrar doesn't support UK ccTLDs — `.uk` and `.co.uk` both return
+    `tld_not_supported` — so a UK tradesperson wanting a `.co.uk` has to
+    buy it elsewhere and use "connect a domain you own" instead; `.com`,
+    `.net`, `.org` and most other endings work fine.
+  - Needs `VERCEL_API_TOKEN` (a full-account token — domain purchases need
+    more scope than project management alone), `VERCEL_PROJECT_ID`, and
+    usually `VERCEL_TEAM_ID` (see `.env.example`) to do anything; without
+    them, connect/purchase calls fail with a clear error rather than
+    silently pretending to work.
 
 - **Photo-to-video animation** — the manage dashboard has an "Animate this
   photo" button per uploaded photo, gated at 3 free animations per site then

@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { AnimationStatus, BillingStatus, FeedbackRound, GeneratedSite, HeroStage, OnboardingData, QuoteBreakdown, SiteAnimation, SiteImage, SiteRecord, SiteStatus } from "./types";
+import { AnimationStatus, BillingStatus, DomainPurchase, DomainPurchaseStatus, DomainRegistrantContact, DomainSource, DomainStatus, FeedbackRound, GeneratedSite, HeroStage, OnboardingData, QuoteBreakdown, SiteAnimation, SiteImage, SiteRecord, SiteStatus } from "./types";
 
 interface SiteRow {
   id: string;
@@ -15,6 +15,10 @@ interface SiteRow {
   stripe_subscription_id: string | null;
   animation_credits: number;
   edit_credits: number;
+  custom_domain: string | null;
+  domain_status: DomainStatus;
+  domain_source: DomainSource | null;
+  desired_domain: string | null;
 }
 
 function rowToRecord(row: SiteRow): SiteRecord {
@@ -32,6 +36,10 @@ function rowToRecord(row: SiteRow): SiteRecord {
     stripeSubscriptionId: row.stripe_subscription_id ?? undefined,
     animationCredits: row.animation_credits,
     editCredits: row.edit_credits,
+    customDomain: row.custom_domain ?? undefined,
+    domainStatus: row.domain_status,
+    domainSource: row.domain_source ?? undefined,
+    desiredDomain: row.desired_domain ?? undefined,
   };
 }
 
@@ -46,6 +54,7 @@ export async function insertSite(supabase: SupabaseClient, record: SiteRecord): 
     generated: record.generated,
     feedback_history: record.feedbackHistory,
     billing_status: record.billingStatus,
+    desired_domain: record.desiredDomain,
   });
   if (error) throw new Error(error.message);
 }
@@ -354,5 +363,119 @@ export async function consumeEditCredit(supabase: SupabaseClient, siteId: string
 // one-time edit-credit payment.
 export async function addEditCredits(supabase: SupabaseClient, siteId: string, count: number): Promise<void> {
   const { error } = await supabase.rpc("increment_edit_credits", { p_site_id: siteId, p_count: count });
+  if (error) throw new Error(error.message);
+}
+
+// ---- Custom domains ----
+
+export async function updateSiteDomain(
+  supabase: SupabaseClient,
+  params: { siteId: string; customDomain: string | null; domainStatus: DomainStatus; domainSource: DomainSource | null }
+): Promise<void> {
+  const { error } = await supabase
+    .from("sites")
+    .update({
+      custom_domain: params.customDomain,
+      domain_status: params.domainStatus,
+      domain_source: params.domainSource,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", params.siteId);
+  if (error) throw new Error(error.message);
+}
+
+interface DomainPurchaseRow {
+  id: string;
+  site_id: string;
+  domain: string;
+  years: number;
+  expected_price_usd: number;
+  charged_price_usd: number;
+  contact: DomainRegistrantContact;
+  status: DomainPurchaseStatus;
+  stripe_checkout_session_id: string | null;
+  stripe_payment_intent_id: string | null;
+  vercel_order_id: string | null;
+  error_message: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+function rowToDomainPurchase(row: DomainPurchaseRow): DomainPurchase {
+  return {
+    id: row.id,
+    siteId: row.site_id,
+    domain: row.domain,
+    years: row.years,
+    expectedPriceUsd: row.expected_price_usd,
+    chargedPriceUsd: row.charged_price_usd,
+    contact: row.contact,
+    status: row.status,
+    stripeCheckoutSessionId: row.stripe_checkout_session_id ?? undefined,
+    stripePaymentIntentId: row.stripe_payment_intent_id ?? undefined,
+    vercelOrderId: row.vercel_order_id ?? undefined,
+    errorMessage: row.error_message ?? undefined,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export async function insertDomainPurchase(
+  supabase: SupabaseClient,
+  purchase: {
+    id: string;
+    siteId: string;
+    domain: string;
+    years: number;
+    expectedPriceUsd: number;
+    chargedPriceUsd: number;
+    contact: DomainRegistrantContact;
+    stripeCheckoutSessionId?: string;
+  }
+): Promise<void> {
+  const { error } = await supabase.from("domain_purchases").insert({
+    id: purchase.id,
+    site_id: purchase.siteId,
+    domain: purchase.domain,
+    years: purchase.years,
+    expected_price_usd: purchase.expectedPriceUsd,
+    charged_price_usd: purchase.chargedPriceUsd,
+    contact: purchase.contact,
+    stripe_checkout_session_id: purchase.stripeCheckoutSessionId,
+  });
+  if (error) throw new Error(error.message);
+}
+
+export async function getDomainPurchase(supabase: SupabaseClient, id: string): Promise<DomainPurchase | null> {
+  const { data, error } = await supabase.from("domain_purchases").select("*").eq("id", id).maybeSingle();
+  if (error) throw new Error(error.message);
+  return data ? rowToDomainPurchase(data as DomainPurchaseRow) : null;
+}
+
+export async function listDomainPurchasesForSite(supabase: SupabaseClient, siteId: string): Promise<DomainPurchase[]> {
+  const { data, error } = await supabase
+    .from("domain_purchases")
+    .select("*")
+    .eq("site_id", siteId)
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data as DomainPurchaseRow[] | null ?? []).map(rowToDomainPurchase);
+}
+
+export async function updateDomainPurchaseStatus(
+  supabase: SupabaseClient,
+  params: {
+    id: string;
+    status: DomainPurchaseStatus;
+    stripePaymentIntentId?: string;
+    vercelOrderId?: string;
+    errorMessage?: string;
+  }
+): Promise<void> {
+  const update: Record<string, unknown> = { status: params.status, updated_at: new Date().toISOString() };
+  if (params.stripePaymentIntentId !== undefined) update.stripe_payment_intent_id = params.stripePaymentIntentId;
+  if (params.vercelOrderId !== undefined) update.vercel_order_id = params.vercelOrderId;
+  if (params.errorMessage !== undefined) update.error_message = params.errorMessage;
+  const { error } = await supabase.from("domain_purchases").update(update).eq("id", params.id);
   if (error) throw new Error(error.message);
 }
