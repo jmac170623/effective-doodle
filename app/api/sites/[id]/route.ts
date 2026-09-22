@@ -127,7 +127,13 @@ export async function DELETE(
     console.error("Failed to clean up storage for deleted site:", error);
   }
 
-  await deleteSite(admin, id);
+  try {
+    await deleteSite(admin, id);
+  } catch (error) {
+    console.error(`Failed to delete site ${id}:`, error);
+    const message = error instanceof Error ? error.message : "Failed to delete this site.";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 
   return NextResponse.json({ success: true });
 }
