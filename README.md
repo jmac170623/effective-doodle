@@ -1,7 +1,7 @@
 # 365 Travel
 
-Marketing website for **365 Travel** (365travel.co), a private travel
-concierge for clients who want every detail of a trip arranged for them.
+Marketing website for **365 Travel** (365travel.co), a private holiday
+agent for clients who want every detail of a trip arranged for them.
 Static HTML/CSS/JS — no build step, no dependencies.
 
 ## Structure
