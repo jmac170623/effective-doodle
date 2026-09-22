@@ -139,7 +139,7 @@
     var status = document.getElementById("formStatus");
     if (destination) {
       status.textContent =
-        'Noted — tell us a little more about ' + destination + ' below and a travel architect will call you.';
+        'Noted — tell us a little more about ' + destination + ' below and a holiday agent will call you.';
       status.className = "form-status success";
       document.getElementById("message").value =
         "I'd like to discuss a trip to " + destination + ".";
@@ -199,7 +199,7 @@
     }
 
     formStatus.textContent =
-      "Thank you, " + name.split(" ")[0] + ". A travel architect will call you directly, usually within a few hours — 365 days a year.";
+      "Thank you, " + name.split(" ")[0] + ". A holiday agent will call you directly, usually within a few hours — 365 days a year.";
     formStatus.className = "form-status success";
     contactForm.reset();
   });
