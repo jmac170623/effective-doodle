@@ -23,6 +23,15 @@ style of the generated site.
   filling in the same template. If `ANTHROPIC_API_KEY` isn't set or the call
   fails for any reason, generation falls back to the deterministic template
   copy automatically.
+- **Answer proofreading** (`lib/textCleanup.ts`) — before a site is
+  generated or a dashboard edit is regenerated, Claude corrects spelling,
+  punctuation, and capitalization in the free-text onboarding answers
+  (name, business name, trade, area, about text, proud moment/unique fact,
+  service names/descriptions, one-word descriptor) — never their meaning,
+  voice, or an intentionally stylized business name. Falls back to the
+  answers as typed if `ANTHROPIC_API_KEY` isn't set or the call fails.
+  Contact details and social links aren't touched by this — they're
+  format-validated separately (`lib/validateOnboarding.ts`).
 - **Preview + AI feedback loop** (`/preview/[id]`, owner-only) — renders the
   generated site and lets the owner describe what they don't like in plain
   English. Claude (`lib/aiFeedback.ts`) interprets the feedback and decides

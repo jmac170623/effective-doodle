@@ -3,6 +3,7 @@ import { getSite, listHeroStages, listSiteAnimations, listSiteImages, updateSite
 import { createClient } from "@/lib/supabase/server";
 import { validateOnboardingPatch } from "@/lib/validateOnboarding";
 import { generateSite } from "@/lib/siteGenerator";
+import { correctOnboardingText } from "@/lib/textCleanup";
 import { ToneProfileId } from "@/lib/types";
 
 export async function GET(
@@ -55,7 +56,8 @@ export async function PATCH(
     ? requestedTone
     : site.generated.toneProfile;
 
-  const updatedOnboarding = { ...site.onboarding, ...result.data };
+  const mergedOnboarding = { ...site.onboarding, ...result.data };
+  const updatedOnboarding = await correctOnboardingText(mergedOnboarding);
   const regenerated = await generateSite(updatedOnboarding, toneProfile);
 
   const updated = {

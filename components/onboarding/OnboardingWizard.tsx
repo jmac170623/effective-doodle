@@ -352,9 +352,18 @@ function BasicInfoStep({
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Tell us about you</h2>
+      <p className="text-sm text-slate-500">
+        Don&apos;t worry about typos — we&apos;ll proofread everything before it goes on your site. Just get the
+        details right.
+      </p>
       <div className="grid grid-cols-2 gap-4">
         <Field label="Your full name">
-          <input className={inputClass} value={state.fullName} onChange={(e) => update("fullName", e.target.value)} />
+          <input
+            className={inputClass}
+            placeholder="e.g. Josh Williams"
+            value={state.fullName}
+            onChange={(e) => update("fullName", e.target.value)}
+          />
         </Field>
         <Field label="Age (optional)">
           <input type="number" className={inputClass} value={state.age} onChange={(e) => update("age", e.target.value)} />
@@ -373,13 +382,19 @@ function BasicInfoStep({
           <input
             type="number"
             className={inputClass}
+            placeholder="e.g. 8"
             value={state.yearsExperience}
             onChange={(e) => update("yearsExperience", e.target.value)}
           />
         </Field>
       </div>
       <Field label="Business name">
-        <input className={inputClass} value={state.businessName} onChange={(e) => update("businessName", e.target.value)} />
+        <input
+          className={inputClass}
+          placeholder="e.g. Williams Plumbing & Heating"
+          value={state.businessName}
+          onChange={(e) => update("businessName", e.target.value)}
+        />
       </Field>
       <Field label="Location / area covered">
         <input
@@ -388,6 +403,10 @@ function BasicInfoStep({
           value={state.areaCovered}
           onChange={(e) => update("areaCovered", e.target.value)}
         />
+        <p className="mt-1 text-xs text-slate-500">
+          The town, city, or region you serve — this appears on your site exactly as written (e.g. &quot;Greater
+          Manchester&quot; or &quot;North Leeds and surrounding areas&quot;), so be specific.
+        </p>
       </Field>
     </div>
   );
@@ -403,27 +422,66 @@ function ContactStep({
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">How can customers reach you?</h2>
+      <p className="text-sm text-slate-500">These appear on your site exactly as entered, so double-check them.</p>
       <div className="grid grid-cols-2 gap-4">
         <Field label="Phone number">
-          <input className={inputClass} value={state.phone} onChange={(e) => update("phone", e.target.value)} />
+          <input
+            className={inputClass}
+            placeholder="e.g. 07700 900123"
+            value={state.phone}
+            onChange={(e) => update("phone", e.target.value)}
+          />
         </Field>
         <Field label="Email">
-          <input type="email" className={inputClass} value={state.email} onChange={(e) => update("email", e.target.value)} />
+          <input
+            type="email"
+            className={inputClass}
+            placeholder="e.g. josh@williamsplumbing.co.uk"
+            value={state.email}
+            onChange={(e) => update("email", e.target.value)}
+          />
         </Field>
       </div>
-      <p className="pt-2 text-sm font-medium text-slate-700">Social links (optional)</p>
+      <div className="pt-2">
+        <p className="text-sm font-medium text-slate-700">Social links (optional)</p>
+        <p className="mt-0.5 text-xs text-slate-500">
+          Paste the full page URL from your browser&apos;s address bar when you&apos;re on your page — not just
+          your username. These become clickable buttons on your site, so a partial link (e.g. just
+          &quot;joesplumbing&quot;) will lead nowhere.
+        </p>
+      </div>
       <div className="grid grid-cols-2 gap-4">
-        <Field label="Facebook">
-          <input className={inputClass} value={state.facebook} onChange={(e) => update("facebook", e.target.value)} />
+        <Field label="Facebook page URL">
+          <input
+            className={inputClass}
+            placeholder="https://facebook.com/yourbusinesspage"
+            value={state.facebook}
+            onChange={(e) => update("facebook", e.target.value)}
+          />
         </Field>
-        <Field label="Instagram">
-          <input className={inputClass} value={state.instagram} onChange={(e) => update("instagram", e.target.value)} />
+        <Field label="Instagram profile URL">
+          <input
+            className={inputClass}
+            placeholder="https://instagram.com/yourbusiness"
+            value={state.instagram}
+            onChange={(e) => update("instagram", e.target.value)}
+          />
         </Field>
-        <Field label="TikTok">
-          <input className={inputClass} value={state.tiktok} onChange={(e) => update("tiktok", e.target.value)} />
+        <Field label="TikTok profile URL">
+          <input
+            className={inputClass}
+            placeholder="https://tiktok.com/@yourbusiness"
+            value={state.tiktok}
+            onChange={(e) => update("tiktok", e.target.value)}
+          />
         </Field>
-        <Field label="Website">
-          <input className={inputClass} value={state.website} onChange={(e) => update("website", e.target.value)} />
+        <Field label="Existing website URL">
+          <input
+            className={inputClass}
+            placeholder="https://yourbusiness.co.uk"
+            value={state.website}
+            onChange={(e) => update("website", e.target.value)}
+          />
         </Field>
       </div>
     </div>
@@ -456,6 +514,10 @@ function ServicesStep({
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">What services do you offer?</h2>
+      <p className="text-sm text-slate-500">
+        Each one becomes its own listing on your site, so name them the way a customer would search for them — e.g.
+        &quot;Boiler installation &amp; repair&quot; works better than just &quot;Heating&quot;.
+      </p>
       <div className="space-y-3">
         {state.services.map((service, index) => (
           <div key={index} className="flex gap-2 rounded-lg border border-slate-200 p-3">
@@ -468,7 +530,7 @@ function ServicesStep({
               />
               <input
                 className={inputClass}
-                placeholder="Short description (optional)"
+                placeholder="Short description (optional) — e.g. Full bathroom refits, tiling, and leak repairs"
                 value={service.description}
                 onChange={(e) => updateService(index, { description: e.target.value })}
               />
@@ -523,7 +585,9 @@ function AboutStep({
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Describe your business in your own words</h2>
       <p className="text-sm text-slate-500">
-        Don&apos;t worry about making it sound &quot;professional&quot; — write it like you&apos;d tell a customer. We&apos;ll lightly polish it.
+        Don&apos;t worry about making it sound &quot;professional&quot; or about typos — write it like you&apos;d
+        tell a customer. We&apos;ll proofread spelling and punctuation and lightly polish it, keeping it in your
+        voice.
       </p>
       <textarea
         className={`${inputClass} min-h-32`}

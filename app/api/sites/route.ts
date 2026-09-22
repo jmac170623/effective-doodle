@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { validateOnboarding } from "@/lib/validateOnboarding";
 import { computeToneProfile } from "@/lib/toneProfiles";
 import { generateSite } from "@/lib/siteGenerator";
+import { correctOnboardingText } from "@/lib/textCleanup";
 import { insertSite } from "@/lib/db";
 import { generateId } from "@/lib/idGen";
 import { SiteRecord } from "@/lib/types";
@@ -25,7 +26,8 @@ export async function POST(request: NextRequest) {
   const toneProfile = computeToneProfile(result.data.quiz);
 
   try {
-    const generated = await generateSite(result.data, toneProfile);
+    const cleanedOnboarding = await correctOnboardingText(result.data);
+    const generated = await generateSite(cleanedOnboarding, toneProfile);
     const now = new Date().toISOString();
 
     const record: SiteRecord = {
@@ -34,7 +36,7 @@ export async function POST(request: NextRequest) {
       createdAt: now,
       updatedAt: now,
       status: "draft",
-      onboarding: result.data,
+      onboarding: cleanedOnboarding,
       generated,
       feedbackHistory: [],
       billingStatus: "unpaid",

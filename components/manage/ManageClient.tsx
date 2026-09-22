@@ -366,11 +366,34 @@ export function ManageClient({ siteId }: { siteId: string }) {
 
           <section className="space-y-3 border-t border-slate-100 pt-4">
             <h2 className="text-sm font-semibold text-slate-700">Social links (optional)</h2>
+            <p className="text-xs text-slate-500">
+              Paste the full page URL, not just your username — these become clickable buttons on your site.
+            </p>
             <div className="grid grid-cols-2 gap-3">
-              <input className={inputClass} placeholder="Facebook" value={facebook} onChange={(e) => setFacebook(e.target.value)} />
-              <input className={inputClass} placeholder="Instagram" value={instagram} onChange={(e) => setInstagram(e.target.value)} />
-              <input className={inputClass} placeholder="TikTok" value={tiktok} onChange={(e) => setTiktok(e.target.value)} />
-              <input className={inputClass} placeholder="Website" value={website} onChange={(e) => setWebsite(e.target.value)} />
+              <input
+                className={inputClass}
+                placeholder="https://facebook.com/yourbusinesspage"
+                value={facebook}
+                onChange={(e) => setFacebook(e.target.value)}
+              />
+              <input
+                className={inputClass}
+                placeholder="https://instagram.com/yourbusiness"
+                value={instagram}
+                onChange={(e) => setInstagram(e.target.value)}
+              />
+              <input
+                className={inputClass}
+                placeholder="https://tiktok.com/@yourbusiness"
+                value={tiktok}
+                onChange={(e) => setTiktok(e.target.value)}
+              />
+              <input
+                className={inputClass}
+                placeholder="https://yourbusiness.co.uk"
+                value={website}
+                onChange={(e) => setWebsite(e.target.value)}
+              />
             </div>
           </section>
 
