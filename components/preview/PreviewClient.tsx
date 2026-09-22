@@ -15,6 +15,8 @@ function PreviewClientInner({ siteId }: { siteId: string }) {
   const [publishing, setPublishing] = useState(false);
   const [pollExhausted, setPollExhausted] = useState(false);
   const pollAttempts = useRef(0);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   const checkoutResult = searchParams.get("checkout");
   const editCheckoutResult = searchParams.get("editCheckout");
@@ -89,6 +91,28 @@ function PreviewClientInner({ siteId }: { siteId: string }) {
     }
   }
 
+  async function handleDelete() {
+    if (!site) return;
+    const confirmed = window.confirm(
+      `Delete this draft of "${site.onboarding.businessName}"? This permanently deletes it and its photos. This can't be undone.`
+    );
+    if (!confirmed) return;
+
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      const res = await fetch(`/api/sites/${siteId}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Couldn't delete this draft.");
+      }
+      router.push("/sites");
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Couldn't delete this draft.");
+      setDeleting(false);
+    }
+  }
+
   if (loadError) {
     return <div className="p-12 text-center text-red-600">{loadError}</div>;
   }
@@ -110,23 +134,38 @@ function PreviewClientInner({ siteId }: { siteId: string }) {
               Detected style: {toneLabel}. {site.status === "published" ? "Published." : "Not published yet."}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={handlePublish}
-            disabled={publishing || activating}
-            className="rounded-lg bg-emerald-600 px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
-          >
-            {activating
-              ? "Activating…"
-              : publishing
-              ? isActive
-                ? "Publishing…"
-                : "Redirecting to checkout…"
-              : isActive
-              ? "Publish Website"
-              : "Publish Website — £35/mo"}
-          </button>
+          <div className="flex items-center gap-3">
+            {site.status === "draft" && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleting || publishing}
+                className="rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:border-red-400 disabled:opacity-50"
+              >
+                {deleting ? "Deleting…" : "Delete this draft"}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={handlePublish}
+              disabled={publishing || activating}
+              className="rounded-lg bg-emerald-600 px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            >
+              {activating
+                ? "Activating…"
+                : publishing
+                ? isActive
+                  ? "Publishing…"
+                  : "Redirecting to checkout…"
+                : isActive
+                ? "Publish Website"
+                : "Publish Website — £35/mo"}
+            </button>
+          </div>
         </div>
+        {deleteError && (
+          <p className="mx-auto mt-2 max-w-5xl text-sm text-red-600">{deleteError}</p>
+        )}
         {checkoutResult === "cancelled" && (
           <p className="mx-auto mt-2 max-w-5xl text-sm text-amber-600">
             Checkout was cancelled — no charge was made. You can try again anytime.
