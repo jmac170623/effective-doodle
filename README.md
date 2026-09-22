@@ -41,7 +41,12 @@ style of the generated site.
   `ANTHROPIC_API_KEY` isn't set or the call fails, falls back to a rule-based
   keyword adjuster (`lib/feedback.ts`) so feedback never just does nothing.
 - **My Sites** (`/sites`) — every account's dashboard-lite: lists their sites
-  (draft or published) with links back into preview or the live page.
+  (draft or published) with links back into preview or the live page, and a
+  **Delete** option (also available inside `/manage/[id]`'s danger zone).
+  Deleting a site cancels its Stripe subscription first if one's active,
+  removes its gallery/hero-stage photos from storage, then deletes the
+  site row — everything else (images, hero stages, animations, quotes,
+  leads) cascades in Postgres. Irreversible; confirmed before it runs.
 - **Instant quote calculator** — every generated site gets a "Get an Instant
   Quote" section backed by a shared materials catalog (`materials` table,
   currently placeholder-branded pricing — see `lib/quoteCategories.ts` and

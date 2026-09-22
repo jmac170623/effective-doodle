@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { HeroStage, SiteAnimation, SiteImage, SiteRecord, ToneProfileId } from "@/lib/types";
 import { TONE_PROFILES } from "@/lib/toneProfiles";
 import { FREE_ANIMATION_CAP, checkAnimationEligibility } from "@/lib/animationLimits";
@@ -17,8 +18,11 @@ const inputClass =
   "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none";
 
 export function ManageClient({ siteId }: { siteId: string }) {
+  const router = useRouter();
   const [site, setSite] = useState<SiteRecord | null>(null);
   const [loadError, setLoadError] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   const [businessName, setBusinessName] = useState("");
   const [areaCovered, setAreaCovered] = useState("");
@@ -324,6 +328,32 @@ export function ManageClient({ siteId }: { siteId: string }) {
     }
   }
 
+  async function handleDelete() {
+    if (!site) return;
+    const confirmed = window.confirm(
+      `Delete "${site.onboarding.businessName}"? This permanently deletes the site, its photos, and its quote history${
+        site.billingStatus === "active" || site.billingStatus === "past_due"
+          ? ", and cancels its £35/mo subscription"
+          : ""
+      }. This can't be undone.`
+    );
+    if (!confirmed) return;
+
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      const res = await fetch(`/api/sites/${siteId}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Couldn't delete this site.");
+      }
+      router.push("/sites");
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Couldn't delete this site.");
+      setDeleting(false);
+    }
+  }
+
   if (loadError) {
     return <div className="p-12 text-center text-red-600">{loadError}</div>;
   }
@@ -619,6 +649,26 @@ export function ManageClient({ siteId }: { siteId: string }) {
             className="w-full rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
           >
             {saving ? "Saving…" : "Save Changes"}
+          </button>
+        </div>
+
+        <div className="mt-6 space-y-3 rounded-2xl border border-red-200 bg-red-50 p-6">
+          <h2 className="text-sm font-semibold text-red-900">Danger zone</h2>
+          <p className="text-xs text-red-700">
+            Deleting this site removes it, its photos, and its quote history permanently
+            {site.billingStatus === "active" || site.billingStatus === "past_due"
+              ? " and cancels its £35/mo subscription"
+              : ""}
+            . This can&apos;t be undone.
+          </p>
+          {deleteError && <p className="text-xs font-medium text-red-700">{deleteError}</p>}
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={deleting}
+            className="rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-700 hover:border-red-400 disabled:opacity-50"
+          >
+            {deleting ? "Deleting…" : "Delete this site"}
           </button>
         </div>
       </div>

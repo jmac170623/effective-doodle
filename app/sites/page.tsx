@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { listSitesForOwner } from "@/lib/db";
+import { SitesListClient } from "@/components/sites/SitesListClient";
 
 export default async function SitesPage() {
   const supabase = await createClient();
@@ -37,39 +38,7 @@ export default async function SitesPage() {
           + Build a new website
         </Link>
 
-        <div className="mt-8 space-y-3">
-          {sites.length === 0 && (
-            <p className="text-sm text-slate-500">You haven&apos;t built a website yet.</p>
-          )}
-          {sites.map((site) => (
-            <div
-              key={site.id}
-              className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm"
-            >
-              <div>
-                <p className="font-semibold text-slate-900">{site.onboarding.businessName}</p>
-                <p className="text-xs text-slate-500">
-                  {site.status === "published" ? "Published" : "Draft"} · updated{" "}
-                  {new Date(site.updatedAt).toLocaleDateString()}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <Link
-                  href={site.status === "published" ? `/site/${site.id}` : `/preview/${site.id}`}
-                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:border-slate-400"
-                >
-                  {site.status === "published" ? "View live site" : "Continue editing"}
-                </Link>
-                <Link
-                  href={`/manage/${site.id}`}
-                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:border-slate-400"
-                >
-                  Manage
-                </Link>
-              </div>
-            </div>
-          ))}
-        </div>
+        <SitesListClient initialSites={sites} />
       </div>
     </main>
   );

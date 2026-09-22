@@ -70,6 +70,14 @@ export async function updateSite(supabase: SupabaseClient, record: SiteRecord): 
   if (error) throw new Error(error.message);
 }
 
+// Cascades to site_images, site_hero_stages, site_animations, quotes, and
+// leads via ON DELETE CASCADE. Storage objects (gallery photos) live
+// outside Postgres and must be cleaned up separately by the caller.
+export async function deleteSite(supabase: SupabaseClient, id: string): Promise<void> {
+  const { error } = await supabase.from("sites").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
 export async function listSitesForOwner(supabase: SupabaseClient, ownerId: string): Promise<SiteRecord[]> {
   const { data, error } = await supabase
     .from("sites")
