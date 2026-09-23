@@ -80,18 +80,17 @@ const HERO_TRANSFORMATION_PROMPT =
  * before/during/after), rather than animating a single image.
  *
  * Endpoint prefix ("minimax/h3/...") and auth/polling/response handling are
- * verified (same as animatePhoto above). The multi-image input field names
- * below are the best-confirmed guess, not yet proven against a real call:
- * Higgsfield's own model catalog (minimax_h3) lists this model's supported
- * input roles as "start_image", "end_image", "image_references" (alongside
- * video/audio references not relevant here) — confirmed by querying the
- * live model catalog, not invented. Following the single-image endpoint's
- * own confirmed convention (`image_url` singular), the most likely REST
- * field names are `start_image_url` / `end_image_url` /
- * `image_reference_urls`. This throws a real error (not a silent null) on
- * failure so the first live attempt's actual Higgsfield error — if the
- * field names are wrong — tells us exactly what to fix instead of another
- * guess.
+ * verified (same as animatePhoto above). Multi-image field names: a first
+ * live attempt with `start_image_url` came back "'image_url' is a required
+ * property" — real Higgsfield validation, not a guess — confirming the
+ * start frame is still the base `image_url` field (same as the
+ * single-image endpoint), not a separate start-specific field. The model
+ * catalog (minimax_h3, queried live) confirms this model accepts
+ * start_image/end_image/image_references roles beyond that; `end_image_url`
+ * / `image_reference_urls` below remain the best-confirmed guess for those
+ * until proven. This throws a real error (not a silent null) on failure so
+ * each live attempt's actual Higgsfield error keeps narrowing what's wrong
+ * instead of guessing blind.
  */
 export async function animateHeroTransformation(stageUrls: string[]): Promise<{ videoUrl: string } | null> {
   if (!process.env.HF_CREDENTIALS) return null;
@@ -104,7 +103,7 @@ export async function animateHeroTransformation(stageUrls: string[]): Promise<{ 
   const result = await higgsfield.subscribe("minimax/h3/image-to-video", {
     input: {
       prompt: HERO_TRANSFORMATION_PROMPT,
-      start_image_url: stageUrls[0],
+      image_url: stageUrls[0],
       end_image_url: stageUrls[stageUrls.length - 1],
       ...(middleStages.length > 0 ? { image_reference_urls: middleStages } : {}),
       duration: HERO_TRANSFORMATION_DURATION_SECONDS,
