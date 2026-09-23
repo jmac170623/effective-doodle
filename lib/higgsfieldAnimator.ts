@@ -31,26 +31,26 @@ const GALLERY_ANIMATION_PROMPT =
 export async function animatePhoto(imageUrl: string): Promise<{ videoUrl: string } | null> {
   if (!process.env.HF_CREDENTIALS) return null;
 
-  try {
-    config({ credentials: process.env.HF_CREDENTIALS });
-    const result = await higgsfield.subscribe("minimax/h3/image-to-video", {
-      input: {
-        prompt: GALLERY_ANIMATION_PROMPT,
-        image_url: imageUrl,
-        duration: GALLERY_ANIMATION_DURATION_SECONDS,
-        resolution: GALLERY_ANIMATION_RESOLUTION,
-        aspect_ratio: "auto",
-        aigc_watermark: false,
-      },
-      withPolling: true,
-    });
+  config({ credentials: process.env.HF_CREDENTIALS });
+  const result = await higgsfield.subscribe("minimax/h3/image-to-video", {
+    input: {
+      prompt: GALLERY_ANIMATION_PROMPT,
+      image_url: imageUrl,
+      duration: GALLERY_ANIMATION_DURATION_SECONDS,
+      resolution: GALLERY_ANIMATION_RESOLUTION,
+      aspect_ratio: "auto",
+      aigc_watermark: false,
+    },
+    withPolling: true,
+  });
 
-    if (result.status !== "completed" || !result.video?.url) return null;
-    return { videoUrl: result.video.url };
-  } catch (error) {
-    console.error("Higgsfield animatePhoto failed, falling back gracefully:", error);
-    return null;
+  // "nsfw" happens on a real (if rare) misclassified trade photo — surfaced
+  // to the caller like any other non-completion rather than masked as a
+  // generic failure, since it's diagnosable and not a code bug.
+  if (result.status !== "completed" || !result.video?.url) {
+    throw new Error(`Higgsfield animation did not complete (status: ${result.status}).`);
   }
+  return { videoUrl: result.video.url };
 }
 
 // This runs exactly once per site (enforced in the hero-animation route,
@@ -80,27 +80,43 @@ const HERO_TRANSFORMATION_PROMPT =
  * before/during/after), rather than animating a single image.
  *
  * Endpoint prefix ("minimax/h3/...") and auth/polling/response handling are
- * verified (same as animatePhoto above). What's NOT yet verified: the input
- * field name(s) for supplying more than one photo — the dashboard's own
- * code samples only showed the single-image "minimax/h3/image-to-video"
- * shape (`image_url: string`). The model's own catalog description calls it
- * "multimodal video generation with keyframes or image/video/audio
- * references", which strongly implies a distinct keyframes-capable
- * endpoint/input exists, but its exact shape hasn't been confirmed against
- * a real code sample yet. Faking that field name here would risk a
- * confusing 422 on the one-shot generation — left as null until confirmed.
+ * verified (same as animatePhoto above). The multi-image input field names
+ * below are the best-confirmed guess, not yet proven against a real call:
+ * Higgsfield's own model catalog (minimax_h3) lists this model's supported
+ * input roles as "start_image", "end_image", "image_references" (alongside
+ * video/audio references not relevant here) — confirmed by querying the
+ * live model catalog, not invented. Following the single-image endpoint's
+ * own confirmed convention (`image_url` singular), the most likely REST
+ * field names are `start_image_url` / `end_image_url` /
+ * `image_reference_urls`. This throws a real error (not a silent null) on
+ * failure so the first live attempt's actual Higgsfield error — if the
+ * field names are wrong — tells us exactly what to fix instead of another
+ * guess.
  */
 export async function animateHeroTransformation(stageUrls: string[]): Promise<{ videoUrl: string } | null> {
   if (!process.env.HF_CREDENTIALS) return null;
   if (stageUrls.length < 2) return null;
 
-  // TODO: real Higgsfield API call goes here once the multi-image input
-  // shape is confirmed — likely a "minimax/h3/keyframes"-style endpoint
-  // (see comment above), reusing the same config()/subscribe()/polling
-  // pattern as animatePhoto, with HERO_TRANSFORMATION_PROMPT/DURATION/RESOLUTION.
-  console.warn(
-    `Higgsfield hero transformation input shape not yet confirmed — skipped across ${stageUrls.length} stages ` +
-      `(intended: ${HERO_TRANSFORMATION_DURATION_SECONDS}s at ${HERO_TRANSFORMATION_RESOLUTION}, prompt: "${HERO_TRANSFORMATION_PROMPT}").`
-  );
-  return null;
+  config({ credentials: process.env.HF_CREDENTIALS });
+
+  const middleStages = stageUrls.slice(1, -1);
+
+  const result = await higgsfield.subscribe("minimax/h3/image-to-video", {
+    input: {
+      prompt: HERO_TRANSFORMATION_PROMPT,
+      start_image_url: stageUrls[0],
+      end_image_url: stageUrls[stageUrls.length - 1],
+      ...(middleStages.length > 0 ? { image_reference_urls: middleStages } : {}),
+      duration: HERO_TRANSFORMATION_DURATION_SECONDS,
+      resolution: HERO_TRANSFORMATION_RESOLUTION,
+      aspect_ratio: "auto",
+      aigc_watermark: false,
+    },
+    withPolling: true,
+  });
+
+  if (result.status !== "completed" || !result.video?.url) {
+    throw new Error(`Higgsfield hero transformation did not complete (status: ${result.status}).`);
+  }
+  return { videoUrl: result.video.url };
 }

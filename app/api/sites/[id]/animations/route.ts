@@ -43,11 +43,20 @@ export async function POST(
   const animationId = generateId("anim");
   await insertSiteAnimation(supabase, { id: animationId, siteId: id, imageId, usedCredit: eligibility.usesCredit });
 
-  const result = await animatePhoto(image.url);
+  let result;
+  try {
+    result = await animatePhoto(image.url);
+  } catch (error) {
+    await updateSiteAnimationStatus(supabase, { id: animationId, status: "failed" });
+    console.error(`Animation failed for site ${id}, image ${imageId}:`, error);
+    const message = error instanceof Error ? error.message : "Animation failed.";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 
   if (!result) {
-    // Not a customer-facing failure — Higgsfield isn't wired up yet. Don't
-    // charge a credit for an attempt that could never have succeeded.
+    // Not a customer-facing failure — Higgsfield isn't wired up yet (no
+    // HF_CREDENTIALS configured). Don't charge a credit for an attempt that
+    // could never have succeeded.
     await updateSiteAnimationStatus(supabase, { id: animationId, status: "failed" });
     return NextResponse.json(
       { error: "Animation isn't set up yet — check back once this is configured." },

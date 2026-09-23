@@ -55,7 +55,15 @@ export async function POST(
   const animationId = generateId("anim");
   await insertSiteAnimation(supabase, { id: animationId, siteId: id, isHero: true, usedCredit: eligibility.usesCredit });
 
-  const result = await animateHeroTransformation(stages.map((s) => s.url));
+  let result;
+  try {
+    result = await animateHeroTransformation(stages.map((s) => s.url));
+  } catch (error) {
+    await updateSiteAnimationStatus(supabase, { id: animationId, status: "failed" });
+    console.error(`Hero transformation failed for site ${id}:`, error);
+    const message = error instanceof Error ? error.message : "Hero transformation failed.";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 
   if (!result) {
     await updateSiteAnimationStatus(supabase, { id: animationId, status: "failed" });
