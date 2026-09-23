@@ -731,7 +731,7 @@
               <span class="mic-ring"></span>
               <span>🎤</span>
             </button>
-            <p class="mic-status" id="micStatus">Tap to answer</p>
+            <p class="mic-status" id="micStatus">Tap to speak</p>
             <button class="link-btn" id="toggleTypeBtn" type="button">Type instead</button>
           </div>
 
@@ -744,7 +744,7 @@
         <button class="icon-btn end-call" id="endCallBtn" aria-label="End call">☎</button>
       </div>
       <p class="stt-note" id="sttNote" hidden>Speech recognition isn't supported in this browser (try Chrome or Edge) — using typed replies instead.</p>
-      <p class="stt-note" id="micHint">Speak clearly right after "Listening…" appears. Mic accuracy depends on your browser and microphone — Chrome on desktop tends to work best.</p>
+      <p class="stt-note" id="micHint">Tap the mic to start speaking, then tap it again when you're finished — it won't cut you off while you're mid-sentence. Mic accuracy depends on your browser and microphone — Chrome on desktop tends to work best.</p>
 
       <details class="transcript" id="transcriptDetails" hidden>
         <summary>View full call transcript</summary>
@@ -865,6 +865,9 @@
   let recognition = null;
   let recognizing = false;
   let sttSupported = false;
+  let sttError = false;
+  let finalTranscriptBuffer = "";
+  let micStream = null;
   let replyMode = "mic"; // mic | type
   let availableVoices = [];
   let selectedVoice = null;
@@ -947,7 +950,9 @@
     });
 
     // Prefer the more natural-sounding voices browsers ship, in rough order of quality.
+    // "Andrew" is checked first since it's the requested default when the browser/OS has it installed.
     const preferredPatterns = [
+      /andrew/i,
       /natural/i, /neural/i, /online/i,
       /aria/i, /jenny/i, /guy/i,
       /google uk english female/i, /google us english/i,
@@ -1021,29 +1026,35 @@
     }
 
     recognition = new SpeechRecognition();
-    recognition.continuous = false;
+    // continuous:true + a manual mic-tap to stop means pauses in speech don't cut the caller off —
+    // only tapping the mic again submits, per the "wait until I confirm I'm finished" requirement.
+    recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = navigator.language || "en-US";
 
     recognition.onstart = () => {
       recognizing = true;
+      sttError = false;
+      finalTranscriptBuffer = "";
       micBtn.classList.add("listening");
-      micStatus.textContent = "Listening…";
+      micStatus.textContent = "Listening… tap the mic again when you're done";
     };
 
     recognition.onresult = (event) => {
       let interim = "";
-      let final = "";
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
-        if (event.results[i].isFinal) final += transcript;
-        else interim += transcript;
+        if (event.results[i].isFinal) {
+          finalTranscriptBuffer = (finalTranscriptBuffer + " " + transcript).trim();
+        } else {
+          interim += transcript;
+        }
       }
-      if (interim && !final) userCaption.textContent = interim;
-      if (final.trim()) processReply(final.trim());
+      userCaption.textContent = (finalTranscriptBuffer + " " + interim).trim();
     };
 
     recognition.onerror = (event) => {
+      sttError = true;
       recognizing = false;
       micBtn.classList.remove("listening");
       if (callState !== "active" || !awaitingAnswer) return;
@@ -1059,7 +1070,26 @@
     recognition.onend = () => {
       recognizing = false;
       micBtn.classList.remove("listening");
+      if (sttError) return;
+      if (callState !== "active" || !awaitingAnswer) return;
+      const text = finalTranscriptBuffer.trim();
+      if (text) {
+        processReply(text);
+      } else {
+        micStatus.textContent = "Didn't catch anything — tap to try again";
+      }
     };
+  }
+
+  // Requested once, right when the call is accepted, so the browser's permission prompt
+  // appears at most once per call instead of being triggered repeatedly per question.
+  async function requestMicAccess() {
+    if (!sttSupported || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
+    try {
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (e) {
+      // Denied or unavailable — the mic button's own error handling will surface this when tapped.
+    }
   }
 
   function startListening() {
@@ -1070,6 +1100,13 @@
   function stopListening() {
     if (recognition && recognizing) {
       try { recognition.stop(); } catch (e) { /* no-op */ }
+    }
+  }
+
+  function releaseMicStream() {
+    if (micStream) {
+      micStream.getTracks().forEach(track => track.stop());
+      micStream = null;
     }
   }
 
@@ -1103,8 +1140,7 @@
   function enableReplyControls() {
     if (replyMode === "mic" && sttSupported) {
       micBtn.disabled = false;
-      micStatus.textContent = "Tap to answer";
-      startListening();
+      micStatus.textContent = "Tap to speak";
     } else {
       userInput.disabled = false;
       sendBtn.disabled = false;
@@ -1385,6 +1421,7 @@
   function resetCallScreen() {
     window.speechSynthesis && window.speechSynthesis.cancel();
     stopListening();
+    releaseMicStream();
     stopTimer();
     answers = {};
     questionIndex = -1;
@@ -1404,6 +1441,7 @@
   function acceptCall() {
     setCallState("active");
     startTimer();
+    requestMicAccess();
     botSay(currentConfig.greeting, () => {
       setTimeout(advance, 400);
     });
@@ -1419,6 +1457,7 @@
   function endCall() {
     window.speechSynthesis && window.speechSynthesis.cancel();
     stopListening();
+    releaseMicStream();
     setCallState("ended");
     renderSummary();
   }
