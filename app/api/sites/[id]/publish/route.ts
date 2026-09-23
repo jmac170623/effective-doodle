@@ -31,7 +31,14 @@ export async function POST(
     status: "published" as const,
     updatedAt: new Date().toISOString(),
   };
-  await updateSite(supabase, updated);
+
+  try {
+    await updateSite(supabase, updated);
+  } catch (error) {
+    console.error(`Failed to publish site ${id}:`, error);
+    const message = error instanceof Error ? error.message : "Failed to publish.";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 
   return NextResponse.json(updated);
 }

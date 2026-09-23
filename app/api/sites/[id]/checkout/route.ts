@@ -25,16 +25,22 @@ export async function POST(
   }
 
   const origin = request.nextUrl.origin;
-  const stripe = getStripe();
-  const session = await stripe.checkout.sessions.create({
-    mode: "subscription",
-    line_items: [{ price: SITE_RETAINER_PRICE_ID, quantity: 1 }],
-    success_url: `${origin}/preview/${id}?checkout=success`,
-    cancel_url: `${origin}/preview/${id}?checkout=cancelled`,
-    customer_email: user.email,
-    metadata: { siteId: id },
-    subscription_data: { metadata: { siteId: id } },
-  });
+  try {
+    const stripe = getStripe();
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      line_items: [{ price: SITE_RETAINER_PRICE_ID, quantity: 1 }],
+      success_url: `${origin}/preview/${id}?checkout=success`,
+      cancel_url: `${origin}/preview/${id}?checkout=cancelled`,
+      customer_email: user.email,
+      metadata: { siteId: id },
+      subscription_data: { metadata: { siteId: id } },
+    });
 
-  return NextResponse.json({ url: session.url });
+    return NextResponse.json({ url: session.url });
+  } catch (error) {
+    console.error(`Failed to start checkout for site ${id}:`, error);
+    const message = error instanceof Error ? error.message : "Failed to start checkout.";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }

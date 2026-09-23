@@ -17,6 +17,7 @@ function PreviewClientInner({ siteId }: { siteId: string }) {
   const pollAttempts = useRef(0);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const [publishError, setPublishError] = useState("");
 
   const checkoutResult = searchParams.get("checkout");
   const editCheckoutResult = searchParams.get("editCheckout");
@@ -70,10 +71,14 @@ function PreviewClientInner({ siteId }: { siteId: string }) {
   async function handlePublish() {
     if (!site) return;
     setPublishing(true);
+    setPublishError("");
     try {
       if (site.billingStatus === "active") {
         const res = await fetch(`/api/sites/${siteId}/publish`, { method: "POST" });
-        if (!res.ok) throw new Error("Failed to publish.");
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || "Failed to publish.");
+        }
         router.push(`/site/${siteId}`);
         return;
       }
@@ -87,7 +92,7 @@ function PreviewClientInner({ siteId }: { siteId: string }) {
       window.location.href = url;
     } catch (err) {
       setPublishing(false);
-      setLoadError(err instanceof Error ? err.message : "Something went wrong.");
+      setPublishError(err instanceof Error ? err.message : "Something went wrong.");
     }
   }
 
@@ -165,6 +170,9 @@ function PreviewClientInner({ siteId }: { siteId: string }) {
         </div>
         {deleteError && (
           <p className="mx-auto mt-2 max-w-5xl text-sm text-red-600">{deleteError}</p>
+        )}
+        {publishError && (
+          <p className="mx-auto mt-2 max-w-5xl text-sm text-red-600">{publishError}</p>
         )}
         {checkoutResult === "cancelled" && (
           <p className="mx-auto mt-2 max-w-5xl text-sm text-amber-600">
