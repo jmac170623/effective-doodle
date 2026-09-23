@@ -3,6 +3,7 @@ import { ContactForm } from "./ContactForm";
 import { ScrollReveal } from "./ScrollReveal";
 import { HeroScrubVideo } from "./HeroScrubVideo";
 import { HeroStageSlideshow } from "./HeroStageSlideshow";
+import { LazyAutoplayVideo } from "./LazyAutoplayVideo";
 import { QuoteCalculator } from "./QuoteCalculator";
 import { matchTradeCategory, defaultDayRate } from "@/lib/quoteCategories";
 
@@ -316,14 +317,10 @@ function Gallery({
             const animation = animations.find((a) => a.imageId === image.id && a.status === "completed" && a.videoUrl);
             if (animation?.videoUrl) {
               return (
-                <video
+                <LazyAutoplayVideo
                   key={image.id}
                   src={animation.videoUrl}
                   poster={image.url}
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
                   className="aspect-square rounded-[var(--radius)] object-cover"
                 />
               );
@@ -334,6 +331,8 @@ function Gallery({
                 key={image.id}
                 src={image.url}
                 alt={image.caption || "Job photo"}
+                loading="lazy"
+                decoding="async"
                 className="aspect-square rounded-[var(--radius)] object-cover"
               />
             );
