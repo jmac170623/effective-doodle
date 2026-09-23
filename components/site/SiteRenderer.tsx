@@ -2,6 +2,7 @@ import { OnboardingData, GeneratedSite, HeroStage, SiteAnimation, SiteImage } fr
 import { ContactForm } from "./ContactForm";
 import { ScrollReveal } from "./ScrollReveal";
 import { HeroScrubVideo } from "./HeroScrubVideo";
+import { HeroStageSlideshow } from "./HeroStageSlideshow";
 import { QuoteCalculator } from "./QuoteCalculator";
 import { matchTradeCategory, defaultDayRate } from "@/lib/quoteCategories";
 
@@ -32,7 +33,7 @@ export function SiteRenderer({ siteId, onboarding, generated, images = [], anima
   } as React.CSSProperties;
 
   const sectionGapClass =
-    style.density === "compact" ? "py-12" : style.density === "spacious" ? "py-24" : "py-16";
+    style.density === "compact" ? "py-12" : style.density === "spacious" ? "py-20" : "py-16";
 
   return (
     <div
@@ -48,6 +49,8 @@ export function SiteRenderer({ siteId, onboarding, generated, images = [], anima
 
       <Hero
         copy={copy}
+        yearsExperience={onboarding.yearsExperience}
+        areaCovered={onboarding.areaCovered}
         heroStages={heroStages}
         heroVideoUrl={heroAnimation?.videoUrl}
         sectionGapClass={sectionGapClass}
@@ -91,6 +94,47 @@ function Reveal({ motion, children }: { motion: GeneratedSite["style"]["motion"]
   return <ScrollReveal>{children}</ScrollReveal>;
 }
 
+// A small colored "eyebrow" label above the heading gives every section a
+// second typographic level instead of one flat size repeated down the
+// page, and puts the accent color to visible use — previously defined in
+// every palette but never actually rendered anywhere.
+function SectionHeading({
+  eyebrow,
+  heading,
+  intro,
+  light,
+}: {
+  eyebrow: string;
+  heading: string;
+  intro?: string;
+  light?: boolean;
+}) {
+  return (
+    <div>
+      <span
+        className={`text-xs font-bold uppercase tracking-[0.2em] ${light ? "text-white/80" : ""}`}
+        style={light ? undefined : { color: "var(--color-accent)" }}
+      >
+        {eyebrow}
+      </span>
+      <h2
+        className={`mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl ${light ? "text-white" : ""}`}
+        style={{ fontFamily: "var(--font-heading)" }}
+      >
+        {heading}
+      </h2>
+      {intro && (
+        <p
+          className={`mt-3 max-w-xl text-base ${light ? "text-white/80" : ""}`}
+          style={light ? undefined : { color: "var(--color-muted)" }}
+        >
+          {intro}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function Nav({ businessName, phone }: { businessName: string; phone: string }) {
   return (
     <header
@@ -120,51 +164,69 @@ function Nav({ businessName, phone }: { businessName: string; phone: string }) {
 
 function Hero({
   copy,
+  yearsExperience,
+  areaCovered,
   heroStages,
   heroVideoUrl,
   sectionGapClass,
 }: {
   copy: GeneratedSite["copy"];
+  yearsExperience: number;
+  areaCovered: string;
   heroStages: HeroStage[];
   heroVideoUrl?: string;
   sectionGapClass: string;
 }) {
   // The last stage (e.g. "after"/finished) is the compelling shot to lead
-  // with; earlier stages only come into play once the transformation video
-  // exists, at which point the whole sequence plays as the visitor scrolls.
+  // with once a transformation video exists (it plays as the visitor
+  // scrolls). Without a video, multiple stages crossfade as a slideshow
+  // instead of only ever showing the final photo — uploading a before/
+  // during/after sequence should visibly do something even pre-animation.
   const backgroundImageUrl = heroStages.length > 0 ? heroStages[heroStages.length - 1].url : undefined;
+  const stageUrls = heroStages.map((s) => s.url);
 
   return (
     <section
       className={`relative overflow-hidden px-6 text-center ${sectionGapClass} ${
-        backgroundImageUrl ? "flex min-h-[70vh] flex-col items-center justify-center" : ""
+        backgroundImageUrl ? "flex min-h-[78vh] flex-col items-center justify-center" : ""
       }`}
     >
       {backgroundImageUrl &&
         (heroVideoUrl ? (
           <HeroScrubVideo src={heroVideoUrl} posterUrl={backgroundImageUrl} className="absolute inset-0" />
+        ) : stageUrls.length > 1 ? (
+          <HeroStageSlideshow urls={stageUrls} className="absolute inset-0" />
         ) : (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={backgroundImageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
         ))}
-      {backgroundImageUrl && <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10" />}
+      {backgroundImageUrl && <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-black/10" />}
 
       <div className="relative">
+        <span
+          className="inline-block rounded-full px-4 py-1 text-xs font-bold uppercase tracking-[0.2em]"
+          style={{
+            backgroundColor: backgroundImageUrl ? "rgba(255,255,255,0.15)" : "var(--color-secondary)",
+            color: backgroundImageUrl ? "#ffffff" : "var(--color-accent)",
+          }}
+        >
+          {yearsExperience > 0 ? `${yearsExperience}+ Years Experience` : `Serving ${areaCovered}`}
+        </span>
         <h1
-          className={`mx-auto max-w-3xl text-4xl font-extrabold leading-tight sm:text-5xl ${backgroundImageUrl ? "text-white" : ""}`}
+          className={`mx-auto mt-5 max-w-3xl text-5xl font-black leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl ${backgroundImageUrl ? "text-white" : ""}`}
           style={{ fontFamily: "var(--font-heading)" }}
         >
           {copy.heroHeadline}
         </h1>
         <p
-          className={`mx-auto mt-4 max-w-xl text-lg ${backgroundImageUrl ? "text-white/90" : ""}`}
+          className={`mx-auto mt-5 max-w-xl text-lg sm:text-xl ${backgroundImageUrl ? "text-white/90" : ""}`}
           style={backgroundImageUrl ? undefined : { color: "var(--color-muted)" }}
         >
           {copy.heroSubheadline}
         </p>
         <a
           href="#contact"
-          className="mt-8 inline-block rounded-[var(--radius)] px-8 py-3 text-base font-semibold text-white shadow-sm transition hover:opacity-90"
+          className="mt-9 inline-block rounded-[var(--radius)] px-9 py-4 text-base font-bold text-white shadow-lg transition hover:scale-[1.02] hover:opacity-90"
           style={{ backgroundColor: "var(--color-primary)" }}
         >
           {copy.heroCta}
@@ -177,10 +239,11 @@ function Hero({
 function About({ copy, sectionGapClass }: { copy: GeneratedSite["copy"]; sectionGapClass: string }) {
   return (
     <section id="about" className={`mx-auto max-w-3xl px-6 ${sectionGapClass}`}>
-      <h2 className="text-2xl font-bold sm:text-3xl" style={{ fontFamily: "var(--font-heading)" }}>
-        {copy.aboutHeading}
-      </h2>
-      <p className="mt-4 whitespace-pre-line text-base leading-relaxed" style={{ color: "var(--color-muted)" }}>
+      <SectionHeading eyebrow="About Us" heading={copy.aboutHeading} />
+      <p
+        className="mt-6 whitespace-pre-line border-l-4 pl-5 text-lg leading-relaxed"
+        style={{ color: "var(--color-muted)", borderColor: "var(--color-accent)" }}
+      >
         {copy.aboutBody}
       </p>
     </section>
@@ -199,24 +262,25 @@ function Services({
   return (
     <section id="services" className={`px-6 ${sectionGapClass}`} style={{ backgroundColor: "var(--color-secondary)" }}>
       <div className="mx-auto max-w-5xl">
-        <h2 className="text-2xl font-bold sm:text-3xl" style={{ fontFamily: "var(--font-heading)" }}>
-          {copy.servicesHeading}
-        </h2>
-        <p className="mt-2 max-w-xl" style={{ color: "var(--color-muted)" }}>
-          {copy.servicesIntro}
-        </p>
-        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {services.map((service) => (
+        <SectionHeading eyebrow="What We Offer" heading={copy.servicesHeading} intro={copy.servicesIntro} />
+        <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {services.map((service, i) => (
             <div
               key={service.id}
-              className="rounded-[var(--radius)] p-5 shadow-sm"
-              style={{ backgroundColor: "var(--color-surface)" }}
+              className="rounded-[var(--radius)] p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+              style={{ backgroundColor: "var(--color-surface)", borderTop: "3px solid var(--color-accent)" }}
             >
-              <h3 className="font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+              <span
+                className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white"
+                style={{ backgroundColor: "var(--color-primary)" }}
+              >
+                {i + 1}
+              </span>
+              <h3 className="mt-4 text-lg font-bold" style={{ fontFamily: "var(--font-heading)" }}>
                 {service.name}
               </h3>
               {service.description && (
-                <p className="mt-2 text-sm" style={{ color: "var(--color-muted)" }}>
+                <p className="mt-2 text-sm leading-relaxed" style={{ color: "var(--color-muted)" }}>
                   {service.description}
                 </p>
               )}
@@ -246,13 +310,8 @@ function Gallery({
   return (
     <section id="gallery" className={`px-6 ${sectionGapClass}`}>
       <div className="mx-auto max-w-5xl">
-        <h2 className="text-2xl font-bold sm:text-3xl" style={{ fontFamily: "var(--font-heading)" }}>
-          {copy.galleryHeading}
-        </h2>
-        <p className="mt-2 max-w-xl" style={{ color: "var(--color-muted)" }}>
-          {copy.galleryIntro}
-        </p>
-        <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <SectionHeading eyebrow="Our Work" heading={copy.galleryHeading} intro={copy.galleryIntro} />
+        <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3">
           {images.map((image) => {
             const animation = animations.find((a) => a.imageId === image.id && a.status === "completed" && a.videoUrl);
             if (animation?.videoUrl) {
@@ -311,13 +370,12 @@ function QuoteSection({
   return (
     <section id="quote" className={`px-6 ${sectionGapClass}`}>
       <div className="mx-auto max-w-5xl">
-        <h2 className="text-2xl font-bold sm:text-3xl" style={{ fontFamily: "var(--font-heading)" }}>
-          Get a Quote
-        </h2>
-        <p className="mt-2 max-w-xl" style={{ color: "var(--color-muted)" }}>
-          Enter the size of each area for a real, itemized estimate — no waiting around for a callback.
-        </p>
-        <div className="mt-8">
+        <SectionHeading
+          eyebrow="Instant Estimate"
+          heading="Get a Quote"
+          intro="Enter the details of the job for a real, itemized estimate — no waiting around for a callback."
+        />
+        <div className="mt-10">
           <QuoteCalculator
             siteId={siteId}
             category={category}
@@ -342,15 +400,10 @@ function Contact({
   sectionGapClass: string;
 }) {
   return (
-    <section id="contact" className={`px-6 ${sectionGapClass}`} style={{ backgroundColor: "var(--color-secondary)" }}>
+    <section id="contact" className={`px-6 text-white ${sectionGapClass}`} style={{ backgroundColor: "var(--color-primary)" }}>
       <div className="mx-auto grid max-w-5xl gap-10 sm:grid-cols-2">
         <div>
-          <h2 className="text-2xl font-bold sm:text-3xl" style={{ fontFamily: "var(--font-heading)" }}>
-            {copy.contactHeading}
-          </h2>
-          <p className="mt-2 max-w-md" style={{ color: "var(--color-muted)" }}>
-            {copy.contactIntro}
-          </p>
+          <SectionHeading eyebrow="Get In Touch" heading={copy.contactHeading} intro={copy.contactIntro} light />
           <dl className="mt-6 space-y-2 text-sm">
             <div>
               <dt className="inline font-semibold">Phone: </dt>

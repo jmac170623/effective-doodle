@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { JobSize, Material, TradeCategory } from "./types";
+import { JobSize, Material, QuoteMeasureKind, TradeCategory } from "./types";
 
 interface MaterialRow {
   id: string;
@@ -8,6 +8,7 @@ interface MaterialRow {
   unit: string;
   unit_price: number;
   merchant_label: string;
+  measure_kind: QuoteMeasureKind;
   suggested_qty: Record<JobSize, number>;
 }
 
@@ -19,6 +20,7 @@ function rowToMaterial(row: MaterialRow): Material {
     unit: row.unit,
     unitPrice: row.unit_price,
     merchantLabel: row.merchant_label,
+    measureKind: row.measure_kind,
     suggestedQty: row.suggested_qty,
   };
 }

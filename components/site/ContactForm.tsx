@@ -39,8 +39,8 @@ export function ContactForm({ siteId }: { siteId: string }) {
   if (status === "sent") {
     return (
       <div
-        className="rounded-[var(--radius)] p-6 text-center"
-        style={{ backgroundColor: "var(--color-surface)" }}
+        className="rounded-[var(--radius)] p-6 text-center shadow-lg"
+        style={{ backgroundColor: "var(--color-surface)", color: "var(--color-text)" }}
       >
         <p className="font-semibold">Thanks — your message has been sent!</p>
         <p className="mt-1 text-sm" style={{ color: "var(--color-muted)" }}>
@@ -53,8 +53,8 @@ export function ContactForm({ siteId }: { siteId: string }) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-3 rounded-[var(--radius)] p-6"
-      style={{ backgroundColor: "var(--color-surface)" }}
+      className="space-y-3 rounded-[var(--radius)] p-6 shadow-lg"
+      style={{ backgroundColor: "var(--color-surface)", color: "var(--color-text)" }}
     >
       <div>
         <label className="text-sm font-medium" htmlFor="contact-name">Name</label>

@@ -250,6 +250,14 @@ export type TradeCategory = "plumbing" | "electrical" | "tiling" | "painting" | 
 
 export type JobSize = "small" | "medium" | "large";
 
+// Not every material in a job scales with the same measurement: tiles and
+// paint scale with area, pipe/cable/trim with length, fixtures with count,
+// and concrete/aggregate/screed with volume. "job" is for line items that
+// are either included or not (e.g. skip hire) rather than scaling with any
+// single dimension — its quantity is included once any section has a
+// nonzero value, regardless of kind.
+export type QuoteMeasureKind = "area" | "volume" | "length" | "count" | "job";
+
 export interface Material {
   id: string;
   category: TradeCategory;
@@ -257,6 +265,7 @@ export interface Material {
   unit: string;
   unitPrice: number;
   merchantLabel: string;
+  measureKind: QuoteMeasureKind;
   suggestedQty: Record<JobSize, number>;
 }
 
@@ -270,19 +279,29 @@ export interface QuoteLineItem {
   merchantLabel: string;
 }
 
-// A customer-entered area (e.g. "Kitchen", "Hallway") — the quote tool sums
-// these into a total area rather than asking the customer to pick a
-// materials quantity or a coarse small/medium/large size themselves.
+// A customer-entered measurement (e.g. "Kitchen floor", "Pipe run to
+// garage", "New sockets") — the quote tool sums same-kind sections into
+// totals per measurement type rather than forcing every job into a single
+// square-metre figure, which doesn't hold for length- or count-driven work.
 export interface QuoteSection {
   id: string;
   label: string;
-  areaSqm: number;
+  kind: QuoteMeasureKind;
+  // The value in the kind's natural unit: area -> m², volume -> m³,
+  // length -> linear metres, count -> whole units. Ignored for "job".
+  value: number;
+  // Volume sections are entered/edited as area (m²) x depth (mm) in the UI
+  // — asking a customer to picture "cubic metres" directly isn't realistic
+  // — kept here so the calculator can show the two real-world numbers
+  // instead of just the derived m³ figure.
+  areaSqm?: number;
+  depthMm?: number;
 }
 
 export interface QuoteBreakdown {
   category: TradeCategory;
   sections: QuoteSection[];
-  areaSqm: number;
+  totals: Record<Exclude<QuoteMeasureKind, "job">, number>;
   lineItems: QuoteLineItem[];
   materialsTotal: number;
   labourDays: number;

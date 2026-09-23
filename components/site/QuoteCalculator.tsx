@@ -1,18 +1,40 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { buildQuoteBreakdown } from "@/lib/quoteEngine";
+import { buildQuoteBreakdown, volumeFromAreaAndDepth } from "@/lib/quoteEngine";
 import { generateId } from "@/lib/idGen";
-import { Material, OnboardingData, QuoteSection, TradeCategory } from "@/lib/types";
+import { Material, OnboardingData, QuoteMeasureKind, QuoteSection, TradeCategory } from "@/lib/types";
 
 function formatGBP(n: number): string {
   return `£${n.toFixed(2)}`;
 }
 
-const MAX_SECTION_SQM = 80;
+const KIND_OPTIONS: { value: QuoteMeasureKind; label: string; unitLabel: string }[] = [
+  { value: "area", label: "Area", unitLabel: "m²" },
+  { value: "volume", label: "Volume (e.g. concrete, screed)", unitLabel: "m³" },
+  { value: "length", label: "Length (e.g. pipe run, fencing)", unitLabel: "m" },
+  { value: "count", label: "Number of fixtures/fittings", unitLabel: "" },
+];
 
-function newSection(label = ""): QuoteSection {
-  return { id: generateId("section"), label, areaSqm: 0 };
+const SLIDER_CONFIG: Record<Exclude<QuoteMeasureKind, "job">, { max: number; step: number }> = {
+  area: { max: 80, step: 0.5 },
+  volume: { max: 40, step: 0.5 }, // applies to the area half of the area×depth input
+  length: { max: 100, step: 0.5 },
+  count: { max: 30, step: 1 },
+};
+
+// Which measurement kind a fresh section defaults to, based on how this
+// trade is typically quoted — plumbers/electricians are usually quoting
+// fixtures first, tilers/decorators a floor or wall area. "general" covers
+// too many different trades to guess, so it defaults to area but the
+// customer can change it per section either way.
+function defaultKindForCategory(category: TradeCategory): QuoteMeasureKind {
+  if (category === "plumbing" || category === "electrical") return "count";
+  return "area";
+}
+
+function newSection(category: TradeCategory): QuoteSection {
+  return { id: generateId("section"), label: "", kind: defaultKindForCategory(category), value: 0 };
 }
 
 export function QuoteCalculator({
@@ -27,7 +49,7 @@ export function QuoteCalculator({
   services: OnboardingData["services"];
 }) {
   const [serviceName, setServiceName] = useState(services[0]?.name ?? "General work");
-  const [sections, setSections] = useState<QuoteSection[]>([newSection()]);
+  const [sections, setSections] = useState<QuoteSection[]>([newSection(category)]);
   const [materials, setMaterials] = useState<Material[]>([]);
   const [loading, setLoading] = useState(true);
   const [calculated, setCalculated] = useState(false);
@@ -54,10 +76,7 @@ export function QuoteCalculator({
     };
   }, [category]);
 
-  const totalAreaSqm = useMemo(
-    () => Math.round(sections.reduce((sum, s) => sum + (s.areaSqm || 0), 0) * 10) / 10,
-    [sections]
-  );
+  const hasAnyValue = useMemo(() => sections.some((s) => s.value > 0), [sections]);
 
   const breakdown = useMemo(
     () => buildQuoteBreakdown(category, sections, materials, dayRate),
@@ -68,8 +87,16 @@ export function QuoteCalculator({
     setSections((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch } : s)));
   }
 
+  function changeSectionKind(id: string, kind: QuoteMeasureKind) {
+    updateSection(id, { kind, value: 0, areaSqm: undefined, depthMm: undefined });
+  }
+
+  function updateVolumeSection(id: string, areaSqm: number, depthMm: number) {
+    updateSection(id, { areaSqm, depthMm, value: volumeFromAreaAndDepth(areaSqm, depthMm) });
+  }
+
   function addSection() {
-    setSections((prev) => [...prev, newSection()]);
+    setSections((prev) => [...prev, newSection(category)]);
   }
 
   function removeSection(id: string) {
@@ -115,6 +142,13 @@ export function QuoteCalculator({
     );
   }
 
+  const totalsSummary = [
+    breakdown.totals.area > 0 && `${breakdown.totals.area} m²`,
+    breakdown.totals.volume > 0 && `${breakdown.totals.volume} m³`,
+    breakdown.totals.length > 0 && `${breakdown.totals.length} m`,
+    breakdown.totals.count > 0 && `${breakdown.totals.count} item${breakdown.totals.count === 1 ? "" : "s"}`,
+  ].filter(Boolean);
+
   return (
     <div className="space-y-6 rounded-[var(--radius)] p-6" style={{ backgroundColor: "var(--color-surface)" }}>
       <div>
@@ -134,59 +168,20 @@ export function QuoteCalculator({
       </div>
 
       <div className="space-y-4">
-        <p className="text-sm font-medium">Tell us the size of the area (in m²) — add a section for each room or space</p>
+        <p className="text-sm font-medium">
+          Add a section for each part of the job, and pick how it&apos;s measured — not everything is a floor area.
+        </p>
         {sections.map((section, i) => (
-          <div
+          <QuoteSectionRow
             key={section.id}
-            className="space-y-2 rounded-[var(--radius)] border p-4"
-            style={{ borderColor: "var(--color-muted)" }}
-          >
-            <div className="flex items-center gap-2">
-              <input
-                placeholder={`Section ${i + 1} name (e.g. Kitchen)`}
-                className="flex-1 rounded-[var(--radius)] border px-3 py-1.5 text-sm"
-                style={{ borderColor: "var(--color-muted)" }}
-                value={section.label}
-                onChange={(e) => updateSection(section.id, { label: e.target.value })}
-              />
-              {sections.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => removeSection(section.id)}
-                  className="text-xs font-medium underline"
-                  style={{ color: "var(--color-muted)" }}
-                >
-                  Remove
-                </button>
-              )}
-            </div>
-            <div className="flex items-center gap-3">
-              <input
-                type="range"
-                min={0}
-                max={MAX_SECTION_SQM}
-                step={0.5}
-                value={section.areaSqm}
-                onChange={(e) => updateSection(section.id, { areaSqm: Number(e.target.value) })}
-                className="flex-1"
-                style={{ accentColor: "var(--color-primary)" }}
-              />
-              <div className="flex items-center gap-1">
-                <input
-                  type="number"
-                  min={0}
-                  step={0.5}
-                  value={section.areaSqm}
-                  onChange={(e) => updateSection(section.id, { areaSqm: Math.max(0, Number(e.target.value) || 0) })}
-                  className="w-20 rounded border px-2 py-1 text-right text-sm"
-                  style={{ borderColor: "var(--color-muted)" }}
-                />
-                <span className="text-sm" style={{ color: "var(--color-muted)" }}>
-                  m²
-                </span>
-              </div>
-            </div>
-          </div>
+            section={section}
+            index={i}
+            onLabelChange={(label) => updateSection(section.id, { label })}
+            onKindChange={(kind) => changeSectionKind(section.id, kind)}
+            onValueChange={(value) => updateSection(section.id, { value })}
+            onVolumeChange={(areaSqm, depthMm) => updateVolumeSection(section.id, areaSqm, depthMm)}
+            onRemove={sections.length > 1 ? () => removeSection(section.id) : undefined}
+          />
         ))}
         <button
           type="button"
@@ -196,15 +191,17 @@ export function QuoteCalculator({
         >
           + Add another section
         </button>
-        <p className="text-sm" style={{ color: "var(--color-muted)" }}>
-          Total area: <span className="font-semibold">{totalAreaSqm} m²</span>
-        </p>
+        {totalsSummary.length > 0 && (
+          <p className="text-sm" style={{ color: "var(--color-muted)" }}>
+            Total: <span className="font-semibold">{totalsSummary.join(" · ")}</span>
+          </p>
+        )}
       </div>
 
       {!calculated ? (
         <button
           type="button"
-          disabled={totalAreaSqm <= 0 || loading}
+          disabled={!hasAnyValue || loading}
           onClick={() => setCalculated(true)}
           className="w-full rounded-[var(--radius)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 sm:w-auto"
           style={{ backgroundColor: "var(--color-primary)" }}
@@ -287,6 +284,177 @@ export function QuoteCalculator({
           </form>
         </div>
       )}
+    </div>
+  );
+}
+
+function QuoteSectionRow({
+  section,
+  index,
+  onLabelChange,
+  onKindChange,
+  onValueChange,
+  onVolumeChange,
+  onRemove,
+}: {
+  section: QuoteSection;
+  index: number;
+  onLabelChange: (label: string) => void;
+  onKindChange: (kind: QuoteMeasureKind) => void;
+  onValueChange: (value: number) => void;
+  onVolumeChange: (areaSqm: number, depthMm: number) => void;
+  onRemove?: () => void;
+}) {
+  const placeholder =
+    section.kind === "count"
+      ? `Section ${index + 1} name (e.g. New sockets & switches)`
+      : section.kind === "length"
+      ? `Section ${index + 1} name (e.g. Pipe run to garage)`
+      : `Section ${index + 1} name (e.g. Kitchen)`;
+
+  return (
+    <div className="space-y-3 rounded-[var(--radius)] border p-4" style={{ borderColor: "var(--color-muted)" }}>
+      <div className="flex items-center gap-2">
+        <input
+          placeholder={placeholder}
+          className="flex-1 rounded-[var(--radius)] border px-3 py-1.5 text-sm"
+          style={{ borderColor: "var(--color-muted)" }}
+          value={section.label}
+          onChange={(e) => onLabelChange(e.target.value)}
+        />
+        {onRemove && (
+          <button type="button" onClick={onRemove} className="text-xs font-medium underline" style={{ color: "var(--color-muted)" }}>
+            Remove
+          </button>
+        )}
+      </div>
+
+      <div>
+        <select
+          className="rounded-[var(--radius)] border px-2 py-1 text-xs"
+          style={{ borderColor: "var(--color-muted)" }}
+          value={section.kind}
+          onChange={(e) => onKindChange(e.target.value as QuoteMeasureKind)}
+        >
+          {KIND_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {section.kind === "volume" ? (
+        <VolumeInputs section={section} onVolumeChange={onVolumeChange} />
+      ) : (
+        <SimpleValueInput kind={section.kind as Exclude<QuoteMeasureKind, "volume" | "job">} value={section.value} onChange={onValueChange} />
+      )}
+    </div>
+  );
+}
+
+function SimpleValueInput({
+  kind,
+  value,
+  onChange,
+}: {
+  kind: Exclude<QuoteMeasureKind, "volume" | "job">;
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  const { max, step } = SLIDER_CONFIG[kind];
+  const unitLabel = KIND_OPTIONS.find((o) => o.value === kind)?.unitLabel ?? "";
+
+  return (
+    <div className="flex items-center gap-3">
+      <input
+        type="range"
+        min={0}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="flex-1"
+        style={{ accentColor: "var(--color-primary)" }}
+      />
+      <div className="flex items-center gap-1">
+        <input
+          type="number"
+          min={0}
+          step={step}
+          value={value}
+          onChange={(e) => onChange(Math.max(0, Number(e.target.value) || 0))}
+          className="w-20 rounded border px-2 py-1 text-right text-sm"
+          style={{ borderColor: "var(--color-muted)" }}
+        />
+        {unitLabel && (
+          <span className="text-sm" style={{ color: "var(--color-muted)" }}>
+            {unitLabel}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function VolumeInputs({
+  section,
+  onVolumeChange,
+}: {
+  section: QuoteSection;
+  onVolumeChange: (areaSqm: number, depthMm: number) => void;
+}) {
+  const areaSqm = section.areaSqm ?? 0;
+  const depthMm = section.depthMm ?? 0;
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs" style={{ color: "var(--color-muted)" }}>
+        Volume-based work is easier to judge as an area and a depth than in cubic metres directly.
+      </p>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-xs" style={{ color: "var(--color-muted)" }}>
+            Area
+          </label>
+          <div className="mt-1 flex items-center gap-1">
+            <input
+              type="number"
+              min={0}
+              step={0.5}
+              value={areaSqm}
+              onChange={(e) => onVolumeChange(Math.max(0, Number(e.target.value) || 0), depthMm)}
+              className="w-full rounded border px-2 py-1 text-sm"
+              style={{ borderColor: "var(--color-muted)" }}
+            />
+            <span className="text-sm" style={{ color: "var(--color-muted)" }}>
+              m²
+            </span>
+          </div>
+        </div>
+        <div>
+          <label className="text-xs" style={{ color: "var(--color-muted)" }}>
+            Depth
+          </label>
+          <div className="mt-1 flex items-center gap-1">
+            <input
+              type="number"
+              min={0}
+              step={10}
+              value={depthMm}
+              onChange={(e) => onVolumeChange(areaSqm, Math.max(0, Number(e.target.value) || 0))}
+              className="w-full rounded border px-2 py-1 text-sm"
+              style={{ borderColor: "var(--color-muted)" }}
+            />
+            <span className="text-sm" style={{ color: "var(--color-muted)" }}>
+              mm
+            </span>
+          </div>
+        </div>
+      </div>
+      <p className="text-xs" style={{ color: "var(--color-muted)" }}>
+        ≈ {section.value.toFixed(2)} m³
+      </p>
     </div>
   );
 }

@@ -50,9 +50,16 @@ style of the generated site.
 - **Instant quote calculator** — every generated site gets a "Get an Instant
   Quote" section backed by a shared materials catalog (`materials` table,
   currently placeholder-branded pricing — see `lib/quoteCategories.ts` and
-  `lib/quoteEngine.ts`). A visitor picks a service and job size and gets a
-  real itemized estimate (materials + labour); requests are recomputed
-  server-side and stored in `quotes`.
+  `lib/quoteEngine.ts`). Not every job is a floor area: each section a
+  visitor adds picks its own measurement — **area** (m²), **volume** (m³,
+  entered as area × depth in mm since guessing cubic metres directly isn't
+  realistic), **length** (linear metres, for pipe/cable/fencing runs), or
+  **count** (fixtures/fittings) — and each material in the catalog is
+  tagged with which of those it actually scales against
+  (`materials.measure_kind`), so a plumbing quote is no longer estimated
+  off a made-up room size. A visitor picks a service, adds a section per
+  part of the job, and gets a real itemized estimate (materials + labour);
+  requests are recomputed server-side and stored in `quotes`.
 - **Publish is billing-gated** — publishing a site requires an active £35/mo
   Stripe subscription for that specific site (`lib/stripe.ts`,
   `app/api/webhooks/stripe/route.ts`). The Stripe webhook is the source of

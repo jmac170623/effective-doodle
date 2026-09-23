@@ -5,20 +5,24 @@ import { buildQuoteBreakdown } from "@/lib/quoteEngine";
 import { defaultDayRate } from "@/lib/quoteCategories";
 import { generateId } from "@/lib/idGen";
 import { createClient } from "@/lib/supabase/server";
-import { QuoteSection, TradeCategory } from "@/lib/types";
+import { QuoteMeasureKind, QuoteSection, TradeCategory } from "@/lib/types";
 
 const VALID_CATEGORIES: TradeCategory[] = ["plumbing", "electrical", "tiling", "painting", "general"];
+const VALID_KINDS: QuoteMeasureKind[] = ["area", "volume", "length", "count", "job"];
 
 function parseSections(input: unknown): QuoteSection[] | null {
   if (!Array.isArray(input)) return null;
   const sections: QuoteSection[] = [];
   for (const raw of input) {
-    const areaSqm = Number(raw?.areaSqm);
-    if (!Number.isFinite(areaSqm) || areaSqm < 0) return null;
+    const kind = raw?.kind as QuoteMeasureKind;
+    if (!VALID_KINDS.includes(kind)) return null;
+    const value = Number(raw?.value);
+    if (!Number.isFinite(value) || value < 0) return null;
     sections.push({
       id: typeof raw?.id === "string" && raw.id ? raw.id : generateId("section"),
       label: typeof raw?.label === "string" ? raw.label.trim().slice(0, 60) : "",
-      areaSqm,
+      kind,
+      value,
     });
   }
   return sections;
@@ -44,8 +48,8 @@ export async function POST(
   if (!VALID_CATEGORIES.includes(category)) {
     return NextResponse.json({ error: "Invalid category." }, { status: 400 });
   }
-  if (!sections || sections.length === 0 || sections.every((s) => s.areaSqm <= 0)) {
-    return NextResponse.json({ error: "Enter at least one area to quote." }, { status: 400 });
+  if (!sections || sections.length === 0 || sections.every((s) => s.value <= 0)) {
+    return NextResponse.json({ error: "Enter at least one measurement to quote." }, { status: 400 });
   }
 
   const supabase = await createClient();
