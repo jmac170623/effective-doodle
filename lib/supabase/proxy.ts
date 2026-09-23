@@ -26,9 +26,21 @@ export async function updateSession(request: NextRequest) {
   );
 
   // IMPORTANT: getUser() must be called to refresh the session — do not remove.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Bounded with a timeout: an unresponsive/paused Supabase project must not
+  // hang every request in this app indefinitely (manifests to visitors as a
+  // browser-level "page couldn't load" with no way to recover).
+  let user = null;
+  try {
+    const result = await Promise.race([
+      supabase.auth.getUser(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Supabase auth timed out")), 5000)
+      ),
+    ]);
+    user = result.data.user;
+  } catch (error) {
+    console.error("proxy: failed to refresh Supabase session:", error);
+  }
 
   const isProtected = PROTECTED_PREFIXES.some((prefix) => request.nextUrl.pathname.startsWith(prefix));
 
