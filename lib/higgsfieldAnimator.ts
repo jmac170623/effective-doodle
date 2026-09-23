@@ -53,61 +53,49 @@ export async function animatePhoto(imageUrl: string): Promise<{ videoUrl: string
   return { videoUrl: result.video.url };
 }
 
-// This runs exactly once per site (enforced in the hero-animation route,
-// not here) — a single deliberate, premium generation rather than something
-// regenerated repeatedly. That's the justification for spending more per
-// generation than the single-photo animator: there's no "try again cheaper"
-// path, so it should look as good as the model can produce the first time.
-//
-// Duration is pinned to minimax_h3's actual maximum (15s), not a guessed
-// middle value. Up to 4 stage photos can be supplied, and a shorter
-// duration risks compressing each stage's transition into too little time
-// to register — the reference ad the user targeted dwells on each of its
-// ~4 stages for several real seconds. At $0.0715/s (45% off), 15s costs
-// ~$1.07 per generation — a small price for a generation that only ever
-// happens once per site.
-const HERO_TRANSFORMATION_DURATION_SECONDS = 15;
-const HERO_TRANSFORMATION_RESOLUTION = "2K";
-// Target quality bar: a real "QuickSite" competitor ad the user shared —
-// fixed camera angle on one property, morphing through the job's stages
-// (e.g. overgrown -> landscaped -> furnished -> dusk with lighting on),
-// polished real-estate/landscaping-ad quality, no jarring cuts.
-const HERO_TRANSFORMATION_PROMPT =
-  "A smooth, cinematic professional transformation of this exact property/job, shot from a single fixed camera angle that stays locked throughout — the framing must not shift or drift. Progress naturally through the supplied stage photos in order, as if time is passing on this one scene: consistent perspective and geometry throughout, with lighting evolving realistically stage to stage (including a shift toward golden-hour or dusk lighting with any exterior/feature lighting switching on if the final stage suggests evening). Photorealistic, polished real-estate/landscaping advertisement quality. No jarring cuts, no camera pans or zooms, no unrelated objects or people appearing.";
+// Each stage photo gets its own independent clip — subtle motion within
+// just that single frame — rather than one AI-blended morph across all
+// stages. This reuses the exact same proven single-image endpoint as
+// animatePhoto above (an earlier attempt at a multi-image "keyframes" call
+// on this same endpoint came back real Higgsfield validation errors —
+// unconfirmed field names aren't worth the risk on what's meant to be a
+// one-shot, premium generation). The clips are played back-to-back on the
+// page (see components/site/HeroStageScrubVideo.tsx), which is what
+// actually reproduces the reference ad's effect: each stage of the job
+// visibly comes alive in turn, not one continuous invented transition.
+const HERO_STAGE_DURATION_SECONDS = 5;
+const HERO_STAGE_RESOLUTION = "2K";
+
+function heroStagePrompt(position: "start" | "middle" | "end"): string {
+  const base =
+    "Subtle, realistic camera motion and natural ambient movement bringing this exact photo to life — consistent perspective and geometry, no narrative change to the scene, no unrelated objects or people, no text.";
+  if (position === "start") {
+    return `This is the starting point of a job, before the work shown in later stages has begun. ${base}`;
+  }
+  if (position === "end") {
+    return `This is the finished, completed result of the job. ${base}`;
+  }
+  return `This is a work-in-progress stage midway through the job. ${base}`;
+}
 
 /**
- * Generates one transformation video across ordered stage photos (e.g.
- * before/during/after), rather than animating a single image.
- *
- * Endpoint prefix ("minimax/h3/...") and auth/polling/response handling are
- * verified (same as animatePhoto above). Multi-image field names: a first
- * live attempt with `start_image_url` came back "'image_url' is a required
- * property" — real Higgsfield validation, not a guess — confirming the
- * start frame is still the base `image_url` field (same as the
- * single-image endpoint), not a separate start-specific field. The model
- * catalog (minimax_h3, queried live) confirms this model accepts
- * start_image/end_image/image_references roles beyond that; `end_image_url`
- * / `image_reference_urls` below remain the best-confirmed guess for those
- * until proven. This throws a real error (not a silent null) on failure so
- * each live attempt's actual Higgsfield error keeps narrowing what's wrong
- * instead of guessing blind.
+ * Animates one hero stage photo in isolation. Called once per stage (see
+ * the hero-animation route) rather than passing all stages into a single
+ * multi-image call.
  */
-export async function animateHeroTransformation(stageUrls: string[]): Promise<{ videoUrl: string } | null> {
+export async function animateHeroStageClip(
+  imageUrl: string,
+  position: "start" | "middle" | "end"
+): Promise<{ videoUrl: string } | null> {
   if (!process.env.HF_CREDENTIALS) return null;
-  if (stageUrls.length < 2) return null;
 
   config({ credentials: process.env.HF_CREDENTIALS });
-
-  const middleStages = stageUrls.slice(1, -1);
-
   const result = await higgsfield.subscribe("minimax/h3/image-to-video", {
     input: {
-      prompt: HERO_TRANSFORMATION_PROMPT,
-      image_url: stageUrls[0],
-      end_image_url: stageUrls[stageUrls.length - 1],
-      ...(middleStages.length > 0 ? { image_reference_urls: middleStages } : {}),
-      duration: HERO_TRANSFORMATION_DURATION_SECONDS,
-      resolution: HERO_TRANSFORMATION_RESOLUTION,
+      prompt: heroStagePrompt(position),
+      image_url: imageUrl,
+      duration: HERO_STAGE_DURATION_SECONDS,
+      resolution: HERO_STAGE_RESOLUTION,
       aspect_ratio: "auto",
       aigc_watermark: false,
     },
@@ -115,7 +103,7 @@ export async function animateHeroTransformation(stageUrls: string[]): Promise<{ 
   });
 
   if (result.status !== "completed" || !result.video?.url) {
-    throw new Error(`Higgsfield hero transformation did not complete (status: ${result.status}).`);
+    throw new Error(`Higgsfield hero stage animation did not complete (status: ${result.status}).`);
   }
   return { videoUrl: result.video.url };
 }

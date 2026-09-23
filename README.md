@@ -114,31 +114,25 @@ style of the generated site.
   `minimax/h3/image-to-video` via the `@higgsfield/client` SDK and needs a
   real `HF_CREDENTIALS` value (see `.env.example`) to run; without it,
   generation is skipped gracefully and the static photo is kept.
-- **Hero "main display image" + staged transformation (UI wired, animation
-  still a placeholder)** — a dedicated onboarding question (and matching
-  manage dashboard section) collects ordered "stage" photos (before/during/
-  after) for one showcase job, stored in `site_hero_stages`. The last stage
-  renders full-bleed as the homepage's hero background. `app/api/sites/[id]/
-  hero-animation` uses the same animation cap/credits as gallery photos to
-  generate one transformation video across the stages
-  (`lib/higgsfieldAnimator.ts#animateHeroTransformation` — still a documented
-  placeholder: the multi-image input field name for a `minimax/h3`-style
-  multi-stage/keyframes call hasn't been confirmed against a real code
-  sample yet, so it deliberately returns null rather than guess on a one-shot
-  generation; `animatePhoto` above is fully implemented). Once a
-  video exists, `HeroScrubVideo` binds its playback position to scroll
-  progress, so scrolling visually advances through the job's phases instead
-  of autoplaying. Checked live against Higgsfield's model catalog:
-  `minimax_h3` is the cheapest model that supports start/end-frame
-  transformation — **30 credits** per hero animation (15s at 2K, its
-  actual maximum duration, since up to 4 stage photos need real time each
-  to register and this only ever runs once per site) and **10 credits**
-  per single gallery photo animation (5s at 2K, up to 3 free per site).
-  Worst case, a single site using every free slot costs **60 credits**
-  (1 hero + 3 gallery) — so the $19/mo Starter plan (270 credits) covers
-  roughly 4-5 sites/month at full free-tier usage, not a large number once
-  you have real customer volume; budget for Plus ($59/mo, 1,200 credits,
-  ~20 sites/month at full usage) once traction picks up.
+- **Hero "main display image" + staged transformation** — a dedicated
+  onboarding question (and matching manage dashboard section) collects
+  ordered "stage" photos (before/during/after) for one showcase job, stored
+  in `site_hero_stages`. The last stage renders full-bleed as the homepage's
+  hero background. `app/api/sites/[id]/hero-animation` uses the same
+  animation cap/credits as gallery photos, but rather than one AI-blended
+  video across all stages, it animates each stage photo independently
+  (`lib/higgsfieldAnimator.ts#animateHeroStageClip`, reusing the same
+  single-image endpoint as `animatePhoto`) — subtle motion within each
+  individual photo, not an invented transition between them. All-or-nothing:
+  if any stage's clip fails, none are saved. Once every stage has a clip,
+  `HeroStageScrubVideo` binds playback position across all of them to scroll
+  progress, so scrolling visually advances through each stage's own
+  animation in turn instead of autoplaying. Both hero stage clips and
+  gallery photo animations use the same `minimax_h3` model at 2K, 5s each,
+  ~$0.0715/s (45% off, checked live in the Higgsfield dashboard) — roughly
+  **$0.36 per clip**. A hero animation costs one clip per stage photo (2-4
+  stages, so ~$0.71-$1.43 total) and runs once per site; gallery photos get
+  up to 3 free animations per site from the same shared cap.
 
 Out of scope for now (follow-up work): the full post-launch content-editing
 dashboard. The data model (`lib/types.ts`) leaves room for it — every site

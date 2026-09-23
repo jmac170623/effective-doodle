@@ -4,11 +4,11 @@ import { useEffect, useState } from "react";
 
 const SLIDE_DURATION_MS = 4500;
 
-// Fallback for when a site has multiple hero stage photos but no
-// transformation video yet (animateHeroTransformation is still a stub) — a
-// slow crossfade slideshow across the stages so uploading a before/during/
-// after sequence visibly does something, instead of only ever showing the
-// last photo as a static background.
+// Fallback for when a site has multiple hero stage photos but hasn't
+// generated stage animations yet — a slow crossfade slideshow across the
+// stages so uploading a before/during/after sequence visibly does
+// something, instead of only ever showing the last photo as a static
+// background.
 const FADE_DURATION_MS = 1000;
 
 export function HeroStageSlideshow({ urls, className }: { urls: string[]; className?: string }) {

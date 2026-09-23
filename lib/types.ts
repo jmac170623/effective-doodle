@@ -219,6 +219,10 @@ export interface HeroStage {
   url: string;
   stageOrder: number;
   createdAt: string;
+  // This stage's own animated clip (subtle motion within just this photo),
+  // generated once alongside the other stages' clips — see
+  // lib/higgsfieldAnimator.ts#animateHeroStageClip.
+  videoUrl?: string;
 }
 
 // ---- Higgsfield photo-to-video animations ----

@@ -188,6 +188,7 @@ interface HeroStageRow {
   url: string;
   stage_order: number;
   created_at: string;
+  video_url: string | null;
 }
 
 function rowToHeroStage(row: HeroStageRow): HeroStage {
@@ -197,6 +198,7 @@ function rowToHeroStage(row: HeroStageRow): HeroStage {
     url: row.url,
     stageOrder: row.stage_order,
     createdAt: row.created_at,
+    videoUrl: row.video_url ?? undefined,
   };
 }
 
@@ -225,6 +227,15 @@ export async function insertHeroStage(
 
 export async function deleteHeroStage(supabase: SupabaseClient, stageId: string): Promise<void> {
   const { error } = await supabase.from("site_hero_stages").delete().eq("id", stageId);
+  if (error) throw new Error(error.message);
+}
+
+export async function updateHeroStageVideo(
+  supabase: SupabaseClient,
+  stageId: string,
+  videoUrl: string
+): Promise<void> {
+  const { error } = await supabase.from("site_hero_stages").update({ video_url: videoUrl }).eq("id", stageId);
   if (error) throw new Error(error.message);
 }
 

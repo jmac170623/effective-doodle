@@ -1,8 +1,8 @@
 import { OnboardingData, GeneratedSite, HeroStage, SiteAnimation, SiteImage } from "@/lib/types";
 import { ContactForm } from "./ContactForm";
 import { ScrollReveal } from "./ScrollReveal";
-import { HeroScrubVideo } from "./HeroScrubVideo";
 import { HeroStageSlideshow } from "./HeroStageSlideshow";
+import { HeroStageScrubVideo } from "./HeroStageScrubVideo";
 import { LazyAutoplayVideo } from "./LazyAutoplayVideo";
 import { QuoteCalculator } from "./QuoteCalculator";
 import { matchTradeCategory, defaultDayRate } from "@/lib/quoteCategories";
@@ -17,7 +17,6 @@ interface SiteRendererProps {
 }
 
 export function SiteRenderer({ siteId, onboarding, generated, images = [], animations = [], heroStages = [] }: SiteRendererProps) {
-  const heroAnimation = animations.find((a) => a.isHero && a.status === "completed" && a.videoUrl);
   const { style, copy, gallery, emphasis } = generated;
 
   const cssVars = {
@@ -53,7 +52,6 @@ export function SiteRenderer({ siteId, onboarding, generated, images = [], anima
         yearsExperience={onboarding.yearsExperience}
         areaCovered={onboarding.areaCovered}
         heroStages={heroStages}
-        heroVideoUrl={heroAnimation?.videoUrl}
         sectionGapClass={sectionGapClass}
       />
 
@@ -168,23 +166,26 @@ function Hero({
   yearsExperience,
   areaCovered,
   heroStages,
-  heroVideoUrl,
   sectionGapClass,
 }: {
   copy: GeneratedSite["copy"];
   yearsExperience: number;
   areaCovered: string;
   heroStages: HeroStage[];
-  heroVideoUrl?: string;
   sectionGapClass: string;
 }) {
   // The last stage (e.g. "after"/finished) is the compelling shot to lead
-  // with once a transformation video exists (it plays as the visitor
-  // scrolls). Without a video, multiple stages crossfade as a slideshow
+  // with once stage animations exist (they play in sequence as the visitor
+  // scrolls). Without animations, multiple stages crossfade as a slideshow
   // instead of only ever showing the final photo — uploading a before/
   // during/after sequence should visibly do something even pre-animation.
   const backgroundImageUrl = heroStages.length > 0 ? heroStages[heroStages.length - 1].url : undefined;
   const stageUrls = heroStages.map((s) => s.url);
+  // All-or-nothing, matching the hero-animation route's own guarantee — a
+  // partially animated set never gets this far.
+  const stageClips = heroStages.every((s) => s.videoUrl)
+    ? heroStages.map((s) => ({ src: s.videoUrl! }))
+    : null;
 
   return (
     <section
@@ -193,8 +194,8 @@ function Hero({
       }`}
     >
       {backgroundImageUrl &&
-        (heroVideoUrl ? (
-          <HeroScrubVideo src={heroVideoUrl} posterUrl={backgroundImageUrl} className="absolute inset-0" />
+        (stageClips ? (
+          <HeroStageScrubVideo clips={stageClips} posterUrl={backgroundImageUrl} className="absolute inset-0" />
         ) : stageUrls.length > 1 ? (
           <HeroStageSlideshow urls={stageUrls} className="absolute inset-0" />
         ) : (

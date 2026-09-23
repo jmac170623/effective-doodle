@@ -1,12 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
-import { consumeAnimationCredit, getSite, insertSiteAnimation, listHeroStages, listSiteAnimations, updateSiteAnimationStatus } from "@/lib/db";
+import {
+  consumeAnimationCredit,
+  getSite,
+  insertSiteAnimation,
+  listHeroStages,
+  listSiteAnimations,
+  updateHeroStageVideo,
+  updateSiteAnimationStatus,
+} from "@/lib/db";
 import { checkAnimationEligibility } from "@/lib/animationLimits";
-import { animateHeroTransformation } from "@/lib/higgsfieldAnimator";
+import { animateHeroStageClip } from "@/lib/higgsfieldAnimator";
 import { generateId } from "@/lib/idGen";
 import { createClient } from "@/lib/supabase/server";
+import { HeroStage } from "@/lib/types";
 
-// Generates one transformation video across the site's ordered hero stage
-// photos (see /api/sites/[id]/animations for the single-photo equivalent).
+function stagePosition(index: number, total: number): "start" | "middle" | "end" {
+  if (index === 0) return "start";
+  if (index === total - 1) return "end";
+  return "middle";
+}
+
+// Generates an independent animated clip for each of the site's ordered
+// hero stage photos (see /api/sites/[id]/animations for the equivalent on
+// a single gallery photo). All-or-nothing: if any stage's clip fails, none
+// are saved — a hero animation half-populated with clips would look worse
+// than the static fallback slideshow it replaces.
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -55,17 +73,24 @@ export async function POST(
   const animationId = generateId("anim");
   await insertSiteAnimation(supabase, { id: animationId, siteId: id, isHero: true, usedCredit: eligibility.usesCredit });
 
-  let result;
+  let clips: ({ stage: HeroStage; videoUrl: string } | null)[];
   try {
-    result = await animateHeroTransformation(stages.map((s) => s.url));
+    clips = await Promise.all(
+      stages.map(async (stage, index) => {
+        const result = await animateHeroStageClip(stage.url, stagePosition(index, stages.length));
+        return result ? { stage, videoUrl: result.videoUrl } : null;
+      })
+    );
   } catch (error) {
     await updateSiteAnimationStatus(supabase, { id: animationId, status: "failed" });
-    console.error(`Hero transformation failed for site ${id}:`, error);
-    const message = error instanceof Error ? error.message : "Hero transformation failed.";
+    console.error(`Hero stage animation failed for site ${id}:`, error);
+    const message = error instanceof Error ? error.message : "Hero animation failed.";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 
-  if (!result) {
+  if (clips.some((c) => c === null)) {
+    // Not configured (no HF_CREDENTIALS) — every clip resolves to null
+    // together, never a mix, so this can only be the "not set up" case.
     await updateSiteAnimationStatus(supabase, { id: animationId, status: "failed" });
     return NextResponse.json(
       { error: "Animation isn't set up yet — check back once this is configured." },
@@ -73,10 +98,15 @@ export async function POST(
     );
   }
 
-  await updateSiteAnimationStatus(supabase, { id: animationId, status: "completed", videoUrl: result.videoUrl });
+  const completedClips = clips as { stage: HeroStage; videoUrl: string }[];
+  await Promise.all(completedClips.map((c) => updateHeroStageVideo(supabase, c.stage.id, c.videoUrl)));
+  await updateSiteAnimationStatus(supabase, { id: animationId, status: "completed" });
   if (eligibility.usesCredit) {
     await consumeAnimationCredit(supabase, id, site.animationCredits);
   }
 
-  return NextResponse.json({ ok: true, videoUrl: result.videoUrl });
+  return NextResponse.json({
+    ok: true,
+    stages: completedClips.map((c) => ({ id: c.stage.id, videoUrl: c.videoUrl })),
+  });
 }

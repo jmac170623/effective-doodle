@@ -312,6 +312,15 @@ export function ManageClient({ siteId }: { siteId: string }) {
       if (!res.ok) {
         throw new Error(data.error || "Failed to generate hero animation.");
       }
+      const clipsByStageId = new Map<string, string>(
+        (data.stages ?? []).map((s: { id: string; videoUrl: string }) => [s.id, s.videoUrl])
+      );
+      setHeroStages((prev) =>
+        prev.map((stage) => {
+          const videoUrl = clipsByStageId.get(stage.id);
+          return videoUrl ? { ...stage, videoUrl } : stage;
+        })
+      );
       setAnimations((prev) => [
         ...prev,
         {
@@ -319,7 +328,6 @@ export function ManageClient({ siteId }: { siteId: string }) {
           siteId,
           isHero: true,
           status: "completed",
-          videoUrl: data.videoUrl,
           usedCredit: false,
           createdAt: new Date().toISOString(),
         },
