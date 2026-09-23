@@ -95,6 +95,14 @@ function quantitiesForTotals(
   const anyWork = hasAnyWork(totals);
   const quantities: Record<string, number> = {};
   for (const material of materials) {
+    // Defensive: a material with a missing/invalid measureKind (e.g. a data
+    // migration that hasn't run yet) must never crash the whole page —
+    // exactly this happened when the materials table was missing this
+    // column entirely, throwing inside interpolate() on every render.
+    if (!(material.measureKind in ANCHORS) && material.measureKind !== "job") {
+      quantities[material.id] = 0;
+      continue;
+    }
     if (material.measureKind === "job") {
       // Included once, at its "medium" reference quantity, whenever the
       // quote covers any work at all — e.g. skip hire isn't proportional
