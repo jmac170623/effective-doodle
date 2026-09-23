@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { QUIZ_QUESTIONS } from "@/lib/toneProfiles";
 import { createClient } from "@/lib/supabase/client";
 import { generateId } from "@/lib/idGen";
+import { resizeImageForUpload } from "@/lib/imageResize";
 
 const MAX_ONBOARDING_PHOTOS = 8;
 const MAX_HERO_STAGES = 4;
@@ -211,9 +212,10 @@ export function OnboardingWizard() {
         for (let i = 0; i < heroStages.length; i++) {
           const { file } = heroStages[i];
           try {
-            const ext = file.name.split(".").pop() || "jpg";
+            const uploadFile = await resizeImageForUpload(file);
+            const ext = uploadFile.name.split(".").pop() || "jpg";
             const path = `${data.id}/hero-${generateId("img")}.${ext}`;
-            const { error: uploadErr } = await supabase.storage.from("gallery").upload(path, file);
+            const { error: uploadErr } = await supabase.storage.from("gallery").upload(path, uploadFile);
             if (uploadErr) throw uploadErr;
             const { data: publicUrlData } = supabase.storage.from("gallery").getPublicUrl(path);
             await supabase.from("site_hero_stages").insert({
@@ -229,9 +231,10 @@ export function OnboardingWizard() {
         for (let i = 0; i < photos.length; i++) {
           const { file } = photos[i];
           try {
-            const ext = file.name.split(".").pop() || "jpg";
+            const uploadFile = await resizeImageForUpload(file);
+            const ext = uploadFile.name.split(".").pop() || "jpg";
             const path = `${data.id}/${generateId("img")}.${ext}`;
-            const { error: uploadErr } = await supabase.storage.from("gallery").upload(path, file);
+            const { error: uploadErr } = await supabase.storage.from("gallery").upload(path, uploadFile);
             if (uploadErr) throw uploadErr;
             const { data: publicUrlData } = supabase.storage.from("gallery").getPublicUrl(path);
             await supabase.from("site_images").insert({

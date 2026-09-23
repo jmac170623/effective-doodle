@@ -8,6 +8,7 @@ import { TONE_PROFILES } from "@/lib/toneProfiles";
 import { FREE_ANIMATION_CAP, checkAnimationEligibility } from "@/lib/animationLimits";
 import { createClient } from "@/lib/supabase/client";
 import { generateId } from "@/lib/idGen";
+import { resizeImageForUpload } from "@/lib/imageResize";
 
 interface ServiceDraft {
   name: string;
@@ -154,10 +155,11 @@ export function ManageClient({ siteId }: { siteId: string }) {
     setUploadError("");
     try {
       const supabase = createClient();
-      const ext = file.name.split(".").pop() || "jpg";
+      const uploadFile = await resizeImageForUpload(file);
+      const ext = uploadFile.name.split(".").pop() || "jpg";
       const path = `${siteId}/${generateId("img")}.${ext}`;
 
-      const { error: uploadErr } = await supabase.storage.from("gallery").upload(path, file);
+      const { error: uploadErr } = await supabase.storage.from("gallery").upload(path, uploadFile);
       if (uploadErr) throw new Error(uploadErr.message);
 
       const { data: publicUrlData } = supabase.storage.from("gallery").getPublicUrl(path);
@@ -253,10 +255,11 @@ export function ManageClient({ siteId }: { siteId: string }) {
     setHeroUploadError("");
     try {
       const supabase = createClient();
-      const ext = file.name.split(".").pop() || "jpg";
+      const uploadFile = await resizeImageForUpload(file);
+      const ext = uploadFile.name.split(".").pop() || "jpg";
       const path = `${siteId}/hero-${generateId("img")}.${ext}`;
 
-      const { error: uploadErr } = await supabase.storage.from("gallery").upload(path, file);
+      const { error: uploadErr } = await supabase.storage.from("gallery").upload(path, uploadFile);
       if (uploadErr) throw new Error(uploadErr.message);
 
       const { data: publicUrlData } = supabase.storage.from("gallery").getPublicUrl(path);
