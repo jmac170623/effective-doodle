@@ -949,19 +949,30 @@
       voiceSelect.appendChild(opt);
     });
 
-    // Prefer the more natural-sounding voices browsers ship, in rough order of quality.
-    // "Andrew" is checked first since it's the requested default when the browser/OS has it installed.
-    const preferredPatterns = [
-      /andrew/i,
-      /natural/i, /neural/i, /online/i,
-      /aria/i, /jenny/i, /guy/i,
-      /google uk english female/i, /google us english/i,
-      /samantha/i, /daniel/i, /karen/i, /moira/i
-    ];
-    let best = null;
-    for (const pattern of preferredPatterns) {
-      best = voicesToList.find(v => pattern.test(v.name));
-      if (best) break;
+    // Requested default: the Chrome OS "Android Speech Recognition and Synthesis from
+    // Google en-gb-x-gba-local" system voice, when this is running on a Chromebook.
+    let best = voicesToList.find(v => /en-gb-x-gba-local/i.test(v.name));
+
+    if (!best) {
+      // Same voice family, different accent/variant — still closer to what was asked for
+      // than an unrelated voice.
+      best = voicesToList.find(v => /android speech recognition and synthesis from google/i.test(v.name) && v.lang === "en-GB")
+          || voicesToList.find(v => /android speech recognition and synthesis from google/i.test(v.name));
+    }
+
+    if (!best) {
+      // Not on a Chromebook — fall back to the more natural-sounding voices other
+      // browsers/OSes ship, in rough order of quality.
+      const preferredPatterns = [
+        /natural/i, /neural/i, /online/i,
+        /aria/i, /jenny/i, /guy/i,
+        /google uk english female/i, /google us english/i,
+        /samantha/i, /daniel/i, /karen/i, /moira/i
+      ];
+      for (const pattern of preferredPatterns) {
+        best = voicesToList.find(v => pattern.test(v.name));
+        if (best) break;
+      }
     }
     const chosen = (selectedVoice && voicesToList.find(v => v.name === selectedVoice.name)) || best || voicesToList[0];
     selectedVoice = chosen;
