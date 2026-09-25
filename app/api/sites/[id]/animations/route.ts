@@ -5,6 +5,12 @@ import { animatePhoto } from "@/lib/higgsfieldAnimator";
 import { generateId } from "@/lib/idGen";
 import { createClient } from "@/lib/supabase/server";
 
+// Real Higgsfield generation + polling can run well past a default
+// serverless timeout (confirmed live: an attempt got killed mid-flight and
+// stuck at "processing" forever with no error surfaced — same failure mode
+// fixed on the hero-animation route).
+export const maxDuration = 60;
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
