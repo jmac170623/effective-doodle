@@ -14,6 +14,12 @@ import { generateId } from "@/lib/idGen";
 import { createClient } from "@/lib/supabase/server";
 import { HeroStage } from "@/lib/types";
 
+// Three stage clips generate concurrently (see Promise.all below), each
+// involving a real Higgsfield generation + polling — the route was hitting
+// Vercel's default function timeout and getting killed mid-flight, leaving
+// the animation row stuck in "processing" forever with no error surfaced.
+export const maxDuration = 120;
+
 function stagePosition(index: number, total: number): "start" | "middle" | "end" {
   if (index === 0) return "start";
   if (index === total - 1) return "end";
