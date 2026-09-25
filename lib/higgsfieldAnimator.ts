@@ -17,7 +17,53 @@ import { config, higgsfield } from "@higgsfield/client/v2";
  *    { prompt, image_url, duration, resolution, aspect_ratio, aigc_watermark }
  *    is the confirmed single-photo shape (from the dashboard's own
  *    model-specific code sample for this exact model).
+ *
+ * NOT using the SDK's own `withPolling: true` — read its source
+ * (dist/v2/client.js#pollV2Request): its catch block only tolerates axios
+ * errors with an HTTP response whose status is >= 500. A raw connection
+ * reset (ECONNRESET, no HTTP response at all) falls through and rethrows,
+ * aborting the whole poll loop on the very first network hiccup — during a
+ * loop that can legitimately run for minutes. Confirmed live: two separate
+ * generations both failed with exactly "read ECONNRESET". subscribeResilient
+ * below submits the job via the SDK (reusing its own retry-protected POST)
+ * but polls status manually, tolerating any transient failure.
  */
+interface HFV2Response {
+  status: "queued" | "in_progress" | "completed" | "failed" | "nsfw";
+  request_id?: string;
+  video?: { url: string };
+}
+
+const HF_API_BASE_URL = "https://api.higgsfield.ai";
+const HF_POLL_INTERVAL_MS = 2000;
+const HF_MAX_POLL_TIME_MS = 240000;
+
+async function subscribeResilient(endpoint: string, input: Record<string, unknown>): Promise<HFV2Response> {
+  const submitted = (await higgsfield.subscribe(endpoint, { input, withPolling: false })) as HFV2Response;
+  if (!submitted.request_id) return submitted;
+
+  const startTime = Date.now();
+  while (true) {
+    if (Date.now() - startTime > HF_MAX_POLL_TIME_MS) {
+      throw new Error(`Higgsfield polling exceeded ${HF_MAX_POLL_TIME_MS}ms.`);
+    }
+    try {
+      const res = await fetch(`${HF_API_BASE_URL}/requests/${submitted.request_id}/status`, {
+        headers: { Authorization: `Key ${process.env.HF_CREDENTIALS}` },
+      });
+      if (res.ok) {
+        const data = (await res.json()) as HFV2Response;
+        if (data.status === "completed" || data.status === "failed" || data.status === "nsfw") {
+          return data;
+        }
+      }
+      // Non-ok (including 5xx) — transient, keep polling.
+    } catch {
+      // Network-level error (ECONNRESET etc.) — also transient.
+    }
+    await new Promise((resolve) => setTimeout(resolve, HF_POLL_INTERVAL_MS));
+  }
+}
 
 // Lighter-touch than the hero transformation — this runs up to 3 times per
 // site for free, so it intentionally uses a shorter duration to keep the
@@ -32,16 +78,13 @@ export async function animatePhoto(imageUrl: string): Promise<{ videoUrl: string
   if (!process.env.HF_CREDENTIALS) return null;
 
   config({ credentials: process.env.HF_CREDENTIALS });
-  const result = await higgsfield.subscribe("minimax/h3/image-to-video", {
-    input: {
-      prompt: GALLERY_ANIMATION_PROMPT,
-      image_url: imageUrl,
-      duration: GALLERY_ANIMATION_DURATION_SECONDS,
-      resolution: GALLERY_ANIMATION_RESOLUTION,
-      aspect_ratio: "auto",
-      aigc_watermark: false,
-    },
-    withPolling: true,
+  const result = await subscribeResilient("minimax/h3/image-to-video", {
+    prompt: GALLERY_ANIMATION_PROMPT,
+    image_url: imageUrl,
+    duration: GALLERY_ANIMATION_DURATION_SECONDS,
+    resolution: GALLERY_ANIMATION_RESOLUTION,
+    aspect_ratio: "auto",
+    aigc_watermark: false,
   });
 
   // "nsfw" happens on a real (if rare) misclassified trade photo — surfaced
@@ -90,16 +133,13 @@ export async function animateHeroStageClip(
   if (!process.env.HF_CREDENTIALS) return null;
 
   config({ credentials: process.env.HF_CREDENTIALS });
-  const result = await higgsfield.subscribe("minimax/h3/image-to-video", {
-    input: {
-      prompt: heroStagePrompt(position),
-      image_url: imageUrl,
-      duration: HERO_STAGE_DURATION_SECONDS,
-      resolution: HERO_STAGE_RESOLUTION,
-      aspect_ratio: "auto",
-      aigc_watermark: false,
-    },
-    withPolling: true,
+  const result = await subscribeResilient("minimax/h3/image-to-video", {
+    prompt: heroStagePrompt(position),
+    image_url: imageUrl,
+    duration: HERO_STAGE_DURATION_SECONDS,
+    resolution: HERO_STAGE_RESOLUTION,
+    aspect_ratio: "auto",
+    aigc_watermark: false,
   });
 
   if (result.status !== "completed" || !result.video?.url) {
