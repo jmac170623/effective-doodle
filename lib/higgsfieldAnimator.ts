@@ -36,7 +36,12 @@ interface HFV2Response {
 
 const HF_API_BASE_URL = "https://api.higgsfield.ai";
 const HF_POLL_INTERVAL_MS = 2000;
-const HF_MAX_POLL_TIME_MS = 240000;
+// Confirmed live: the previous 240s ceiling was reached by our own thrown
+// error (not a platform timeout) while generating 3 hero clips
+// concurrently — the single gallery animation completed fine in that same
+// window, so concurrent generations against the same account appear to
+// queue/contend and take longer per-clip than running one in isolation.
+const HF_MAX_POLL_TIME_MS = 480000;
 
 async function subscribeResilient(endpoint: string, input: Record<string, unknown>): Promise<HFV2Response> {
   const submitted = (await higgsfield.subscribe(endpoint, { input, withPolling: false })) as HFV2Response;
