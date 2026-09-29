@@ -18,9 +18,10 @@ import { HeroStage } from "@/lib/types";
 // involving a real Higgsfield generation + polling — the route was hitting
 // Vercel's default function timeout and getting killed mid-flight, leaving
 // the animation row stuck in "processing" forever with no error surfaced.
-// Matches animateHeroStageClip's own poll ceiling (480s, applies per clip
-// but they run concurrently) plus headroom for the surrounding DB calls.
-export const maxDuration = 520;
+// 300 is the Hobby plan's hard ceiling (higher values are rejected at
+// deploy time, not just runtime) — see the ceiling comment in
+// lib/higgsfieldAnimator.ts for what to do if this isn't enough.
+export const maxDuration = 300;
 
 function stagePosition(index: number, total: number): "start" | "middle" | "end" {
   if (index === 0) return "start";

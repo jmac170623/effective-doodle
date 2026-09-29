@@ -8,9 +8,9 @@ import { createClient } from "@/lib/supabase/server";
 // Real Higgsfield generation + polling can run well past a default
 // serverless timeout (confirmed live: an attempt got killed mid-flight and
 // stuck at "processing" forever with no error surfaced — same failure mode
-// fixed on the hero-animation route). Matches animatePhoto's own poll
-// ceiling (480s) plus headroom for the surrounding DB calls.
-export const maxDuration = 520;
+// fixed on the hero-animation route). 300 is the Hobby plan's hard ceiling
+// (higher values are rejected at deploy time, not just runtime).
+export const maxDuration = 300;
 
 export async function POST(
   request: NextRequest,

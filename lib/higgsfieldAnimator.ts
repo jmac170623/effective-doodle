@@ -36,12 +36,15 @@ interface HFV2Response {
 
 const HF_API_BASE_URL = "https://api.higgsfield.ai";
 const HF_POLL_INTERVAL_MS = 2000;
-// Confirmed live: the previous 240s ceiling was reached by our own thrown
-// error (not a platform timeout) while generating 3 hero clips
-// concurrently — the single gallery animation completed fine in that same
-// window, so concurrent generations against the same account appear to
-// queue/contend and take longer per-clip than running one in isolation.
-const HF_MAX_POLL_TIME_MS = 480000;
+// Hard-capped below 300s: Vercel's Hobby plan rejects any Serverless
+// Function maxDuration above 300 outright at deploy time (confirmed live —
+// an earlier 520s value made the whole deployment fail with
+// "invalid_max_duration" before any code even ran). 260s leaves ~40s of
+// headroom inside the route's own 300s maxDuration for the surrounding DB
+// calls. If hero generation (3 concurrent clips) still doesn't reliably
+// finish inside this, the real fix is a Pro plan (up to 900s) or moving to
+// a webhook-based async flow instead of holding the request open.
+const HF_MAX_POLL_TIME_MS = 260000;
 
 async function subscribeResilient(endpoint: string, input: Record<string, unknown>): Promise<HFV2Response> {
   const submitted = (await higgsfield.subscribe(endpoint, { input, withPolling: false })) as HFV2Response;
