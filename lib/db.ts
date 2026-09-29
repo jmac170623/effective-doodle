@@ -235,8 +235,20 @@ export async function updateHeroStageVideo(
   stageId: string,
   videoUrl: string
 ): Promise<void> {
-  const { error } = await supabase.from("site_hero_stages").update({ video_url: videoUrl }).eq("id", stageId);
+  // .update() doesn't error when zero rows match — confirmed live: a hero
+  // animation was marked "completed" while every stage's video_url stayed
+  // null, because a stage referenced by a stale in-flight request had
+  // since been deleted/replaced. .select() + a length check turns that
+  // silent no-op into a real, catchable error.
+  const { data, error } = await supabase
+    .from("site_hero_stages")
+    .update({ video_url: videoUrl })
+    .eq("id", stageId)
+    .select("id");
   if (error) throw new Error(error.message);
+  if (!data || data.length === 0) {
+    throw new Error(`Hero stage ${stageId} no longer exists — it may have been removed or replaced mid-generation.`);
+  }
 }
 
 export async function insertLead(

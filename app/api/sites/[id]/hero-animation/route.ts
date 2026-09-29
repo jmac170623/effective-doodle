@@ -107,7 +107,14 @@ export async function POST(
   }
 
   const completedClips = clips as { stage: HeroStage; videoUrl: string }[];
-  await Promise.all(completedClips.map((c) => updateHeroStageVideo(supabase, c.stage.id, c.videoUrl)));
+  try {
+    await Promise.all(completedClips.map((c) => updateHeroStageVideo(supabase, c.stage.id, c.videoUrl)));
+  } catch (error) {
+    await updateSiteAnimationStatus(supabase, { id: animationId, status: "failed" });
+    console.error(`Failed to save hero stage clips for site ${id}:`, error);
+    const message = error instanceof Error ? error.message : "Failed to save the generated clips.";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
   await updateSiteAnimationStatus(supabase, { id: animationId, status: "completed" });
   if (eligibility.usesCredit) {
     await consumeAnimationCredit(supabase, id, site.animationCredits);
