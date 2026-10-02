@@ -24,11 +24,12 @@ async function generatePhotoAnimation(
   animationId: string,
   imageUrl: string,
   usesCredit: boolean,
-  currentCredits: number
+  currentCredits: number,
+  trade: string
 ) {
   let result;
   try {
-    result = await animatePhoto(imageUrl);
+    result = await animatePhoto(imageUrl, trade);
   } catch (error) {
     await updateSiteAnimationStatus(supabase, { id: animationId, status: "failed" });
     console.error(`Animation failed for site ${siteId}, image ${imageId}:`, error);
@@ -88,7 +89,7 @@ export async function POST(
   await insertSiteAnimation(supabase, { id: animationId, siteId: id, imageId, usedCredit: eligibility.usesCredit });
 
   after(() =>
-    generatePhotoAnimation(supabase, id, imageId, animationId, image.url, eligibility.usesCredit, site.animationCredits)
+    generatePhotoAnimation(supabase, id, imageId, animationId, image.url, eligibility.usesCredit, site.animationCredits, site.onboarding.trade)
   );
 
   return NextResponse.json({ ok: true, status: "processing", animationId });

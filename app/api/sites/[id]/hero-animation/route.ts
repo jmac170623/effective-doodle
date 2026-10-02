@@ -40,13 +40,14 @@ async function generateHeroClips(
   animationId: string,
   stages: HeroStage[],
   usesCredit: boolean,
-  currentCredits: number
+  currentCredits: number,
+  trade: string
 ) {
   let clips: ({ stage: HeroStage; videoUrl: string } | null)[];
   try {
     clips = await Promise.all(
       stages.map(async (stage, index) => {
-        const result = await animateHeroStageClip(stage.url, stagePosition(index, stages.length));
+        const result = await animateHeroStageClip(stage.url, stagePosition(index, stages.length), trade);
         return result ? { stage, videoUrl: result.videoUrl } : null;
       })
     );
@@ -132,7 +133,7 @@ export async function POST(
   await insertSiteAnimation(supabase, { id: animationId, siteId: id, isHero: true, usedCredit: eligibility.usesCredit });
 
   after(() =>
-    generateHeroClips(supabase, id, animationId, stages, eligibility.usesCredit, site.animationCredits)
+    generateHeroClips(supabase, id, animationId, stages, eligibility.usesCredit, site.animationCredits, site.onboarding.trade)
   );
 
   return NextResponse.json({ ok: true, status: "processing", animationId });

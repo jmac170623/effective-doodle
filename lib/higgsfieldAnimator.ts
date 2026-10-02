@@ -1,4 +1,9 @@
 import { config, higgsfield } from "@higgsfield/client/v2";
+import {
+  describeStageMotion,
+  GALLERY_PHOTO_CONTEXT_DESCRIPTION,
+  heroStageContextDescription,
+} from "./heroStageVision";
 
 /**
  * Real Higgsfield photo-to-video integration for single-photo animation.
@@ -79,17 +84,35 @@ async function subscribeResilient(endpoint: string, input: Record<string, unknow
 // live in the dashboard), 5s costs ~$0.36 per generation.
 const GALLERY_ANIMATION_DURATION_SECONDS = 5;
 const GALLERY_ANIMATION_RESOLUTION = "2K";
-// Same fix as heroStagePrompt below: "subtle" produced clips that were
-// visually indistinguishable from the static source photo.
-const GALLERY_ANIMATION_PROMPT =
-  "Animate this exact photo with continuous, clearly visible camera movement for the entire duration — a slow cinematic push-in combined with gentle parallax drift across the scene's depth. The motion must be obvious to a viewer, not a static or freeze-frame shot. Keep perspective, geometry and every object in the scene completely unchanged — no narrative change to the scene, no unrelated objects or people, no text.";
+// Fallback only, used when vision analysis of the actual photo (below) is
+// unavailable or fails. Earlier wording asked for "subtle" motion, and real
+// generated clips came back visually indistinguishable from a frozen photo
+// for the full duration — "subtle" is no longer in this prompt on purpose.
+const GENERIC_FALLBACK_MOTION_PROMPT =
+  "Animate this exact photo with continuous, clearly visible camera movement for the entire duration — a slow cinematic push-in combined with gentle parallax drift across the scene's depth. The motion must be obvious to a viewer, not a static or freeze-frame shot.";
+const MOTION_SAFETY_SUFFIX =
+  " Keep perspective, geometry and every object in the scene completely unchanged apart from the one physical action described above — no unrelated objects or people, no text.";
 
-export async function animatePhoto(imageUrl: string): Promise<{ videoUrl: string } | null> {
+/**
+ * Looks at the actual photo and describes the real physical construction
+ * action that produced what's visible in it (render being chipped off,
+ * mesh being bedded into a wall, joints being pointed, ...), so the motion
+ * animates something true to that specific photo instead of a generic
+ * camera-drift effect that fits no photo in particular. Falls back to the
+ * generic prompt above when vision analysis isn't configured or fails.
+ */
+async function buildMotionPrompt(imageUrl: string, contextDescription: string, trade: string): Promise<string> {
+  const motion = await describeStageMotion(imageUrl, contextDescription, trade);
+  return `${motion ?? GENERIC_FALLBACK_MOTION_PROMPT}${MOTION_SAFETY_SUFFIX}`;
+}
+
+export async function animatePhoto(imageUrl: string, trade: string): Promise<{ videoUrl: string } | null> {
   if (!process.env.HF_CREDENTIALS) return null;
 
+  const prompt = await buildMotionPrompt(imageUrl, GALLERY_PHOTO_CONTEXT_DESCRIPTION, trade);
   config({ credentials: process.env.HF_CREDENTIALS });
   const result = await subscribeResilient("minimax/h3/image-to-video", {
-    prompt: GALLERY_ANIMATION_PROMPT,
+    prompt,
     image_url: imageUrl,
     duration: GALLERY_ANIMATION_DURATION_SECONDS,
     resolution: GALLERY_ANIMATION_RESOLUTION,
@@ -119,39 +142,27 @@ export async function animatePhoto(imageUrl: string): Promise<{ videoUrl: string
 const HERO_STAGE_DURATION_SECONDS = 5;
 const HERO_STAGE_RESOLUTION = "2K";
 
-function heroStagePrompt(position: "start" | "middle" | "end"): string {
-  // Earlier wording asked for "subtle" motion, and real generated clips came
-  // back visually indistinguishable from a frozen photo for the full
-  // duration (confirmed by comparing first/last frame on all three stage
-  // clips of a real site) — a direct cause of the user-reported "I can't
-  // see any animation at all". Asking explicitly for continuous, visible
-  // movement (not just permitting it) while still locking down geometry and
-  // content is the fix; "subtle" is no longer in this prompt on purpose.
-  const base =
-    "Animate this exact photo with continuous, clearly visible camera movement for the entire duration — a slow cinematic push-in combined with gentle parallax drift across the scene's depth. The motion must be obvious to a viewer, not a static or freeze-frame shot. Keep perspective, geometry and every object in the scene completely unchanged — no narrative change to the scene, no unrelated objects or people, no text.";
-  if (position === "start") {
-    return `This is the starting point of a job, before the work shown in later stages has begun. ${base}`;
-  }
-  if (position === "end") {
-    return `This is the finished, completed result of the job. ${base}`;
-  }
-  return `This is a work-in-progress stage midway through the job. ${base}`;
-}
-
 /**
  * Animates one hero stage photo in isolation. Called once per stage (see
  * the hero-animation route) rather than passing all stages into a single
- * multi-image call.
+ * multi-image call. The motion itself comes from actually looking at this
+ * photo (buildMotionPrompt, via describeStageMotion) — e.g. render being
+ * chipped off a bare wall at the start stage, mesh being bedded in partway
+ * through, joints being pointed on the finished wall — rather than a
+ * generic "work in progress" line that doesn't describe anything specific
+ * to what's in the photo.
  */
 export async function animateHeroStageClip(
   imageUrl: string,
-  position: "start" | "middle" | "end"
+  position: "start" | "middle" | "end",
+  trade: string
 ): Promise<{ videoUrl: string } | null> {
   if (!process.env.HF_CREDENTIALS) return null;
 
+  const prompt = await buildMotionPrompt(imageUrl, heroStageContextDescription(position), trade);
   config({ credentials: process.env.HF_CREDENTIALS });
   const result = await subscribeResilient("minimax/h3/image-to-video", {
-    prompt: heroStagePrompt(position),
+    prompt,
     image_url: imageUrl,
     duration: HERO_STAGE_DURATION_SECONDS,
     resolution: HERO_STAGE_RESOLUTION,
