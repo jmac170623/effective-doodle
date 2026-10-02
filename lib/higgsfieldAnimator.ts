@@ -36,7 +36,19 @@ import {
 interface HFV2Response {
   status: "queued" | "in_progress" | "completed" | "failed" | "nsfw";
   request_id?: string;
+  status_url?: string;
   video?: { url: string };
+}
+
+// The SDK's own V2Response type (dist/v2/types.d.ts) carries no error/reason
+// field at all for a "failed" status — request_id and status_url are the
+// only things that let a failure actually be looked up afterwards instead
+// of just saying "it failed" with no way to find out why.
+function describeFailure(result: HFV2Response): string {
+  const parts = [`status: ${result.status}`];
+  if (result.request_id) parts.push(`request_id: ${result.request_id}`);
+  if (result.status_url) parts.push(`status_url: ${result.status_url}`);
+  return parts.join(", ");
 }
 
 const HF_API_BASE_URL = "https://api.higgsfield.ai";
@@ -124,7 +136,7 @@ export async function animatePhoto(imageUrl: string, trade: string): Promise<{ v
   // to the caller like any other non-completion rather than masked as a
   // generic failure, since it's diagnosable and not a code bug.
   if (result.status !== "completed" || !result.video?.url) {
-    throw new Error(`Higgsfield animation did not complete (status: ${result.status}).`);
+    throw new Error(`Higgsfield animation did not complete (${describeFailure(result)}).`);
   }
   return { videoUrl: result.video.url };
 }
@@ -171,7 +183,7 @@ export async function animateHeroStageClip(
   });
 
   if (result.status !== "completed" || !result.video?.url) {
-    throw new Error(`Higgsfield hero stage animation did not complete (status: ${result.status}).`);
+    throw new Error(`Higgsfield hero stage animation did not complete (${describeFailure(result)}).`);
   }
   return { videoUrl: result.video.url };
 }
