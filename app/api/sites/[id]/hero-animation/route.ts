@@ -43,28 +43,33 @@ async function generateHeroClips(
   currentCredits: number,
   trade: string
 ) {
-  let clips: ({ stage: HeroStage; videoUrl: string } | null)[];
-  try {
-    clips = await Promise.all(
-      stages.map(async (stage, index) => {
-        const result = await animateHeroStageClip(stage.url, stagePosition(index, stages.length), trade);
-        return result ? { stage, videoUrl: result.videoUrl } : null;
-      })
+  // Promise.all would surface only the first rejection and silently discard
+  // the outcome of the other (possibly successful) concurrent generations —
+  // on a real failure there'd be no way to tell which stage failed, or
+  // whether it was one stage or all three. allSettled keeps every outcome
+  // so a failure is actually diagnosable.
+  const settled = await Promise.allSettled(
+    stages.map(async (stage, index) => {
+      const result = await animateHeroStageClip(stage.url, stagePosition(index, stages.length), trade);
+      if (!result) throw new Error("Higgsfield not configured (no HF_CREDENTIALS).");
+      return { stage, videoUrl: result.videoUrl };
+    })
+  );
+
+  const failedIndexes = settled
+    .map((s, index) => ({ s, index }))
+    .filter((r): r is { s: PromiseRejectedResult; index: number } => r.s.status === "rejected");
+  if (failedIndexes.length > 0) {
+    await updateSiteAnimationStatus(supabase, { id: animationId, status: "failed" });
+    failedIndexes.forEach(({ s, index }) =>
+      console.error(`Hero stage animation failed for site ${siteId} (stage ${index} of ${stages.length}):`, s.reason)
     );
-  } catch (error) {
-    await updateSiteAnimationStatus(supabase, { id: animationId, status: "failed" });
-    console.error(`Hero stage animation failed for site ${siteId}:`, error);
     return;
   }
 
-  if (clips.some((c) => c === null)) {
-    // Not configured (no HF_CREDENTIALS) — every clip resolves to null
-    // together, never a mix, so this can only be the "not set up" case.
-    await updateSiteAnimationStatus(supabase, { id: animationId, status: "failed" });
-    return;
-  }
-
-  const completedClips = clips as { stage: HeroStage; videoUrl: string }[];
+  const completedClips = (settled as PromiseFulfilledResult<{ stage: HeroStage; videoUrl: string }>[]).map(
+    (s) => s.value
+  );
   try {
     await Promise.all(completedClips.map((c) => updateHeroStageVideo(supabase, c.stage.id, c.videoUrl)));
   } catch (error) {
