@@ -79,8 +79,10 @@ async function subscribeResilient(endpoint: string, input: Record<string, unknow
 // live in the dashboard), 5s costs ~$0.36 per generation.
 const GALLERY_ANIMATION_DURATION_SECONDS = 5;
 const GALLERY_ANIMATION_RESOLUTION = "2K";
+// Same fix as heroStagePrompt below: "subtle" produced clips that were
+// visually indistinguishable from the static source photo.
 const GALLERY_ANIMATION_PROMPT =
-  "Subtle, realistic camera motion and natural ambient movement bringing this photo to life — no narrative change to the scene, no unrelated objects or people, no text.";
+  "Animate this exact photo with continuous, clearly visible camera movement for the entire duration — a slow cinematic push-in combined with gentle parallax drift across the scene's depth. The motion must be obvious to a viewer, not a static or freeze-frame shot. Keep perspective, geometry and every object in the scene completely unchanged — no narrative change to the scene, no unrelated objects or people, no text.";
 
 export async function animatePhoto(imageUrl: string): Promise<{ videoUrl: string } | null> {
   if (!process.env.HF_CREDENTIALS) return null;
@@ -118,8 +120,15 @@ const HERO_STAGE_DURATION_SECONDS = 5;
 const HERO_STAGE_RESOLUTION = "2K";
 
 function heroStagePrompt(position: "start" | "middle" | "end"): string {
+  // Earlier wording asked for "subtle" motion, and real generated clips came
+  // back visually indistinguishable from a frozen photo for the full
+  // duration (confirmed by comparing first/last frame on all three stage
+  // clips of a real site) — a direct cause of the user-reported "I can't
+  // see any animation at all". Asking explicitly for continuous, visible
+  // movement (not just permitting it) while still locking down geometry and
+  // content is the fix; "subtle" is no longer in this prompt on purpose.
   const base =
-    "Subtle, realistic camera motion and natural ambient movement bringing this exact photo to life — consistent perspective and geometry, no narrative change to the scene, no unrelated objects or people, no text.";
+    "Animate this exact photo with continuous, clearly visible camera movement for the entire duration — a slow cinematic push-in combined with gentle parallax drift across the scene's depth. The motion must be obvious to a viewer, not a static or freeze-frame shot. Keep perspective, geometry and every object in the scene completely unchanged — no narrative change to the scene, no unrelated objects or people, no text.";
   if (position === "start") {
     return `This is the starting point of a job, before the work shown in later stages has begun. ${base}`;
   }

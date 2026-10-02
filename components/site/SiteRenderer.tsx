@@ -187,6 +187,50 @@ function Hero({
     ? heroStages.map((s) => ({ src: s.videoUrl! }))
     : null;
 
+  const content = (
+    <div className="relative">
+      <span
+        className="inline-block rounded-full px-4 py-1 text-xs font-bold uppercase tracking-[0.2em]"
+        style={{
+          backgroundColor: backgroundImageUrl ? "rgba(255,255,255,0.15)" : "var(--color-secondary)",
+          color: backgroundImageUrl ? "#ffffff" : "var(--color-accent)",
+        }}
+      >
+        {yearsExperience > 0 ? `${yearsExperience}+ Years Experience` : `Serving ${areaCovered}`}
+      </span>
+      <h1
+        className={`mx-auto mt-5 max-w-3xl text-5xl font-black leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl ${backgroundImageUrl ? "text-white" : ""}`}
+        style={{ fontFamily: "var(--font-heading)" }}
+      >
+        {copy.heroHeadline}
+      </h1>
+      <p
+        className={`mx-auto mt-5 max-w-xl text-lg sm:text-xl ${backgroundImageUrl ? "text-white/90" : ""}`}
+        style={backgroundImageUrl ? undefined : { color: "var(--color-muted)" }}
+      >
+        {copy.heroSubheadline}
+      </p>
+      <a
+        href="#contact"
+        className="mt-9 inline-block rounded-[var(--radius)] px-9 py-4 text-base font-bold text-white shadow-lg transition hover:scale-[1.02] hover:opacity-90"
+        style={{ backgroundColor: "var(--color-primary)" }}
+      >
+        {copy.heroCta}
+      </a>
+    </div>
+  );
+
+  // Clips exist: pin the hero in place while the visitor scrubs through
+  // each stage's animation, only releasing into normal page scroll once
+  // every clip has played (see HeroStageScrubVideo for why).
+  if (backgroundImageUrl && stageClips) {
+    return (
+      <HeroStageScrubVideo clips={stageClips} posterUrl={backgroundImageUrl}>
+        {content}
+      </HeroStageScrubVideo>
+    );
+  }
+
   return (
     <section
       className={`relative overflow-hidden px-6 text-center ${sectionGapClass} ${
@@ -194,46 +238,14 @@ function Hero({
       }`}
     >
       {backgroundImageUrl &&
-        (stageClips ? (
-          <HeroStageScrubVideo clips={stageClips} posterUrl={backgroundImageUrl} className="absolute inset-0" />
-        ) : stageUrls.length > 1 ? (
+        (stageUrls.length > 1 ? (
           <HeroStageSlideshow urls={stageUrls} className="absolute inset-0" />
         ) : (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={backgroundImageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
         ))}
       {backgroundImageUrl && <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-black/10" />}
-
-      <div className="relative">
-        <span
-          className="inline-block rounded-full px-4 py-1 text-xs font-bold uppercase tracking-[0.2em]"
-          style={{
-            backgroundColor: backgroundImageUrl ? "rgba(255,255,255,0.15)" : "var(--color-secondary)",
-            color: backgroundImageUrl ? "#ffffff" : "var(--color-accent)",
-          }}
-        >
-          {yearsExperience > 0 ? `${yearsExperience}+ Years Experience` : `Serving ${areaCovered}`}
-        </span>
-        <h1
-          className={`mx-auto mt-5 max-w-3xl text-5xl font-black leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl ${backgroundImageUrl ? "text-white" : ""}`}
-          style={{ fontFamily: "var(--font-heading)" }}
-        >
-          {copy.heroHeadline}
-        </h1>
-        <p
-          className={`mx-auto mt-5 max-w-xl text-lg sm:text-xl ${backgroundImageUrl ? "text-white/90" : ""}`}
-          style={backgroundImageUrl ? undefined : { color: "var(--color-muted)" }}
-        >
-          {copy.heroSubheadline}
-        </p>
-        <a
-          href="#contact"
-          className="mt-9 inline-block rounded-[var(--radius)] px-9 py-4 text-base font-bold text-white shadow-lg transition hover:scale-[1.02] hover:opacity-90"
-          style={{ backgroundColor: "var(--color-primary)" }}
-        >
-          {copy.heroCta}
-        </a>
-      </div>
+      {content}
     </section>
   );
 }
