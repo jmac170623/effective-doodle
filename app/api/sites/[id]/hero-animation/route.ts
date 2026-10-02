@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { after } from "next/server";
 import {
   consumeAnimationCredit,
   getSite,
@@ -13,20 +14,68 @@ import { animateHeroStageClip } from "@/lib/higgsfieldAnimator";
 import { generateId } from "@/lib/idGen";
 import { createClient } from "@/lib/supabase/server";
 import { HeroStage } from "@/lib/types";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
-// Three stage clips generate concurrently (see Promise.all below), each
-// involving a real Higgsfield generation + polling — the route was hitting
-// Vercel's default function timeout and getting killed mid-flight, leaving
-// the animation row stuck in "processing" forever with no error surfaced.
-// 300 is the Hobby plan's hard ceiling (higher values are rejected at
-// deploy time, not just runtime) — see the ceiling comment in
-// lib/higgsfieldAnimator.ts for what to do if this isn't enough.
+// Three stage clips generate concurrently, each involving a real Higgsfield
+// generation + polling that can take minutes. 300 is the Hobby plan's hard
+// ceiling for maxDuration (higher values are rejected at deploy time, not
+// just runtime) — see the ceiling comment in lib/higgsfieldAnimator.ts.
+// Holding the HTTP response open for that long is itself unreliable:
+// confirmed live as "Failed to fetch" — the browser/network drops a
+// multi-minute silent connection well before any server-side timeout is
+// even reached. The response now returns immediately; the actual work runs
+// in the background via after() (Vercel's waitUntil), and the client polls
+// site_hero_stages for the result instead of waiting on this request.
 export const maxDuration = 300;
 
 function stagePosition(index: number, total: number): "start" | "middle" | "end" {
   if (index === 0) return "start";
   if (index === total - 1) return "end";
   return "middle";
+}
+
+async function generateHeroClips(
+  supabase: SupabaseClient,
+  siteId: string,
+  animationId: string,
+  stages: HeroStage[],
+  usesCredit: boolean,
+  currentCredits: number
+) {
+  let clips: ({ stage: HeroStage; videoUrl: string } | null)[];
+  try {
+    clips = await Promise.all(
+      stages.map(async (stage, index) => {
+        const result = await animateHeroStageClip(stage.url, stagePosition(index, stages.length));
+        return result ? { stage, videoUrl: result.videoUrl } : null;
+      })
+    );
+  } catch (error) {
+    await updateSiteAnimationStatus(supabase, { id: animationId, status: "failed" });
+    console.error(`Hero stage animation failed for site ${siteId}:`, error);
+    return;
+  }
+
+  if (clips.some((c) => c === null)) {
+    // Not configured (no HF_CREDENTIALS) — every clip resolves to null
+    // together, never a mix, so this can only be the "not set up" case.
+    await updateSiteAnimationStatus(supabase, { id: animationId, status: "failed" });
+    return;
+  }
+
+  const completedClips = clips as { stage: HeroStage; videoUrl: string }[];
+  try {
+    await Promise.all(completedClips.map((c) => updateHeroStageVideo(supabase, c.stage.id, c.videoUrl)));
+  } catch (error) {
+    await updateSiteAnimationStatus(supabase, { id: animationId, status: "failed" });
+    console.error(`Failed to save hero stage clips for site ${siteId}:`, error);
+    return;
+  }
+
+  await updateSiteAnimationStatus(supabase, { id: animationId, status: "completed" });
+  if (usesCredit) {
+    await consumeAnimationCredit(supabase, siteId, currentCredits);
+  }
 }
 
 // Generates an independent animated clip for each of the site's ordered
@@ -82,47 +131,9 @@ export async function POST(
   const animationId = generateId("anim");
   await insertSiteAnimation(supabase, { id: animationId, siteId: id, isHero: true, usedCredit: eligibility.usesCredit });
 
-  let clips: ({ stage: HeroStage; videoUrl: string } | null)[];
-  try {
-    clips = await Promise.all(
-      stages.map(async (stage, index) => {
-        const result = await animateHeroStageClip(stage.url, stagePosition(index, stages.length));
-        return result ? { stage, videoUrl: result.videoUrl } : null;
-      })
-    );
-  } catch (error) {
-    await updateSiteAnimationStatus(supabase, { id: animationId, status: "failed" });
-    console.error(`Hero stage animation failed for site ${id}:`, error);
-    const message = error instanceof Error ? error.message : "Hero animation failed.";
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
+  after(() =>
+    generateHeroClips(supabase, id, animationId, stages, eligibility.usesCredit, site.animationCredits)
+  );
 
-  if (clips.some((c) => c === null)) {
-    // Not configured (no HF_CREDENTIALS) — every clip resolves to null
-    // together, never a mix, so this can only be the "not set up" case.
-    await updateSiteAnimationStatus(supabase, { id: animationId, status: "failed" });
-    return NextResponse.json(
-      { error: "Animation isn't set up yet — check back once this is configured." },
-      { status: 503 }
-    );
-  }
-
-  const completedClips = clips as { stage: HeroStage; videoUrl: string }[];
-  try {
-    await Promise.all(completedClips.map((c) => updateHeroStageVideo(supabase, c.stage.id, c.videoUrl)));
-  } catch (error) {
-    await updateSiteAnimationStatus(supabase, { id: animationId, status: "failed" });
-    console.error(`Failed to save hero stage clips for site ${id}:`, error);
-    const message = error instanceof Error ? error.message : "Failed to save the generated clips.";
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
-  await updateSiteAnimationStatus(supabase, { id: animationId, status: "completed" });
-  if (eligibility.usesCredit) {
-    await consumeAnimationCredit(supabase, id, site.animationCredits);
-  }
-
-  return NextResponse.json({
-    ok: true,
-    stages: completedClips.map((c) => ({ id: c.stage.id, videoUrl: c.videoUrl })),
-  });
+  return NextResponse.json({ ok: true, status: "processing", animationId });
 }

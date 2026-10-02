@@ -1,16 +1,53 @@
 import { NextRequest, NextResponse } from "next/server";
+import { after } from "next/server";
 import { consumeAnimationCredit, getSite, insertSiteAnimation, listSiteAnimations, listSiteImages, updateSiteAnimationStatus } from "@/lib/db";
 import { checkAnimationEligibility } from "@/lib/animationLimits";
 import { animatePhoto } from "@/lib/higgsfieldAnimator";
 import { generateId } from "@/lib/idGen";
 import { createClient } from "@/lib/supabase/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
-// Real Higgsfield generation + polling can run well past a default
-// serverless timeout (confirmed live: an attempt got killed mid-flight and
-// stuck at "processing" forever with no error surfaced — same failure mode
-// fixed on the hero-animation route). 300 is the Hobby plan's hard ceiling
-// (higher values are rejected at deploy time, not just runtime).
+// Real Higgsfield generation + polling can run for minutes. 300 is the
+// Hobby plan's hard ceiling for maxDuration (higher values are rejected at
+// deploy time, not just runtime). Holding the HTTP response open that long
+// is itself unreliable — confirmed live as "Failed to fetch": the browser/
+// network drops a multi-minute silent connection well before any
+// server-side timeout is reached. The response now returns immediately;
+// the real work runs in the background via after() (Vercel's waitUntil),
+// and the client polls for the result instead of waiting on this request.
 export const maxDuration = 300;
+
+async function generatePhotoAnimation(
+  supabase: SupabaseClient,
+  siteId: string,
+  imageId: string,
+  animationId: string,
+  imageUrl: string,
+  usesCredit: boolean,
+  currentCredits: number
+) {
+  let result;
+  try {
+    result = await animatePhoto(imageUrl);
+  } catch (error) {
+    await updateSiteAnimationStatus(supabase, { id: animationId, status: "failed" });
+    console.error(`Animation failed for site ${siteId}, image ${imageId}:`, error);
+    return;
+  }
+
+  if (!result) {
+    // Not a customer-facing failure — Higgsfield isn't wired up yet (no
+    // HF_CREDENTIALS configured). Don't charge a credit for an attempt that
+    // could never have succeeded.
+    await updateSiteAnimationStatus(supabase, { id: animationId, status: "failed" });
+    return;
+  }
+
+  await updateSiteAnimationStatus(supabase, { id: animationId, status: "completed", videoUrl: result.videoUrl });
+  if (usesCredit) {
+    await consumeAnimationCredit(supabase, siteId, currentCredits);
+  }
+}
 
 export async function POST(
   request: NextRequest,
@@ -50,31 +87,9 @@ export async function POST(
   const animationId = generateId("anim");
   await insertSiteAnimation(supabase, { id: animationId, siteId: id, imageId, usedCredit: eligibility.usesCredit });
 
-  let result;
-  try {
-    result = await animatePhoto(image.url);
-  } catch (error) {
-    await updateSiteAnimationStatus(supabase, { id: animationId, status: "failed" });
-    console.error(`Animation failed for site ${id}, image ${imageId}:`, error);
-    const message = error instanceof Error ? error.message : "Animation failed.";
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
+  after(() =>
+    generatePhotoAnimation(supabase, id, imageId, animationId, image.url, eligibility.usesCredit, site.animationCredits)
+  );
 
-  if (!result) {
-    // Not a customer-facing failure — Higgsfield isn't wired up yet (no
-    // HF_CREDENTIALS configured). Don't charge a credit for an attempt that
-    // could never have succeeded.
-    await updateSiteAnimationStatus(supabase, { id: animationId, status: "failed" });
-    return NextResponse.json(
-      { error: "Animation isn't set up yet — check back once this is configured." },
-      { status: 503 }
-    );
-  }
-
-  await updateSiteAnimationStatus(supabase, { id: animationId, status: "completed", videoUrl: result.videoUrl });
-  if (eligibility.usesCredit) {
-    await consumeAnimationCredit(supabase, id, site.animationCredits);
-  }
-
-  return NextResponse.json({ ok: true, videoUrl: result.videoUrl });
+  return NextResponse.json({ ok: true, status: "processing", animationId });
 }

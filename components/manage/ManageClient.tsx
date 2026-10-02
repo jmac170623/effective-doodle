@@ -18,6 +18,30 @@ interface ServiceDraft {
 const inputClass =
   "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none";
 
+// Animation routes now respond immediately with status "processing" and do
+// the real Higgsfield generation in the background (next/server's after())
+// — holding the HTTP request open for the minutes a generation can take
+// was itself unreliable, confirmed live as a browser-level "Failed to
+// fetch" well before any server-side timeout was reached. This polls the
+// site's own data until the given animation resolves, matching the
+// routes' own ~300s budget.
+async function pollForAnimation(siteId: string, animationId: string): Promise<SiteRecord> {
+  const maxAttempts = 70;
+  const intervalMs = 4000;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    const res = await fetch(`/api/sites/${siteId}`);
+    if (res.ok) {
+      const data = (await res.json()) as SiteRecord;
+      const animation = (data.animations ?? []).find((a) => a.id === animationId);
+      if (animation && animation.status !== "processing") {
+        return data;
+      }
+    }
+  }
+  throw new Error("This is taking longer than expected — check back in a minute, it may still finish.");
+}
+
 export function ManageClient({ siteId }: { siteId: string }) {
   const router = useRouter();
   const [site, setSite] = useState<SiteRecord | null>(null);
@@ -212,19 +236,12 @@ export function ManageClient({ siteId }: { siteId: string }) {
       if (!res.ok) {
         throw new Error(data.error || "Failed to animate photo.");
       }
-      setAnimations((prev) => [
-        ...prev,
-        {
-          id: generateId("anim"),
-          siteId,
-          imageId,
-          isHero: false,
-          status: "completed",
-          videoUrl: data.videoUrl,
-          usedCredit: false,
-          createdAt: new Date().toISOString(),
-        },
-      ]);
+      const updatedSite = await pollForAnimation(siteId, data.animationId);
+      const animation = (updatedSite.animations ?? []).find((a) => a.id === data.animationId);
+      if (animation?.status !== "completed") {
+        throw new Error("Animation failed — try again.");
+      }
+      setAnimations(updatedSite.animations ?? []);
     } catch (err) {
       setAnimationErrors((prev) => ({ ...prev, [imageId]: err instanceof Error ? err.message : "Failed to animate photo." }));
     } finally {
@@ -312,26 +329,13 @@ export function ManageClient({ siteId }: { siteId: string }) {
       if (!res.ok) {
         throw new Error(data.error || "Failed to generate hero animation.");
       }
-      const clipsByStageId = new Map<string, string>(
-        (data.stages ?? []).map((s: { id: string; videoUrl: string }) => [s.id, s.videoUrl])
-      );
-      setHeroStages((prev) =>
-        prev.map((stage) => {
-          const videoUrl = clipsByStageId.get(stage.id);
-          return videoUrl ? { ...stage, videoUrl } : stage;
-        })
-      );
-      setAnimations((prev) => [
-        ...prev,
-        {
-          id: generateId("anim"),
-          siteId,
-          isHero: true,
-          status: "completed",
-          usedCredit: false,
-          createdAt: new Date().toISOString(),
-        },
-      ]);
+      const updatedSite = await pollForAnimation(siteId, data.animationId);
+      const animation = (updatedSite.animations ?? []).find((a) => a.id === data.animationId);
+      if (animation?.status !== "completed") {
+        throw new Error("Hero animation failed — you may be able to try again.");
+      }
+      setHeroStages(updatedSite.heroStages ?? []);
+      setAnimations(updatedSite.animations ?? []);
     } catch (err) {
       setHeroAnimationError(err instanceof Error ? err.message : "Failed to generate hero animation.");
     } finally {
@@ -625,12 +629,17 @@ export function ManageClient({ siteId }: { siteId: string }) {
                     disabled={animatingHero || !eligibility.allowed}
                     className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:border-slate-400 disabled:opacity-50"
                   >
-                    {animatingHero ? "Generating…" : "Generate Hero Animation"}
+                    {animatingHero ? "Generating… (can take a few minutes)" : "Generate Hero Animation"}
                   </button>
                   <p className="text-xs text-slate-500">
                     One-time, cinematic-quality generation — this can only be done once per site, so double-check
                     your stage photos and their order before generating.
                   </p>
+                  {animatingHero && (
+                    <p className="text-xs text-slate-500">
+                      Feel free to stay on this page — it&apos;ll update automatically when it&apos;s done.
+                    </p>
+                  )}
                   {!eligibility.allowed && (
                     <p className="text-xs text-slate-500">No free animations or credits left for this site.</p>
                   )}
