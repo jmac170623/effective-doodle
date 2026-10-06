@@ -68,7 +68,15 @@ export async function describeStageMotion(
             { type: "image", source: { type: "url", url: imageUrl } },
             {
               type: "text",
-              text: `This photo is from a ${trade} business's website and shows ${contextDescription}. Look closely at exactly what's visible — the materials, surfaces and state of the work — and work out what physical construction action was just done, or is being done, to produce what's shown. Then write a short, concrete motion description (2-3 imperative sentences) instructing an AI video model to animate that exact physical process happening on this exact photo — for example material being chipped or stripped away and falling, a material being applied, pressed or spread onto a surface, joints being pointed or finished, a surface being smoothed, dust or debris settling, etc. — whatever genuinely matches what's in this specific photo. Only describe motion of things already visible in the photo; do not invent new people, tools or objects that aren't already implied by the scene. The description must keep the camera framing, geometry and every other part of the scene unchanged apart from the one physical action you describe.`,
+              text: `This photo is from a ${trade} business's website and shows ${contextDescription}. Look very carefully at exactly what is already visible in THIS specific photo — the materials, surfaces, and the precise current state of the work — before deciding what to animate.
+
+Critical rules, because this clip sits between other stage photos and any mismatch will be obvious:
+1. Never invent removal or addition of structural material (bricks, blocks, large sections of a wall or surface) that isn't already indicated as actively in progress in the photo itself. If the surface shown is already in a settled state — e.g. bare brick with no render left, or a fully finished surface — do not show further material being stripped away or appearing; that would contradict what the photo actually shows and won't line up with the stage before or after it.
+2. Only describe an active removal/application process continuing if the photo itself shows clear evidence of work actively mid-process (loose material, a wet surface, a tool mid-use, debris still settling). In that case, continue that exact motion.
+3. If the photo shows a static, settled state (most "before" and "after" shots do), describe only ambient, true-to-life motion instead — dust or light shifting, very subtle settling movement, a slow camera move. Whatever motion you describe, it must engage the FULL visible wall or surface shown in frame, not just a small corner or isolated patch.
+4. Never change the underlying structure, layout, or materials of what's shown — the result must still visually match this exact photo in every frame, at every point in the clip.
+
+Write a short, concrete motion description (2-3 imperative sentences) for an AI video model to animate this exact photo accordingly. Only describe motion of things already visible in the photo; do not invent new people, tools, or objects. Keep the camera framing, geometry and every other part of the scene unchanged apart from the motion you describe.`,
             },
           ],
         },
