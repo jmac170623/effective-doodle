@@ -16,10 +16,11 @@ import { createClient } from "@/lib/supabase/server";
 import { HeroStage } from "@/lib/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-// Three stage clips generate concurrently, each involving a real Higgsfield
-// generation + polling that can take minutes. 300 is the Hobby plan's hard
-// ceiling for maxDuration (higher values are rejected at deploy time, not
-// just runtime) — see the ceiling comment in lib/higgsfieldAnimator.ts.
+// Stage clips generate with limited concurrency (see MAX_CONCURRENT_HIGGSFIELD_JOBS
+// below), each involving a real Higgsfield generation + polling that can
+// take minutes. 300 is the Hobby plan's hard ceiling for maxDuration (higher
+// values are rejected at deploy time, not just runtime) — see the ceiling
+// comment in lib/higgsfieldAnimator.ts.
 // Holding the HTTP response open for that long is itself unreliable:
 // confirmed live as "Failed to fetch" — the browser/network drops a
 // multi-minute silent connection well before any server-side timeout is
@@ -43,18 +44,46 @@ async function generateHeroClips(
   currentCredits: number,
   trade: string
 ) {
-  // Promise.all would surface only the first rejection and silently discard
-  // the outcome of the other (possibly successful) concurrent generations —
+  // This account's real, confirmed ceiling is 2 concurrent minimax_h3 jobs —
+  // tested live: submitting a 3rd generate_video call while 2 were still
+  // in_progress returned 429 "rate_limit_reached" every time, repeatedly,
+  // over more than a minute; it only succeeded the instant one of the two
+  // finished and freed a slot. This — not prompt content, not credits — is
+  // the actual cause behind this feature's long history of failures: it
+  // always submitted all of a site's stage clips at once, and sites with 3+
+  // stages always exceeded the cap. Individual generations are also fast in
+  // practice (~2 minutes each here), so running at most 2 at a time and
+  // starting the next the moment a slot frees up still comfortably fits the
+  // 300s maxDuration ceiling — true sequential (1 at a time) would not.
+  //
+  // Promise.all would also surface only the first rejection and silently
+  // discard the outcome of the other (possibly successful) generations —
   // on a real failure there'd be no way to tell which stage failed, or
-  // whether it was one stage or all three. allSettled keeps every outcome
-  // so a failure is actually diagnosable.
-  const settled = await Promise.allSettled(
-    stages.map(async (stage, index) => {
-      const result = await animateHeroStageClip(stage.url, stagePosition(index, stages.length), trade);
-      if (!result) throw new Error("Higgsfield not configured (no HF_CREDENTIALS).");
-      return { stage, videoUrl: result.videoUrl };
-    })
+  // whether it was one stage or all of them. This keeps every outcome.
+  const MAX_CONCURRENT_HIGGSFIELD_JOBS = 2;
+
+  async function generateOneClip(stage: HeroStage, index: number): Promise<{ stage: HeroStage; videoUrl: string }> {
+    const result = await animateHeroStageClip(stage.url, stagePosition(index, stages.length), trade);
+    if (!result) throw new Error("Higgsfield not configured (no HF_CREDENTIALS).");
+    return { stage, videoUrl: result.videoUrl };
+  }
+
+  const results: PromiseSettledResult<{ stage: HeroStage; videoUrl: string }>[] = new Array(stages.length);
+  let nextIndex = 0;
+  async function worker(): Promise<void> {
+    const index = nextIndex++;
+    if (index >= stages.length) return;
+    try {
+      results[index] = { status: "fulfilled", value: await generateOneClip(stages[index], index) };
+    } catch (reason) {
+      results[index] = { status: "rejected", reason };
+    }
+    return worker();
+  }
+  await Promise.all(
+    Array.from({ length: Math.min(MAX_CONCURRENT_HIGGSFIELD_JOBS, stages.length) }, () => worker())
   );
+  const settled = results;
 
   const failedIndexes = settled
     .map((s, index) => ({ s, index }))
