@@ -187,26 +187,31 @@ function Hero({
     ? heroStages.map((s) => ({ src: s.videoUrl! }))
     : null;
 
+  // Plain, unconditional styling — this no longer ever sits over a video or
+  // photo background. When clips exist, the pinned hero is pure video (no
+  // text overlaid on it) so the cinematic reveal reads full-bleed instead
+  // of being cluttered with copy; the headline/subhead/CTA appear as their
+  // own section immediately after the visitor has scrubbed through it.
   const content = (
     <div className="relative">
       <span
         className="inline-block rounded-full px-4 py-1 text-xs font-bold uppercase tracking-[0.2em]"
         style={{
-          backgroundColor: backgroundImageUrl ? "rgba(255,255,255,0.15)" : "var(--color-secondary)",
-          color: backgroundImageUrl ? "#ffffff" : "var(--color-accent)",
+          backgroundColor: backgroundImageUrl && !stageClips ? "rgba(255,255,255,0.15)" : "var(--color-secondary)",
+          color: backgroundImageUrl && !stageClips ? "#ffffff" : "var(--color-accent)",
         }}
       >
         {yearsExperience > 0 ? `${yearsExperience}+ Years Experience` : `Serving ${areaCovered}`}
       </span>
       <h1
-        className={`mx-auto mt-5 max-w-3xl text-5xl font-black leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl ${backgroundImageUrl ? "text-white" : ""}`}
+        className={`mx-auto mt-5 max-w-3xl text-5xl font-black leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl ${backgroundImageUrl && !stageClips ? "text-white" : ""}`}
         style={{ fontFamily: "var(--font-heading)" }}
       >
         {copy.heroHeadline}
       </h1>
       <p
-        className={`mx-auto mt-5 max-w-xl text-lg sm:text-xl ${backgroundImageUrl ? "text-white/90" : ""}`}
-        style={backgroundImageUrl ? undefined : { color: "var(--color-muted)" }}
+        className={`mx-auto mt-5 max-w-xl text-lg sm:text-xl ${backgroundImageUrl && !stageClips ? "text-white/90" : ""}`}
+        style={backgroundImageUrl && !stageClips ? undefined : { color: "var(--color-muted)" }}
       >
         {copy.heroSubheadline}
       </p>
@@ -222,12 +227,15 @@ function Hero({
 
   // Clips exist: pin the hero in place while the visitor scrubs through
   // each stage's animation, only releasing into normal page scroll once
-  // every clip has played (see HeroStageScrubVideo for why).
+  // every clip has played (see HeroStageScrubVideo for why). The video
+  // fills the pinned viewport edge-to-edge with no text on top of it; the
+  // headline/subhead/CTA follow immediately after as a normal section.
   if (backgroundImageUrl && stageClips) {
     return (
-      <HeroStageScrubVideo clips={stageClips} posterUrl={backgroundImageUrl}>
-        {content}
-      </HeroStageScrubVideo>
+      <>
+        <HeroStageScrubVideo clips={stageClips} posterUrl={backgroundImageUrl} />
+        <section className={`px-6 text-center ${sectionGapClass}`}>{content}</section>
+      </>
     );
   }
 

@@ -33,12 +33,10 @@ export function HeroStageScrubVideo({
   clips,
   posterUrl,
   className,
-  children,
 }: {
   clips: HeroStageClip[];
   posterUrl?: string;
   className?: string;
-  children?: React.ReactNode;
 }) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
@@ -97,7 +95,12 @@ export function HeroStageScrubVideo({
 
   return (
     <div ref={wrapperRef} className={`relative ${className ?? ""}`} style={{ height: `${clips.length * VH_PER_CLIP * 100}vh` }}>
-      <div className="sticky top-0 flex h-screen flex-col items-center justify-center overflow-hidden px-6 text-center">
+      {/* h-dvh (dynamic viewport height), not h-screen (100vh): on mobile,
+          100vh is measured against the largest possible viewport and doesn't
+          shrink when the browser's address bar is showing, so the video can
+          run taller than what's actually visible on screen — dvh tracks the
+          real visible viewport as browser chrome shows/hides. */}
+      <div className="sticky top-0 h-dvh overflow-hidden">
         {clips.map((clip, index) => (
           <video
             key={clip.src}
@@ -116,8 +119,6 @@ export function HeroStageScrubVideo({
             style={{ opacity: index === 0 ? 1 : 0 }}
           />
         ))}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-black/10" />
-        {children}
       </div>
     </div>
   );
