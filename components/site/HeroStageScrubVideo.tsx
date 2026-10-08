@@ -82,8 +82,15 @@ export function HeroStageScrubVideo({
       if (nextIndex < clips.length) {
         playIndex(nextIndex);
       } else {
-        hasPlayedRef.current = true;
-        unlockScroll();
+        // First full pass: release the scroll lock. The sequence then
+        // keeps looping from the start (without re-locking — hasPlayedRef
+        // guards that) so the hero never freezes on the end frame while
+        // it's still on screen.
+        if (!hasPlayedRef.current) {
+          hasPlayedRef.current = true;
+          unlockScroll();
+        }
+        playIndex(0);
       }
     }
 
