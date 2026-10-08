@@ -1,34 +1,27 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export interface HeroStageClip {
   src: string;
 }
 
-// Apple-product-page-style pinned scroll scrubbing: the hero stays fixed in
-// the viewport (CSS `sticky`) for a scroll range proportional to the number
-// of stage clips. Scrolling through that range drives playback — each
-// clip's own animation plays in turn — without the page itself moving.
-// Only once every clip has played does further scrolling resume normal
-// page movement: the tall wrapper below is exactly that "pin budget", and
-// once it's exhausted the sticky element scrolls away like anything else.
+// Autoplay-then-release scroll: once the hero has scrolled to fill the
+// viewport, scrolling locks (the page can't move further) while the stage
+// clips play back-to-back at their own natural pace. The moment the last
+// clip finishes, the lock lifts and scrolling continues normally from
+// exactly where it left off.
 //
-// This replaces an earlier version that scrubbed by swapping a single
-// <video>'s `src` on segment boundaries and mapped progress to the
-// un-pinned section's own (short) scroll distance. Both were real bugs:
-// swapping `src` forces a full network reload before the next frame can
-// show, which looked like "nothing happens, then it jumps to the next
-// photo"; and because the section wasn't pinned, progress reached 1 only
-// once the section had already scrolled off the top of the screen, so the
-// final stage was never actually visible. All clips are now preloaded into
-// their own <video> elements (only the active one visible) so switching is
-// instant, and progress is driven by the pinned wrapper's own scroll range.
-// Hero clips are capped at a handful by the hero-animation route, so
-// mounting them all is bounded and safe — unlike the many-item gallery
-// case elsewhere in this app, which mounts at most one video at a time.
-const VH_PER_CLIP = 1.6;
-
+// This replaces an earlier scroll-scrubbed version that mapped scroll
+// position directly to each video's `currentTime`. That looked like
+// "jumping frames" in practice: HTML5 video seeking has to decode forward
+// from the nearest keyframe on every seek, so fast or fine-grained scroll
+// input produced visibly stepped, non-smooth playback with no way to make
+// it worse/better by tuning frame counts — the seek itself is the
+// bottleneck, not how it's driven. Real, uninterrupted video playback (as
+// used here) has no such per-frame seek cost, so it's smooth by
+// construction; scrolling only decides *when* that playback starts, never
+// *where* within it.
 export function HeroStageScrubVideo({
   clips,
   posterUrl,
@@ -40,86 +33,113 @@ export function HeroStageScrubVideo({
 }) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
-  const durationsRef = useRef<number[]>(clips.map(() => 0));
+  const [activeIndex, setActiveIndex] = useState(0);
   const activeIndexRef = useRef(0);
+  const hasPlayedRef = useRef(false);
+  const lockedRef = useRef(false);
+
+  useEffect(() => {
+    activeIndexRef.current = activeIndex;
+  }, [activeIndex]);
 
   useEffect(() => {
     const wrapper = wrapperRef.current;
     if (!wrapper || clips.length === 0) return;
 
-    let raf = 0;
-
-    function setActive(index: number) {
-      if (index === activeIndexRef.current) return;
-      const prev = videoRefs.current[activeIndexRef.current];
-      if (prev) prev.style.opacity = "0";
-      activeIndexRef.current = index;
-      const next = videoRefs.current[index];
-      if (next) next.style.opacity = "1";
+    function preventScroll(e: Event) {
+      e.preventDefault();
     }
 
-    function updateScrub() {
-      raf = 0;
-      const rect = wrapper!.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
-      const pinRange = rect.height - viewportHeight;
-      const progress = pinRange > 0 ? Math.min(1, Math.max(0, -rect.top / pinRange)) : 0;
+    function lockScroll() {
+      lockedRef.current = true;
+      document.documentElement.style.overflow = "hidden";
+      document.body.style.overflow = "hidden";
+      window.addEventListener("wheel", preventScroll, { passive: false });
+      window.addEventListener("touchmove", preventScroll, { passive: false });
+    }
 
-      const segmentCount = clips.length;
-      const raw = progress * segmentCount;
-      const index = Math.min(segmentCount - 1, Math.floor(raw));
-      const localProgress = Math.min(1, raw - index);
+    function unlockScroll() {
+      lockedRef.current = false;
+      document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
+      window.removeEventListener("wheel", preventScroll);
+      window.removeEventListener("touchmove", preventScroll);
+    }
 
-      setActive(index);
+    function playIndex(index: number) {
+      setActiveIndex(index);
+      activeIndexRef.current = index;
       const video = videoRefs.current[index];
-      const duration = durationsRef.current[index];
-      if (video && duration) {
-        video.currentTime = localProgress * duration;
+      if (video) {
+        video.currentTime = 0;
+        video.play().catch(() => {});
+      }
+    }
+
+    function handleClipEnded(index: number) {
+      if (index !== activeIndexRef.current) return;
+      const nextIndex = index + 1;
+      if (nextIndex < clips.length) {
+        playIndex(nextIndex);
+      } else {
+        hasPlayedRef.current = true;
+        unlockScroll();
+      }
+    }
+
+    const videos = videoRefs.current;
+    const endedHandlers = clips.map((_, index) => () => handleClipEnded(index));
+    videos.forEach((video, index) => {
+      video?.addEventListener("ended", endedHandlers[index]);
+    });
+
+    let raf = 0;
+    function checkTrigger() {
+      raf = 0;
+      if (hasPlayedRef.current || lockedRef.current) return;
+      const rect = wrapper!.getBoundingClientRect();
+      if (rect.top <= 0 && rect.top > -rect.height) {
+        // Snap so the hero fills the viewport exactly, then hold it there.
+        window.scrollTo({ top: window.scrollY + rect.top, behavior: "auto" });
+        lockScroll();
+        playIndex(0);
       }
     }
 
     function onScroll() {
       if (raf) return;
-      raf = requestAnimationFrame(updateScrub);
+      raf = requestAnimationFrame(checkTrigger);
     }
 
-    updateScrub();
+    checkTrigger();
     window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
     return () => {
       window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
       if (raf) cancelAnimationFrame(raf);
+      videos.forEach((video, index) => {
+        video?.removeEventListener("ended", endedHandlers[index]);
+      });
+      if (lockedRef.current) unlockScroll();
     };
   }, [clips]);
 
   return (
-    <div ref={wrapperRef} className={`relative ${className ?? ""}`} style={{ height: `${clips.length * VH_PER_CLIP * 100}vh` }}>
-      {/* h-dvh (dynamic viewport height), not h-screen (100vh): on mobile,
-          100vh is measured against the largest possible viewport and doesn't
-          shrink when the browser's address bar is showing, so the video can
-          run taller than what's actually visible on screen — dvh tracks the
-          real visible viewport as browser chrome shows/hides. */}
-      <div className="sticky top-0 h-dvh overflow-hidden">
-        {clips.map((clip, index) => (
-          <video
-            key={clip.src}
-            ref={(el) => {
-              videoRefs.current[index] = el;
-            }}
-            src={clip.src}
-            poster={index === 0 ? posterUrl : undefined}
-            muted
-            playsInline
-            preload="auto"
-            onLoadedMetadata={(e) => {
-              durationsRef.current[index] = e.currentTarget.duration || 0;
-            }}
-            className="absolute inset-0 h-full w-full object-cover"
-            style={{ opacity: index === 0 ? 1 : 0 }}
-          />
-        ))}
-      </div>
+    <div ref={wrapperRef} className={`relative h-dvh overflow-hidden ${className ?? ""}`}>
+      {clips.map((clip, index) => (
+        <video
+          key={clip.src}
+          ref={(el) => {
+            videoRefs.current[index] = el;
+          }}
+          src={clip.src}
+          poster={index === 0 ? posterUrl : undefined}
+          muted
+          playsInline
+          preload="auto"
+          className="absolute inset-0 h-full w-full object-cover transition-opacity duration-300"
+          style={{ opacity: index === activeIndex ? 1 : 0 }}
+        />
+      ))}
     </div>
   );
 }

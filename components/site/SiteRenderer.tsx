@@ -225,11 +225,12 @@ function Hero({
     </div>
   );
 
-  // Clips exist: pin the hero in place while the visitor scrubs through
-  // each stage's animation, only releasing into normal page scroll once
-  // every clip has played (see HeroStageScrubVideo for why). The video
-  // fills the pinned viewport edge-to-edge with no text on top of it; the
-  // headline/subhead/CTA follow immediately after as a normal section.
+  // Clips exist: once the hero scrolls to fill the viewport, scrolling
+  // locks and each stage's clip autoplays in turn; scrolling resumes
+  // automatically once the last clip finishes (see HeroStageScrubVideo for
+  // why). The video fills the viewport edge-to-edge with no text on top of
+  // it; the headline/subhead/CTA follow immediately after as a normal
+  // section.
   if (backgroundImageUrl && stageClips) {
     return (
       <>
