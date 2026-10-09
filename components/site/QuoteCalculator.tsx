@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { buildQuoteBreakdown, volumeFromAreaAndDepth } from "@/lib/quoteEngine";
+import { matchTradeCategory } from "@/lib/quoteCategories";
 import { generateId } from "@/lib/idGen";
 import { Material, OnboardingData, QuoteMeasureKind, QuoteSection, TradeCategory } from "@/lib/types";
 
@@ -33,23 +34,22 @@ function defaultKindForCategory(category: TradeCategory): QuoteMeasureKind {
   return "area";
 }
 
-function newSection(category: TradeCategory): QuoteSection {
-  return { id: generateId("section"), label: "", kind: defaultKindForCategory(category), value: 0 };
+function newSection(serviceName: string): QuoteSection {
+  const category = matchTradeCategory(serviceName);
+  return { id: generateId("section"), label: "", serviceName, kind: defaultKindForCategory(category), value: 0 };
 }
 
 export function QuoteCalculator({
   siteId,
-  category,
   dayRate,
   services,
 }: {
   siteId: string;
-  category: TradeCategory;
   dayRate: number;
   services: OnboardingData["services"];
 }) {
-  const [serviceName, setServiceName] = useState(services[0]?.name ?? "General work");
-  const [sections, setSections] = useState<QuoteSection[]>([newSection(category)]);
+  const defaultServiceName = services[0]?.name ?? "General work";
+  const [sections, setSections] = useState<QuoteSection[]>([newSection(defaultServiceName)]);
   const [materials, setMaterials] = useState<Material[]>([]);
   const [loading, setLoading] = useState(true);
   const [calculated, setCalculated] = useState(false);
@@ -61,7 +61,10 @@ export function QuoteCalculator({
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`/api/materials?category=${category}`)
+    // Fetches the whole catalog once: sections can each pick a different
+    // service, so which categories are actually needed can change as the
+    // customer edits the form rather than being fixed up front.
+    fetch(`/api/materials`)
       .then((res) => res.json())
       .then((data: { materials: Material[] }) => {
         if (cancelled) return;
@@ -74,17 +77,21 @@ export function QuoteCalculator({
     return () => {
       cancelled = true;
     };
-  }, [category]);
+  }, []);
 
   const hasAnyValue = useMemo(() => sections.some((s) => s.value > 0), [sections]);
 
   const breakdown = useMemo(
-    () => buildQuoteBreakdown(category, sections, materials, dayRate),
-    [category, sections, materials, dayRate]
+    () => buildQuoteBreakdown(sections, materials, dayRate),
+    [sections, materials, dayRate]
   );
 
   function updateSection(id: string, patch: Partial<QuoteSection>) {
     setSections((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch } : s)));
+  }
+
+  function changeSectionService(id: string, serviceName: string) {
+    updateSection(id, { serviceName, kind: defaultKindForCategory(matchTradeCategory(serviceName)), value: 0, areaSqm: undefined, depthMm: undefined });
   }
 
   function changeSectionKind(id: string, kind: QuoteMeasureKind) {
@@ -96,7 +103,7 @@ export function QuoteCalculator({
   }
 
   function addSection() {
-    setSections((prev) => [...prev, newSection(category)]);
+    setSections((prev) => [...prev, newSection(defaultServiceName)]);
   }
 
   function removeSection(id: string) {
@@ -115,8 +122,6 @@ export function QuoteCalculator({
           customerName: name,
           customerEmail: email,
           customerPhone: phone || undefined,
-          serviceName,
-          category,
           sections,
         }),
       });
@@ -151,32 +156,19 @@ export function QuoteCalculator({
 
   return (
     <div className="space-y-6 rounded-[var(--radius)] p-6" style={{ backgroundColor: "var(--color-surface)" }}>
-      <div>
-        <label className="text-sm font-medium">Which service is this for?</label>
-        <select
-          className="mt-1 w-full rounded-[var(--radius)] border px-3 py-2 text-sm sm:w-80"
-          style={{ borderColor: "var(--color-muted)" }}
-          value={serviceName}
-          onChange={(e) => setServiceName(e.target.value)}
-        >
-          {services.map((s) => (
-            <option key={s.id} value={s.name}>
-              {s.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
       <div className="space-y-4">
         <p className="text-sm font-medium">
-          Add a section for each part of the job, and pick how it&apos;s measured — not everything is a floor area.
+          Add a section for each part of the job, pick which service it&apos;s for and how it&apos;s measured — a job can
+          mix more than one service, and not everything is a floor area.
         </p>
         {sections.map((section, i) => (
           <QuoteSectionRow
             key={section.id}
             section={section}
             index={i}
+            services={services}
             onLabelChange={(label) => updateSection(section.id, { label })}
+            onServiceChange={(sv) => changeSectionService(section.id, sv)}
             onKindChange={(kind) => changeSectionKind(section.id, kind)}
             onValueChange={(value) => updateSection(section.id, { value })}
             onVolumeChange={(areaSqm, depthMm) => updateVolumeSection(section.id, areaSqm, depthMm)}
@@ -291,7 +283,9 @@ export function QuoteCalculator({
 function QuoteSectionRow({
   section,
   index,
+  services,
   onLabelChange,
+  onServiceChange,
   onKindChange,
   onValueChange,
   onVolumeChange,
@@ -299,7 +293,9 @@ function QuoteSectionRow({
 }: {
   section: QuoteSection;
   index: number;
+  services: OnboardingData["services"];
   onLabelChange: (label: string) => void;
+  onServiceChange: (serviceName: string) => void;
   onKindChange: (kind: QuoteMeasureKind) => void;
   onValueChange: (value: number) => void;
   onVolumeChange: (areaSqm: number, depthMm: number) => void;
@@ -311,6 +307,13 @@ function QuoteSectionRow({
       : section.kind === "length"
       ? `Section ${index + 1} name (e.g. Pipe run to garage)`
       : `Section ${index + 1} name (e.g. Kitchen)`;
+
+  // The section's own service may not be in the business's service list
+  // (e.g. the default "General work" fallback on a site with none set) —
+  // included as an extra option so the select always has a valid value.
+  const serviceOptions = services.some((s) => s.name === section.serviceName)
+    ? services
+    : [{ id: "__fallback", name: section.serviceName }, ...services];
 
   return (
     <div className="space-y-3 rounded-[var(--radius)] border p-4" style={{ borderColor: "var(--color-muted)" }}>
@@ -329,19 +332,41 @@ function QuoteSectionRow({
         )}
       </div>
 
-      <div>
-        <select
-          className="rounded-[var(--radius)] border px-2 py-1 text-xs"
-          style={{ borderColor: "var(--color-muted)" }}
-          value={section.kind}
-          onChange={(e) => onKindChange(e.target.value as QuoteMeasureKind)}
-        >
-          {KIND_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+      <div className="flex flex-wrap items-center gap-2">
+        <div>
+          <label className="block text-xs" style={{ color: "var(--color-muted)" }}>
+            Service
+          </label>
+          <select
+            className="rounded-[var(--radius)] border px-2 py-1 text-xs"
+            style={{ borderColor: "var(--color-muted)" }}
+            value={section.serviceName}
+            onChange={(e) => onServiceChange(e.target.value)}
+          >
+            {serviceOptions.map((s) => (
+              <option key={s.id} value={s.name}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs" style={{ color: "var(--color-muted)" }}>
+            Measured as
+          </label>
+          <select
+            className="rounded-[var(--radius)] border px-2 py-1 text-xs"
+            style={{ borderColor: "var(--color-muted)" }}
+            value={section.kind}
+            onChange={(e) => onKindChange(e.target.value as QuoteMeasureKind)}
+          >
+            {KIND_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {section.kind === "volume" ? (

@@ -290,6 +290,12 @@ export interface QuoteLineItem {
 export interface QuoteSection {
   id: string;
   label: string;
+  // Which of the business's services this section of the job is for (e.g.
+  // "Damp Proofing" vs "Tiling") — a real job often mixes several, each
+  // needing its own materials, so this is set per section rather than once
+  // for the whole quote. Resolved to a TradeCategory (matchTradeCategory,
+  // lib/quoteCategories.ts) to pick which materials catalog it draws from.
+  serviceName: string;
   kind: QuoteMeasureKind;
   // The value in the kind's natural unit: area -> m², volume -> m³,
   // length -> linear metres, count -> whole units. Ignored for "job".
@@ -303,7 +309,10 @@ export interface QuoteSection {
 }
 
 export interface QuoteBreakdown {
-  category: TradeCategory;
+  // Every distinct category actually drawn on across the quote's sections
+  // — a job can span several (e.g. tiling + general) once sections pick
+  // their own services.
+  categories: TradeCategory[];
   sections: QuoteSection[];
   totals: Record<Exclude<QuoteMeasureKind, "job">, number>;
   lineItems: QuoteLineItem[];

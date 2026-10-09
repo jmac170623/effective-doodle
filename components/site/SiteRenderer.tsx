@@ -399,7 +399,6 @@ function QuoteSection({
         <div className="mt-10">
           <QuoteCalculator
             siteId={siteId}
-            category={category}
             dayRate={dayRate}
             services={onboarding.services}
           />

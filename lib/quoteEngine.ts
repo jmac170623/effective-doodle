@@ -1,3 +1,4 @@
+import { matchTradeCategory } from "./quoteCategories";
 import { JobSize, Material, QuoteBreakdown, QuoteLineItem, QuoteMeasureKind, QuoteSection, TradeCategory } from "./types";
 
 // Reference small/medium/large anchor points per measurement kind. The
@@ -125,19 +126,38 @@ function roundToNearest(value: number, step: number): number {
   return Math.round(value / step) * step;
 }
 
+// Sections each pick their own service (e.g. "Damp Proofing" vs "Tiling"),
+// which resolves to its own TradeCategory and therefore its own materials
+// catalog — a mixed job shouldn't have a tiling section's area pull
+// quantities from the damp-proofing catalog or vice versa. So quantities
+// are computed separately per category (grouping that category's own
+// sections' own totals) and only the resulting line items/labour are
+// combined into one breakdown.
 export function buildQuoteBreakdown(
-  category: TradeCategory,
   sections: QuoteSection[],
   materials: Material[],
   dayRate: number
 ): QuoteBreakdown {
   const totals = totalsBySection(sections);
-  const quantities = quantitiesForTotals(materials, totals);
 
-  const lineItems: QuoteLineItem[] = materials
-    .map((material) => {
+  const sectionsByCategory = new Map<TradeCategory, QuoteSection[]>();
+  for (const section of sections) {
+    const category = matchTradeCategory(section.serviceName);
+    const existing = sectionsByCategory.get(category);
+    if (existing) existing.push(section);
+    else sectionsByCategory.set(category, [section]);
+  }
+
+  const lineItems: QuoteLineItem[] = [];
+  let labourDays = 0;
+  for (const [category, catSections] of sectionsByCategory) {
+    const catTotals = totalsBySection(catSections);
+    const catMaterials = materials.filter((m) => m.category === category);
+    const quantities = quantitiesForTotals(catMaterials, catTotals);
+    for (const material of catMaterials) {
       const quantity = quantities[material.id] ?? 0;
-      return {
+      if (quantity <= 0) continue;
+      lineItems.push({
         materialId: material.id,
         name: material.name,
         unit: material.unit,
@@ -145,17 +165,23 @@ export function buildQuoteBreakdown(
         quantity,
         lineTotal: Math.round(material.unitPrice * quantity * 100) / 100,
         merchantLabel: material.merchantLabel,
-      };
-    })
-    .filter((item) => item.quantity > 0);
+      });
+    }
+    // Unlike labourDaysForTotals' own diminishing-returns blend across
+    // measurement kinds *within* one service, separate services are
+    // genuinely separate chunks of work — often a different skillset
+    // entirely — so their labour time is summed in full rather than
+    // discounted.
+    labourDays += labourDaysForTotals(catTotals);
+  }
+  labourDays = Math.round(labourDays * 20) / 20;
 
   const materialsTotal = Math.round(lineItems.reduce((sum, item) => sum + item.lineTotal, 0) * 100) / 100;
-  const labourDays = labourDaysForTotals(totals);
   const labourTotal = Math.round(labourDays * dayRate * 100) / 100;
   const subtotal = materialsTotal + labourTotal;
 
   return {
-    category,
+    categories: Array.from(sectionsByCategory.keys()),
     sections,
     totals,
     lineItems,

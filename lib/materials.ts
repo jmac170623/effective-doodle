@@ -37,3 +37,17 @@ export async function getMaterialsByCategory(
   if (error) throw new Error(error.message);
   return (data as MaterialRow[] | null ?? []).map(rowToMaterial);
 }
+
+// The whole catalog is small (a few dozen rows across all categories), so
+// the quote calculator fetches it once rather than per-category — each
+// section can pick its own service, and which categories that touches can
+// change as the customer edits sections, so scoping the fetch to just one
+// category up front doesn't work here the way it used to.
+export async function getAllMaterials(supabase: SupabaseClient): Promise<Material[]> {
+  const { data, error } = await supabase
+    .from("materials")
+    .select("*")
+    .order("name", { ascending: true });
+  if (error) throw new Error(error.message);
+  return (data as MaterialRow[] | null ?? []).map(rowToMaterial);
+}

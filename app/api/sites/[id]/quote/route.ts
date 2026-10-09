@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSite, insertQuote } from "@/lib/db";
-import { getMaterialsByCategory } from "@/lib/materials";
+import { getAllMaterials } from "@/lib/materials";
 import { buildQuoteBreakdown } from "@/lib/quoteEngine";
-import { defaultDayRate } from "@/lib/quoteCategories";
+import { defaultDayRate, matchTradeCategory } from "@/lib/quoteCategories";
 import { generateId } from "@/lib/idGen";
 import { createClient } from "@/lib/supabase/server";
-import { QuoteMeasureKind, QuoteSection, TradeCategory } from "@/lib/types";
+import { QuoteMeasureKind, QuoteSection } from "@/lib/types";
 
-const VALID_CATEGORIES: TradeCategory[] = ["plumbing", "electrical", "tiling", "painting", "general"];
 const VALID_KINDS: QuoteMeasureKind[] = ["area", "volume", "length", "count", "job"];
 
 function parseSections(input: unknown): QuoteSection[] | null {
@@ -21,6 +20,7 @@ function parseSections(input: unknown): QuoteSection[] | null {
     sections.push({
       id: typeof raw?.id === "string" && raw.id ? raw.id : generateId("section"),
       label: typeof raw?.label === "string" ? raw.label.trim().slice(0, 60) : "",
+      serviceName: typeof raw?.serviceName === "string" ? raw.serviceName.trim().slice(0, 80) : "",
       kind,
       value,
     });
@@ -38,15 +38,10 @@ export async function POST(
   const customerName = typeof body?.customerName === "string" ? body.customerName.trim() : "";
   const customerEmail = typeof body?.customerEmail === "string" ? body.customerEmail.trim() : "";
   const customerPhone = typeof body?.customerPhone === "string" ? body.customerPhone.trim() : undefined;
-  const serviceName = typeof body?.serviceName === "string" ? body.serviceName.trim() : "";
-  const category = body?.category as TradeCategory;
   const sections = parseSections(body?.sections);
 
-  if (!customerName || !customerEmail || !serviceName) {
-    return NextResponse.json({ error: "Name, email and service are required." }, { status: 400 });
-  }
-  if (!VALID_CATEGORIES.includes(category)) {
-    return NextResponse.json({ error: "Invalid category." }, { status: 400 });
+  if (!customerName || !customerEmail) {
+    return NextResponse.json({ error: "Name and email are required." }, { status: 400 });
   }
   if (!sections || sections.length === 0 || sections.every((s) => s.value <= 0)) {
     return NextResponse.json({ error: "Enter at least one measurement to quote." }, { status: 400 });
@@ -58,11 +53,16 @@ export async function POST(
     return NextResponse.json({ error: "Unknown site." }, { status: 404 });
   }
 
-  const dayRate = site.onboarding.dayRate ?? defaultDayRate(category);
-  const materials = await getMaterialsByCategory(supabase, category);
+  // Each section picks its own service, so the label stored against the
+  // quote is every distinct one actually used, not a single site-wide
+  // category — a job can genuinely span several.
+  const serviceName = Array.from(new Set(sections.map((s) => s.serviceName).filter(Boolean))).join(", ") || "General work";
+
+  const dayRate = site.onboarding.dayRate ?? defaultDayRate(matchTradeCategory(site.onboarding.trade));
+  const materials = await getAllMaterials(supabase);
   // Recomputed server-side from the shared catalog and the customer's own
   // entered areas rather than trusting a client-submitted total.
-  const breakdown = buildQuoteBreakdown(category, sections, materials, dayRate);
+  const breakdown = buildQuoteBreakdown(sections, materials, dayRate);
 
   await insertQuote(supabase, {
     id: generateId("quote"),
