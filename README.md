@@ -48,18 +48,35 @@ style of the generated site.
   site row — everything else (images, hero stages, animations, quotes,
   leads) cascades in Postgres. Irreversible; confirmed before it runs.
 - **Instant quote calculator** — every generated site gets a "Get an Instant
-  Quote" section backed by a shared materials catalog (`materials` table,
-  currently placeholder-branded pricing — see `lib/quoteCategories.ts` and
-  `lib/quoteEngine.ts`). Not every job is a floor area: each section a
-  visitor adds picks its own measurement — **area** (m²), **volume** (m³,
-  entered as area × depth in mm since guessing cubic metres directly isn't
-  realistic), **length** (linear metres, for pipe/cable/fencing runs), or
-  **count** (fixtures/fittings) — and each material in the catalog is
-  tagged with which of those it actually scales against
-  (`materials.measure_kind`), so a plumbing quote is no longer estimated
-  off a made-up room size. A visitor picks a service, adds a section per
-  part of the job, and gets a real itemized estimate (materials + labour);
-  requests are recomputed server-side and stored in `quotes`.
+  Quote" section backed by a shared materials catalog (`materials` table —
+  see `lib/quoteCategories.ts` and `lib/quoteEngine.ts`). Not every job is a
+  floor area: each section a visitor adds picks its own measurement —
+  **area** (m²), **volume** (m³, entered as area × depth in mm since
+  guessing cubic metres directly isn't realistic), **length** (linear
+  metres, for pipe/cable/fencing runs), or **count** (fixtures/fittings) —
+  and each material in the catalog is tagged with which of those it
+  actually scales against (`materials.measure_kind`), so a plumbing quote
+  is no longer estimated off a made-up room size. Each section also picks
+  its own **service** (not one service for the whole quote) — a real job
+  often mixes several (e.g. damp proofing in one room, tiling in another),
+  so `lib/quoteEngine.ts` groups sections by the trade category their
+  service resolves to and prices each group from its own materials before
+  combining them into one breakdown. Requests are recomputed server-side
+  and stored in `quotes`.
+  - **Catalog pricing** — placeholder-branded ("Trade Supply Co") by
+    default. `POST /api/admin/materials/refresh-prices` (gated by the
+    `ADMIN_SECRET` header `x-admin-secret`) refreshes every row from real
+    UK retail listings instead: it searches SerpApi's Google Shopping
+    results per material, then asks Claude to pick the one genuine match
+    and normalize its price onto that material's own unit (e.g. a 10-pack's
+    price ÷ 10), writing the result — price, retailer, source link, and
+    timestamp — back onto the row (`price_source_url`/`price_updated_at`).
+    Needs both `SERPAPI_KEY` and `ANTHROPIC_API_KEY`; without either, it's
+    a clean no-op rather than a broken catalog. This sources real **retail**
+    prices (Wickes, Screwfix, Amazon, etc.), not trade/bulk merchant
+    pricing — meant as a working stopgap (and a live demo to pitch a real
+    builders' merchant data-feed partnership with) rather than a
+    replacement for one.
 - **Publish is billing-gated** — publishing a site requires an active £35/mo
   Stripe subscription for that specific site (`lib/stripe.ts`,
   `app/api/webhooks/stripe/route.ts`). The Stripe webhook is the source of

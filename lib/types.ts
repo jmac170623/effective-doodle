@@ -271,6 +271,11 @@ export interface Material {
   merchantLabel: string;
   measureKind: QuoteMeasureKind;
   suggestedQty: Record<JobSize, number>;
+  // Set once a price has actually been refreshed from a real source
+  // (lib/priceRefresh.ts) rather than typed in by hand — undefined for
+  // rows that have never been refreshed.
+  priceSourceUrl?: string;
+  priceUpdatedAt?: string;
 }
 
 export interface QuoteLineItem {

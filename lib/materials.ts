@@ -10,6 +10,8 @@ interface MaterialRow {
   merchant_label: string;
   measure_kind: QuoteMeasureKind;
   suggested_qty: Record<JobSize, number>;
+  price_source_url: string | null;
+  price_updated_at: string | null;
 }
 
 function rowToMaterial(row: MaterialRow): Material {
@@ -22,6 +24,8 @@ function rowToMaterial(row: MaterialRow): Material {
     merchantLabel: row.merchant_label,
     measureKind: row.measure_kind,
     suggestedQty: row.suggested_qty,
+    priceSourceUrl: row.price_source_url ?? undefined,
+    priceUpdatedAt: row.price_updated_at ?? undefined,
   };
 }
 
@@ -50,4 +54,29 @@ export async function getAllMaterials(supabase: SupabaseClient): Promise<Materia
     .order("name", { ascending: true });
   if (error) throw new Error(error.message);
   return (data as MaterialRow[] | null ?? []).map(rowToMaterial);
+}
+
+// Writes a refreshed price back onto a catalog row (lib/priceRefresh.ts).
+// The `materials` table has no update policy for anon/authenticated
+// clients (see supabase/migrations/0002_materials.sql) — callers must pass
+// a service-role client, same as the rest of this app's admin-only writes.
+export async function updateMaterialPrice(
+  supabase: SupabaseClient,
+  materialId: string,
+  update: { unitPrice: number; merchantLabel: string; sourceUrl?: string }
+): Promise<void> {
+  const { data, error } = await supabase
+    .from("materials")
+    .update({
+      unit_price: update.unitPrice,
+      merchant_label: update.merchantLabel,
+      price_source_url: update.sourceUrl ?? null,
+      price_updated_at: new Date().toISOString(),
+    })
+    .eq("id", materialId)
+    .select("id");
+  if (error) throw new Error(error.message);
+  if (!data || data.length === 0) {
+    throw new Error(`Material ${materialId} no longer exists.`);
+  }
 }

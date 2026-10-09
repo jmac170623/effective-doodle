@@ -230,6 +230,7 @@ export function QuoteCalculator({
                     <li key={item.materialId} className="flex justify-between">
                       <span>
                         {item.quantity} {item.unit} — {item.name}
+                        {item.merchantLabel && <span className="opacity-70"> ({item.merchantLabel})</span>}
                       </span>
                       <span>{formatGBP(item.lineTotal)}</span>
                     </li>
