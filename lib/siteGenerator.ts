@@ -9,6 +9,7 @@ import { PALETTE_VARIANTS } from "./styleTokens";
 import { TONE_PROFILES } from "./toneProfiles";
 import { generateId } from "./idGen";
 import { generateCopyWithAI } from "./aiCopywriter";
+import { pickVariant } from "./variantPicker";
 
 function tradeNoun(trade: string): string {
   return trade.trim() || "tradesperson";
@@ -16,21 +17,6 @@ function tradeNoun(trade: string): string {
 
 function capitalize(s: string): string {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
-}
-
-// Deterministic per-business variant selection: the same business always
-// regenerates the same copy, but different businesses of the same tone
-// read differently instead of all sounding identical.
-function hashString(s: string): number {
-  let hash = 0;
-  for (let i = 0; i < s.length; i++) {
-    hash = (hash * 31 + s.charCodeAt(i)) >>> 0;
-  }
-  return hash;
-}
-
-function pickVariant<T>(variants: T[], seed: string): T {
-  return variants[hashString(seed) % variants.length];
 }
 
 function polishAbout(rawText: string, businessName: string): string {

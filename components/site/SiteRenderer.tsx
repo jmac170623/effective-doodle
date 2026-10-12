@@ -5,6 +5,8 @@ import { HeroStageSlideshow } from "./HeroStageSlideshow";
 import { HeroStageScrubVideo } from "./HeroStageScrubVideo";
 import { LazyAutoplayVideo } from "./LazyAutoplayVideo";
 import { QuoteCalculator } from "./QuoteCalculator";
+import { SectionHeading } from "./SectionHeading";
+import { ServicesSection } from "./ServicesSection";
 import { matchTradeCategory, defaultDayRate } from "@/lib/quoteCategories";
 
 interface SiteRendererProps {
@@ -58,7 +60,12 @@ export function SiteRenderer({ siteId, onboarding, generated, images = [], anima
       <div className="flex flex-col">
         <div style={{ order: 10 - emphasis.services * 5 }}>
           <Reveal motion={style.motion}>
-            <Services copy={copy} services={onboarding.services} sectionGapClass={sectionGapClass} />
+            <ServicesSection
+              copy={copy}
+              services={onboarding.services}
+              businessName={onboarding.businessName}
+              sectionGapClass={sectionGapClass}
+            />
           </Reveal>
         </div>
 
@@ -91,47 +98,6 @@ export function SiteRenderer({ siteId, onboarding, generated, images = [], anima
 function Reveal({ motion, children }: { motion: GeneratedSite["style"]["motion"]; children: React.ReactNode }) {
   if (motion === "none") return <>{children}</>;
   return <ScrollReveal>{children}</ScrollReveal>;
-}
-
-// A small colored "eyebrow" label above the heading gives every section a
-// second typographic level instead of one flat size repeated down the
-// page, and puts the accent color to visible use — previously defined in
-// every palette but never actually rendered anywhere.
-function SectionHeading({
-  eyebrow,
-  heading,
-  intro,
-  light,
-}: {
-  eyebrow: string;
-  heading: string;
-  intro?: string;
-  light?: boolean;
-}) {
-  return (
-    <div>
-      <span
-        className={`text-xs font-bold uppercase tracking-[0.2em] ${light ? "text-white/80" : ""}`}
-        style={light ? undefined : { color: "var(--color-accent)" }}
-      >
-        {eyebrow}
-      </span>
-      <h2
-        className={`mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl ${light ? "text-white" : ""}`}
-        style={{ fontFamily: "var(--font-heading)" }}
-      >
-        {heading}
-      </h2>
-      {intro && (
-        <p
-          className={`mt-3 max-w-xl text-base ${light ? "text-white/80" : ""}`}
-          style={light ? undefined : { color: "var(--color-muted)" }}
-        >
-          {intro}
-        </p>
-      )}
-    </div>
-  );
 }
 
 function Nav({ businessName, phone }: { businessName: string; phone: string }) {
@@ -269,48 +235,6 @@ function About({ copy, sectionGapClass }: { copy: GeneratedSite["copy"]; section
       >
         {copy.aboutBody}
       </p>
-    </section>
-  );
-}
-
-function Services({
-  copy,
-  services,
-  sectionGapClass,
-}: {
-  copy: GeneratedSite["copy"];
-  services: OnboardingData["services"];
-  sectionGapClass: string;
-}) {
-  return (
-    <section id="services" className={`px-6 ${sectionGapClass}`} style={{ backgroundColor: "var(--color-secondary)" }}>
-      <div className="mx-auto max-w-5xl">
-        <SectionHeading eyebrow="What We Offer" heading={copy.servicesHeading} intro={copy.servicesIntro} />
-        <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {services.map((service, i) => (
-            <div
-              key={service.id}
-              className="rounded-[var(--radius)] p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
-              style={{ backgroundColor: "var(--color-surface)", borderTop: "3px solid var(--color-accent)" }}
-            >
-              <span
-                className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white"
-                style={{ backgroundColor: "var(--color-primary)" }}
-              >
-                {i + 1}
-              </span>
-              <h3 className="mt-4 text-lg font-bold" style={{ fontFamily: "var(--font-heading)" }}>
-                {service.name}
-              </h3>
-              {service.description && (
-                <p className="mt-2 text-sm leading-relaxed" style={{ color: "var(--color-muted)" }}>
-                  {service.description}
-                </p>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
     </section>
   );
 }
