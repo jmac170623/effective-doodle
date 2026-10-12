@@ -224,18 +224,33 @@ export function QuoteCalculator({
             </dl>
             {breakdown.lineItems.length > 0 && (
               <details className="mt-3 text-xs" style={{ color: "var(--color-muted)" }}>
-                <summary className="cursor-pointer font-medium">What&apos;s included in this estimate</summary>
-                <ul className="mt-2 space-y-1">
-                  {breakdown.lineItems.map((item) => (
-                    <li key={item.materialId} className="flex justify-between">
-                      <span>
-                        {item.quantity} {item.unit} — {item.name}
-                        {item.merchantLabel && <span className="opacity-70"> ({item.merchantLabel})</span>}
-                      </span>
-                      <span>{formatGBP(item.lineTotal)}</span>
-                    </li>
-                  ))}
-                </ul>
+                <summary className="cursor-pointer font-medium">View materials list</summary>
+                <div className="mt-2 space-y-3">
+                  {breakdown.serviceGroups
+                    .filter((group) => group.lineItems.length > 0)
+                    .map((group) => (
+                      <div key={group.category + group.sectionLabels.join("|")}>
+                        <p className="font-medium" style={{ color: "var(--color-text)" }}>
+                          {group.sectionLabels.join(", ")}
+                        </p>
+                        <ul className="mt-1 space-y-1">
+                          {group.lineItems.map((item) => (
+                            <li key={item.materialId} className="flex justify-between">
+                              <span>
+                                {item.quantity} {item.unit} — {item.name}
+                                {item.merchantLabel && <span className="opacity-70"> ({item.merchantLabel})</span>}
+                              </span>
+                              <span>{formatGBP(item.lineTotal)}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        <div className="mt-1 flex justify-between border-t pt-1" style={{ borderColor: "var(--color-muted)" }}>
+                          <span>Subtotal</span>
+                          <span>{formatGBP(group.materialsTotal)}</span>
+                        </div>
+                      </div>
+                    ))}
+                </div>
               </details>
             )}
           </div>

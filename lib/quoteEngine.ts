@@ -1,5 +1,5 @@
 import { matchTradeCategory } from "./quoteCategories";
-import { JobSize, Material, QuoteBreakdown, QuoteLineItem, QuoteMeasureKind, QuoteSection, TradeCategory } from "./types";
+import { JobSize, Material, QuoteBreakdown, QuoteLineItem, QuoteMeasureKind, QuoteSection, QuoteServiceGroup, TradeCategory } from "./types";
 
 // Reference small/medium/large anchor points per measurement kind. The
 // materials catalog's suggestedQty (small/medium/large) values are
@@ -149,15 +149,17 @@ export function buildQuoteBreakdown(
   }
 
   const lineItems: QuoteLineItem[] = [];
+  const serviceGroups: QuoteServiceGroup[] = [];
   let labourDays = 0;
   for (const [category, catSections] of sectionsByCategory) {
     const catTotals = totalsBySection(catSections);
     const catMaterials = materials.filter((m) => m.category === category);
     const quantities = quantitiesForTotals(catMaterials, catTotals);
+    const groupLineItems: QuoteLineItem[] = [];
     for (const material of catMaterials) {
       const quantity = quantities[material.id] ?? 0;
       if (quantity <= 0) continue;
-      lineItems.push({
+      groupLineItems.push({
         materialId: material.id,
         name: material.name,
         unit: material.unit,
@@ -167,6 +169,13 @@ export function buildQuoteBreakdown(
         merchantLabel: material.merchantLabel,
       });
     }
+    lineItems.push(...groupLineItems);
+    serviceGroups.push({
+      category,
+      sectionLabels: catSections.map((s) => s.label.trim() || s.serviceName),
+      lineItems: groupLineItems,
+      materialsTotal: Math.round(groupLineItems.reduce((sum, item) => sum + item.lineTotal, 0) * 100) / 100,
+    });
     // Unlike labourDaysForTotals' own diminishing-returns blend across
     // measurement kinds *within* one service, separate services are
     // genuinely separate chunks of work — often a different skillset
@@ -185,6 +194,7 @@ export function buildQuoteBreakdown(
     sections,
     totals,
     lineItems,
+    serviceGroups,
     materialsTotal,
     labourDays,
     labourRate: dayRate,

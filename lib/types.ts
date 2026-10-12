@@ -313,6 +313,22 @@ export interface QuoteSection {
   depthMm?: number;
 }
 
+// The materials actually priced for one group of sections that share a
+// resolved category — i.e. the real unit the quote was priced in. Sections
+// with different services almost always land in different groups (that's
+// the point), but two sections both resolving to the same category (e.g.
+// two "Tiling" sections) are priced together as one group, so their
+// materials are shown together too rather than split in a way that
+// wouldn't match what was actually bought.
+export interface QuoteServiceGroup {
+  category: TradeCategory;
+  // Every section's own label (or its service name, if left unlabeled)
+  // that contributed to this group, in the order added.
+  sectionLabels: string[];
+  lineItems: QuoteLineItem[];
+  materialsTotal: number;
+}
+
 export interface QuoteBreakdown {
   // Every distinct category actually drawn on across the quote's sections
   // — a job can span several (e.g. tiling + general) once sections pick
@@ -321,6 +337,7 @@ export interface QuoteBreakdown {
   sections: QuoteSection[];
   totals: Record<Exclude<QuoteMeasureKind, "job">, number>;
   lineItems: QuoteLineItem[];
+  serviceGroups: QuoteServiceGroup[];
   materialsTotal: number;
   labourDays: number;
   labourRate: number;
