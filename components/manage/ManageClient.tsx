@@ -83,6 +83,8 @@ export function ManageClient({ siteId }: { siteId: string }) {
   const [heroUploadError, setHeroUploadError] = useState("");
   const [animatingHero, setAnimatingHero] = useState(false);
   const [heroAnimationError, setHeroAnimationError] = useState("");
+  const [regeneratingStageId, setRegeneratingStageId] = useState<string | null>(null);
+  const [stageRegenerationErrors, setStageRegenerationErrors] = useState<Record<string, string>>({});
   const heroFileInputRef = useRef<HTMLInputElement>(null);
   const MAX_HERO_STAGES = 4;
 
@@ -318,7 +320,7 @@ export function ManageClient({ siteId }: { siteId: string }) {
 
   async function handleAnimateHero() {
     const confirmed = window.confirm(
-      "This generates your hero animation once — it can't be regenerated afterwards. Make sure you're happy with your stage photos and their order first. Continue?"
+      "This generates your hero animation once. An automated check flags any stage that doesn't look right and lets you regenerate just that one for free — but make sure you're happy with your stage photos and their order first. Continue?"
     );
     if (!confirmed) return;
     setAnimatingHero(true);
@@ -340,6 +342,40 @@ export function ManageClient({ siteId }: { siteId: string }) {
       setHeroAnimationError(err instanceof Error ? err.message : "Failed to generate hero animation.");
     } finally {
       setAnimatingHero(false);
+    }
+  }
+
+  async function handleRegenerateStage(stageId: string) {
+    setRegeneratingStageId(stageId);
+    setStageRegenerationErrors((prev) => {
+      const next = { ...prev };
+      delete next[stageId];
+      return next;
+    });
+    try {
+      const res = await fetch(`/api/sites/${siteId}/hero-animation/regenerate-stage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stageId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Regeneration failed.");
+      }
+      setHeroStages((prev) =>
+        prev.map((s) =>
+          s.id === stageId
+            ? { ...s, videoUrl: data.stage.videoUrl, qaPassed: data.stage.qaPassed ?? undefined, qaNote: data.stage.qaNote ?? undefined }
+            : s
+        )
+      );
+    } catch (err) {
+      setStageRegenerationErrors((prev) => ({
+        ...prev,
+        [stageId]: err instanceof Error ? err.message : "Regeneration failed.",
+      }));
+    } finally {
+      setRegeneratingStageId(null);
     }
   }
 
@@ -582,19 +618,39 @@ export function ManageClient({ siteId }: { siteId: string }) {
             {heroStages.length > 0 && (
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {heroStages.map((stage, index) => (
-                  <div key={stage.id} className="group relative aspect-square overflow-hidden rounded-lg border border-slate-200">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={stage.url} alt="" className="h-full w-full object-cover" />
-                    <span className="absolute left-1 top-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">
-                      {index === 0 ? "Start" : index === heroStages.length - 1 ? "Finished" : `Stage ${index + 1}`}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveHeroStage(stage)}
-                      className="absolute right-1 top-1 rounded-full bg-black/60 px-2 py-0.5 text-xs text-white opacity-0 transition group-hover:opacity-100"
-                    >
-                      ✕
-                    </button>
+                  <div key={stage.id} className="space-y-1">
+                    <div className="group relative aspect-square overflow-hidden rounded-lg border border-slate-200">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={stage.url} alt="" className="h-full w-full object-cover" />
+                      <span className="absolute left-1 top-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                        {index === 0 ? "Start" : index === heroStages.length - 1 ? "Finished" : `Stage ${index + 1}`}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveHeroStage(stage)}
+                        className="absolute right-1 top-1 rounded-full bg-black/60 px-2 py-0.5 text-xs text-white opacity-0 transition group-hover:opacity-100"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    {stage.videoUrl && stage.qaPassed === false && (
+                      <div className="rounded-md bg-amber-50 p-1.5">
+                        <p className="text-[10px] font-medium text-amber-700">
+                          This clip may need a second look{stage.qaNote ? `: ${stage.qaNote}` : "."}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => handleRegenerateStage(stage.id)}
+                          disabled={regeneratingStageId === stage.id}
+                          className="mt-1 text-[10px] font-semibold text-amber-700 underline disabled:opacity-50"
+                        >
+                          {regeneratingStageId === stage.id ? "Regenerating… (can take a few minutes)" : "Regenerate this stage (free)"}
+                        </button>
+                        {stageRegenerationErrors[stage.id] && (
+                          <p className="mt-1 text-[10px] text-red-600">{stageRegenerationErrors[stage.id]}</p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -616,7 +672,17 @@ export function ManageClient({ siteId }: { siteId: string }) {
               const heroAnimation = animations.find((a) => a.isHero && a.status !== "failed");
               const eligibility = checkAnimationEligibility(animations, site.animationCredits);
               if (heroAnimation?.status === "completed") {
-                return <p className="text-xs font-medium text-emerald-600">Hero animation generated ✓</p>;
+                const flaggedCount = heroStages.filter((s) => s.qaPassed === false).length;
+                return (
+                  <p className="text-xs font-medium text-emerald-600">
+                    Hero animation generated ✓
+                    {flaggedCount > 0 && (
+                      <span className="ml-1 font-normal text-amber-700">
+                        — {flaggedCount} stage{flaggedCount === 1 ? "" : "s"} flagged for review above.
+                      </span>
+                    )}
+                  </p>
+                );
               }
               if (heroAnimation?.status === "processing") {
                 return <p className="text-xs text-slate-500">Generating…</p>;
@@ -632,8 +698,9 @@ export function ManageClient({ siteId }: { siteId: string }) {
                     {animatingHero ? "Generating… (can take a few minutes)" : "Generate Hero Animation"}
                   </button>
                   <p className="text-xs text-slate-500">
-                    One-time, cinematic-quality generation — this can only be done once per site, so double-check
-                    your stage photos and their order before generating.
+                    One-time, cinematic-quality generation — double-check your stage photos and their order before
+                    generating. An automated check flags anything that doesn&apos;t come out right and lets you
+                    regenerate just that stage for free.
                   </p>
                   {animatingHero && (
                     <p className="text-xs text-slate-500">

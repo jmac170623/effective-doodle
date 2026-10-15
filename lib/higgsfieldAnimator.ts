@@ -151,7 +151,9 @@ export async function animatePhoto(imageUrl: string, trade: string): Promise<{ v
 // page (see components/site/HeroStageScrubVideo.tsx), which is what
 // actually reproduces the reference ad's effect: each stage of the job
 // visibly comes alive in turn, not one continuous invented transition.
-const HERO_STAGE_DURATION_SECONDS = 5;
+// Exported so lib/heroStageQA.ts can sample frames across the clip's real
+// duration rather than guessing it.
+export const HERO_STAGE_DURATION_SECONDS = 5;
 const HERO_STAGE_RESOLUTION = "2K";
 
 /**

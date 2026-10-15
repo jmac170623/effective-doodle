@@ -189,6 +189,8 @@ interface HeroStageRow {
   stage_order: number;
   created_at: string;
   video_url: string | null;
+  qa_passed: boolean | null;
+  qa_note: string | null;
 }
 
 function rowToHeroStage(row: HeroStageRow): HeroStage {
@@ -199,6 +201,8 @@ function rowToHeroStage(row: HeroStageRow): HeroStage {
     stageOrder: row.stage_order,
     createdAt: row.created_at,
     videoUrl: row.video_url ?? undefined,
+    qaPassed: row.qa_passed ?? undefined,
+    qaNote: row.qa_note ?? undefined,
   };
 }
 
@@ -233,7 +237,7 @@ export async function deleteHeroStage(supabase: SupabaseClient, stageId: string)
 export async function updateHeroStageVideo(
   supabase: SupabaseClient,
   stageId: string,
-  videoUrl: string
+  update: { videoUrl: string; qaPassed?: boolean | null; qaNote?: string | null }
 ): Promise<void> {
   // .update() doesn't error when zero rows match — confirmed live: a hero
   // animation was marked "completed" while every stage's video_url stayed
@@ -242,7 +246,11 @@ export async function updateHeroStageVideo(
   // silent no-op into a real, catchable error.
   const { data, error } = await supabase
     .from("site_hero_stages")
-    .update({ video_url: videoUrl })
+    .update({
+      video_url: update.videoUrl,
+      qa_passed: update.qaPassed ?? null,
+      qa_note: update.qaNote ?? null,
+    })
     .eq("id", stageId)
     .select("id");
   if (error) throw new Error(error.message);

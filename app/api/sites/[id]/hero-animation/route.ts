@@ -10,7 +10,8 @@ import {
   updateSiteAnimationStatus,
 } from "@/lib/db";
 import { checkAnimationEligibility } from "@/lib/animationLimits";
-import { animateHeroStageClip } from "@/lib/higgsfieldAnimator";
+import { animateHeroStageClip, HERO_STAGE_DURATION_SECONDS } from "@/lib/higgsfieldAnimator";
+import { qaCheckHeroClip } from "@/lib/heroStageQA";
 import { generateId } from "@/lib/idGen";
 import { createClient } from "@/lib/supabase/server";
 import { HeroStage } from "@/lib/types";
@@ -62,13 +63,24 @@ async function generateHeroClips(
   // whether it was one stage or all of them. This keeps every outcome.
   const MAX_CONCURRENT_HIGGSFIELD_JOBS = 2;
 
-  async function generateOneClip(stage: HeroStage, index: number): Promise<{ stage: HeroStage; videoUrl: string }> {
-    const result = await animateHeroStageClip(stage.url, stagePosition(index, stages.length), trade);
-    if (!result) throw new Error("Higgsfield not configured (no HF_CREDENTIALS).");
-    return { stage, videoUrl: result.videoUrl };
+  interface ClipResult {
+    stage: HeroStage;
+    videoUrl: string;
+    qaPassed: boolean | null;
+    qaNote?: string;
   }
 
-  const results: PromiseSettledResult<{ stage: HeroStage; videoUrl: string }>[] = new Array(stages.length);
+  async function generateOneClip(stage: HeroStage, index: number): Promise<ClipResult> {
+    const result = await animateHeroStageClip(stage.url, stagePosition(index, stages.length), trade);
+    if (!result) throw new Error("Higgsfield not configured (no HF_CREDENTIALS).");
+    // Cheap (a few seconds) relative to the ~2 minute generation it follows,
+    // so it comfortably fits the per-stage time budget — see
+    // lib/heroStageQA.ts for why this checks rather than auto-retries.
+    const qa = await qaCheckHeroClip(result.videoUrl, stage.url, HERO_STAGE_DURATION_SECONDS);
+    return { stage, videoUrl: result.videoUrl, qaPassed: qa.passed, qaNote: qa.note };
+  }
+
+  const results: PromiseSettledResult<ClipResult>[] = new Array(stages.length);
   let nextIndex = 0;
   async function worker(): Promise<void> {
     const index = nextIndex++;
@@ -96,11 +108,13 @@ async function generateHeroClips(
     return;
   }
 
-  const completedClips = (settled as PromiseFulfilledResult<{ stage: HeroStage; videoUrl: string }>[]).map(
-    (s) => s.value
-  );
+  const completedClips = (settled as PromiseFulfilledResult<ClipResult>[]).map((s) => s.value);
   try {
-    await Promise.all(completedClips.map((c) => updateHeroStageVideo(supabase, c.stage.id, c.videoUrl)));
+    await Promise.all(
+      completedClips.map((c) =>
+        updateHeroStageVideo(supabase, c.stage.id, { videoUrl: c.videoUrl, qaPassed: c.qaPassed, qaNote: c.qaNote })
+      )
+    );
   } catch (error) {
     await updateSiteAnimationStatus(supabase, { id: animationId, status: "failed" });
     console.error(`Failed to save hero stage clips for site ${siteId}:`, error);

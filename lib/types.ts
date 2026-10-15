@@ -223,6 +223,12 @@ export interface HeroStage {
   // generated once alongside the other stages' clips — see
   // lib/higgsfieldAnimator.ts#animateHeroStageClip.
   videoUrl?: string;
+  // Set by the automated quality check (lib/heroStageQA.ts) that runs right
+  // after this clip generates — true/false once a check has actually run,
+  // undefined if it hasn't run yet or couldn't (e.g. a transient failure).
+  // false unlocks one free regeneration for just this stage.
+  qaPassed?: boolean;
+  qaNote?: string;
 }
 
 // ---- Higgsfield photo-to-video animations ----
