@@ -24,15 +24,22 @@ export async function POST(
   }
 
   const origin = request.nextUrl.origin;
-  const stripe = getStripe();
-  const session = await stripe.checkout.sessions.create({
-    mode: "payment",
-    line_items: [{ price: EDIT_CREDIT_PRICE_ID, quantity: 1 }],
-    success_url: `${origin}/preview/${id}?editCheckout=success`,
-    cancel_url: `${origin}/preview/${id}?editCheckout=cancelled`,
-    customer_email: user.email,
-    metadata: { siteId: id, type: "edit_credit", credits: "1" },
-  });
+  try {
+    const stripe = getStripe();
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      line_items: [{ price: EDIT_CREDIT_PRICE_ID, quantity: 1 }],
+      success_url: `${origin}/preview/${id}?editCheckout=success`,
+      cancel_url: `${origin}/preview/${id}?editCheckout=cancelled`,
+      customer_email: user.email,
+      metadata: { siteId: id, type: "edit_credit", credits: "1" },
+    });
 
-  return NextResponse.json({ url: session.url });
+    return NextResponse.json({ url: session.url });
+  } catch (error) {
+    // Same reasoning as the site checkout route: never forward a raw
+    // Stripe error message to the client, only log it server-side.
+    console.error(`Failed to start edit-credit checkout for site ${id}:`, error);
+    return NextResponse.json({ error: "Failed to start checkout — please try again shortly." }, { status: 500 });
+  }
 }

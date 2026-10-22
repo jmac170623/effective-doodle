@@ -119,7 +119,9 @@ export async function POST(
 
     return NextResponse.json({ url: session.url });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to start domain purchase.";
-    return NextResponse.json({ error: message }, { status: 502 });
+    // Same reasoning as the site checkout route: never forward a raw
+    // Stripe/Vercel error message to the client, only log it server-side.
+    console.error(`Failed to start domain purchase checkout for site ${id}:`, error);
+    return NextResponse.json({ error: "Failed to start domain purchase — please try again shortly." }, { status: 502 });
   }
 }

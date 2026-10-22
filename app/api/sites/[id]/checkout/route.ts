@@ -39,8 +39,11 @@ export async function POST(
 
     return NextResponse.json({ url: session.url });
   } catch (error) {
+    // Never forward Stripe's raw error text to the client — it can include
+    // internal detail (e.g. a misconfigured API key error literally names
+    // the key and links to the Stripe dashboard) that has no business being
+    // shown on a customer-facing page. Full detail stays server-side.
     console.error(`Failed to start checkout for site ${id}:`, error);
-    const message = error instanceof Error ? error.message : "Failed to start checkout.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: "Failed to start checkout — please try again shortly." }, { status: 500 });
   }
 }
