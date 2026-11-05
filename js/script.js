@@ -33,8 +33,13 @@
     sections.forEach(function (section) {
       if (section.offsetTop <= scrollPos) current = section;
     });
+    var activeTabEl = document.querySelector(".search-tab.active");
+    var activeTabName = activeTabEl ? activeTabEl.getAttribute("data-tab") : null;
     navLinks.forEach(function (link) {
-      var match = link.getAttribute("href") === "#" + current.id;
+      var tabLink = link.getAttribute("data-tab-link");
+      var match = tabLink
+        ? current.id === "home" && tabLink === activeTabName
+        : link.getAttribute("href") === "#" + current.id;
       link.classList.toggle("active", match);
     });
   }
@@ -130,19 +135,59 @@
     });
   }
 
+  /* ---------- Search widget tabs ---------- */
+  var searchTabs = Array.prototype.slice.call(document.querySelectorAll(".search-tab"));
+  var searchPanels = Array.prototype.slice.call(document.querySelectorAll(".search-panel"));
+
+  function activateTab(tabName) {
+    searchTabs.forEach(function (tab) {
+      var isActive = tab.getAttribute("data-tab") === tabName;
+      tab.classList.toggle("active", isActive);
+      tab.setAttribute("aria-selected", String(isActive));
+    });
+    searchPanels.forEach(function (panel) {
+      panel.classList.toggle("active", panel.getAttribute("data-panel") === tabName);
+    });
+    setActiveLink();
+  }
+
+  searchTabs.forEach(function (tab) {
+    tab.addEventListener("click", function () {
+      activateTab(tab.getAttribute("data-tab"));
+    });
+  });
+
+  Array.prototype.slice.call(document.querySelectorAll("[data-tab-link]")).forEach(function (link) {
+    link.addEventListener("click", function () {
+      activateTab(link.getAttribute("data-tab-link"));
+    });
+  });
+
   /* ---------- Hero search (demo only, no backend) ---------- */
   var heroSearch = document.getElementById("heroSearch");
+  var primaryFieldByTab = {
+    stays: "staysDestination",
+    flights: "flightsTo",
+    packages: "packagesDestination",
+    activities: "activitiesDestination"
+  };
   heroSearch.addEventListener("submit", function (e) {
     e.preventDefault();
-    var destination = document.getElementById("destination").value.trim();
+    var activeTab = document.querySelector(".search-tab.active");
+    var tabName = activeTab ? activeTab.getAttribute("data-tab") : "stays";
+    var fieldId = primaryFieldByTab[tabName];
+    var field = fieldId ? document.getElementById(fieldId) : null;
+    var destination = field ? field.value.trim() : "";
     document.getElementById("contact").scrollIntoView({ behavior: "smooth" });
     var status = document.getElementById("formStatus");
     if (destination) {
       status.textContent =
-        'Noted — tell us a little more about ' + destination + ' below and a holiday agent will call you.';
+        'Noted — tell us a little more about ' + destination + ' below and our team will send you live pricing.';
       status.className = "form-status success";
-      document.getElementById("message").value =
-        "I'd like to discuss a trip to " + destination + ".";
+      document.getElementById("message").value = "I'd like to book: " + destination + ".";
+    } else {
+      status.textContent = "Tell us a little more below and our team will send you live pricing.";
+      status.className = "form-status success";
     }
   });
 
@@ -199,7 +244,7 @@
     }
 
     formStatus.textContent =
-      "Thank you, " + name.split(" ")[0] + ". A holiday agent will call you directly, usually within a few hours — 365 days a year.";
+      "Thank you, " + name.split(" ")[0] + ". Our team will be in touch shortly — 365 days a year.";
     formStatus.className = "form-status success";
     contactForm.reset();
   });

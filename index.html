@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>365 Travel | Private Holiday Agent</title>
-<meta name="description" content="365 Travel is a private holiday agent for discerning clients. One call, and every detail of your journey — flights, villas, yachts, reservations — is arranged and managed for you, 365 days a year.">
+<title>365 Travel | Stays, Flights &amp; Holidays — Pay with Card or Crypto</title>
+<meta name="description" content="365 Travel lets you search stays, flights, holiday packages and activities worldwide, then pay however suits you — major cards or leading cryptocurrencies.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,20 +27,21 @@
 
     <nav class="main-nav" id="main-nav">
       <ul>
-        <li><a href="#home" class="nav-link active">Home</a></li>
-        <li><a href="#process" class="nav-link">The Process</a></li>
-        <li><a href="#experiences" class="nav-link">Experiences</a></li>
-        <li><a href="#membership" class="nav-link">Membership</a></li>
-        <li><a href="#about" class="nav-link">About</a></li>
+        <li><a href="#search" class="nav-link active" data-tab-link="stays">Stays</a></li>
+        <li><a href="#search" class="nav-link" data-tab-link="flights">Flights</a></li>
+        <li><a href="#search" class="nav-link" data-tab-link="packages">Packages</a></li>
+        <li><a href="#search" class="nav-link" data-tab-link="activities">Activities</a></li>
+        <li><a href="#crypto" class="nav-link">Pay with Crypto</a></li>
         <li><a href="#contact" class="nav-link">Contact</a></li>
       </ul>
       <div class="mobile-nav-cta">
-        <a href="#contact" class="btn btn-primary btn-block">Request a Consultation</a>
+        <a href="#search" class="btn btn-primary btn-block">Start Searching</a>
       </div>
     </nav>
 
     <div class="header-actions">
-      <a href="#contact" class="btn btn-primary">Request a Consultation</a>
+      <a href="#contact" class="btn btn-outline header-login">Log In</a>
+      <a href="#search" class="btn btn-primary">Start Searching</a>
       <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="main-nav">
         <span></span><span></span><span></span>
       </button>
@@ -56,249 +57,307 @@
       <div class="glow glow-1"></div>
       <div class="glow glow-2"></div>
     </div>
-    <div class="container hero-inner">
-      <div class="hero-copy">
-        <span class="eyebrow">By invitation &amp; application · On call 365 days a year</span>
-        <h1>Extraordinary journeys,<br>effortlessly arranged.</h1>
+    <div class="container hero-inner-stack">
+      <div class="hero-copy-center">
+        <span class="eyebrow">Search worldwide · Pay with card or crypto</span>
+        <h1>Your next holiday,<br>booked your way.</h1>
         <p class="lead">
-          365 Travel is a private holiday agent for clients who
-          expect everything handled — flights, private villas, superyachts,
-          reservations and the details in between — designed around you by a
-          dedicated holiday agent.
+          Search thousands of stays, flights, holiday packages and activities
+          worldwide — then pay however suits you, from major cards to
+          leading cryptocurrencies.
         </p>
+      </div>
 
-        <form class="hero-search" id="heroSearch">
-          <div class="hero-field">
-            <label for="destination">Where would you like to go?</label>
-            <input type="text" id="destination" name="destination" placeholder="e.g. the Amalfi Coast, the Maldives, Kyoto">
+      <div class="search-widget" id="search">
+        <div class="search-tabs" role="tablist">
+          <button type="button" class="search-tab active" data-tab="stays" role="tab" aria-selected="true">🏨 Stays</button>
+          <button type="button" class="search-tab" data-tab="flights" role="tab" aria-selected="false">✈ Flights</button>
+          <button type="button" class="search-tab" data-tab="packages" role="tab" aria-selected="false">🧳 Packages</button>
+          <button type="button" class="search-tab" data-tab="activities" role="tab" aria-selected="false">🎟 Activities</button>
+        </div>
+
+        <form id="heroSearch">
+          <div class="search-panel active" data-panel="stays">
+            <div class="hero-field">
+              <label for="staysDestination">Destination</label>
+              <input type="text" id="staysDestination" name="destination" placeholder="City, hotel or region">
+            </div>
+            <div class="hero-field">
+              <label for="staysCheckin">Check-in</label>
+              <input type="date" id="staysCheckin" name="checkin">
+            </div>
+            <div class="hero-field">
+              <label for="staysCheckout">Check-out</label>
+              <input type="date" id="staysCheckout" name="checkout">
+            </div>
+            <div class="hero-field">
+              <label for="staysGuests">Guests</label>
+              <select id="staysGuests" name="guests">
+                <option>2 Adults, 1 Room</option>
+                <option>1 Adult</option>
+                <option>Family (2 Adults + Kids)</option>
+                <option>Group (5+)</option>
+              </select>
+            </div>
           </div>
-          <div class="hero-field">
-            <label for="tripType">Occasion</label>
-            <select id="tripType" name="tripType">
-              <option value="leisure">Private escape</option>
-              <option value="celebration">Celebration or milestone</option>
-              <option value="business">Business &amp; private aviation</option>
-              <option value="group">Family or group journey</option>
-            </select>
+
+          <div class="search-panel" data-panel="flights">
+            <div class="hero-field">
+              <label for="flightsFrom">From</label>
+              <input type="text" id="flightsFrom" name="from" placeholder="Departure city or airport">
+            </div>
+            <div class="hero-field">
+              <label for="flightsTo">To</label>
+              <input type="text" id="flightsTo" name="to" placeholder="Destination city or airport">
+            </div>
+            <div class="hero-field">
+              <label for="flightsDepart">Depart</label>
+              <input type="date" id="flightsDepart" name="depart">
+            </div>
+            <div class="hero-field">
+              <label for="flightsPassengers">Passengers</label>
+              <select id="flightsPassengers" name="passengers">
+                <option>1 Adult</option>
+                <option>2 Adults</option>
+                <option>Family (2 Adults + Kids)</option>
+                <option>Group (5+)</option>
+              </select>
+            </div>
           </div>
-          <button type="submit" class="btn btn-primary btn-search">Begin Your Journey</button>
+
+          <div class="search-panel" data-panel="packages">
+            <div class="hero-field">
+              <label for="packagesDestination">Destination</label>
+              <input type="text" id="packagesDestination" name="pkgDestination" placeholder="Where do you want to go?">
+            </div>
+            <div class="hero-field">
+              <label for="packagesDepart">Depart</label>
+              <input type="date" id="packagesDepart" name="pkgDepart">
+            </div>
+            <div class="hero-field">
+              <label for="packagesDuration">Duration</label>
+              <select id="packagesDuration" name="duration">
+                <option>7 nights</option>
+                <option>10 nights</option>
+                <option>14 nights</option>
+                <option>Flexible</option>
+              </select>
+            </div>
+            <div class="hero-field">
+              <label for="packagesTravellers">Travellers</label>
+              <select id="packagesTravellers" name="pkgTravellers">
+                <option>2 Adults</option>
+                <option>1 Adult</option>
+                <option>Family</option>
+                <option>Group (5+)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="search-panel" data-panel="activities">
+            <div class="hero-field">
+              <label for="activitiesDestination">Destination</label>
+              <input type="text" id="activitiesDestination" name="actDestination" placeholder="City or region">
+            </div>
+            <div class="hero-field">
+              <label for="activitiesDate">Date</label>
+              <input type="date" id="activitiesDate" name="actDate">
+            </div>
+            <div class="hero-field">
+              <label for="activitiesParticipants">Participants</label>
+              <select id="activitiesParticipants" name="participants">
+                <option>2 People</option>
+                <option>1 Person</option>
+                <option>Family</option>
+                <option>Group (5+)</option>
+              </select>
+            </div>
+            <div class="hero-field hero-field-submit-spacer" aria-hidden="true"></div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-search-wide">Search</button>
         </form>
-
-        <ul class="hero-trust">
-          <li>Dedicated holiday agent</li>
-          <li>Global five-star partner network</li>
-          <li>Discreet, on call around the clock</li>
-        </ul>
       </div>
 
-      <div class="hero-visual" aria-hidden="true">
-        <div class="hero-card card-1">
-          <span class="tag">Currently arranging</span>
-          <strong>Private Villa, Amalfi</strong>
-          <span class="muted">Staffed · Chef · Speedboat transfer</span>
+      <ul class="hero-trust">
+        <li>No booking fees</li>
+        <li>100+ payment options</li>
+        <li>24/7 support</li>
+        <li>Best price guarantee</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- USP tiles -->
+  <section class="section" id="why">
+    <div class="container">
+      <div class="steps steps-4">
+        <div class="step reveal">
+          <div class="step-icon" aria-hidden="true">🕐</div>
+          <h3>24/7 Support</h3>
+          <p>Real people on live chat, email or phone — whenever your trip needs a hand.</p>
         </div>
-        <div class="hero-card card-2">
-          <span class="tag">In progress</span>
-          <strong>Safari &amp; Rail, Southern Africa</strong>
-          <span class="muted">14 days · Fully escorted</span>
+        <div class="step reveal">
+          <div class="step-icon" aria-hidden="true">₿</div>
+          <h3>Pay with Crypto</h3>
+          <p>Card, bank transfer or leading cryptocurrencies — you choose at checkout.</p>
         </div>
-        <div class="hero-mark">✦</div>
+        <div class="step reveal">
+          <div class="step-icon" aria-hidden="true">🏆</div>
+          <h3>Best Price Guarantee</h3>
+          <p>Find it cheaper elsewhere and we'll refund the difference.</p>
+        </div>
+        <div class="step reveal">
+          <div class="step-icon" aria-hidden="true">↺</div>
+          <h3>Free Cancellation</h3>
+          <p>Flexible dates on thousands of stays, no change fees.</p>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- Trust / stats bar -->
-  <section class="stats" aria-label="365 Travel by the numbers">
-    <div class="container stats-grid">
-      <div class="stat reveal"><strong data-count-to="35" data-suffix="+">0</strong><span>Countries with resident partners</span></div>
-      <div class="stat reveal"><strong data-count-to="500" data-suffix="+">0</strong><span>Five-star &amp; private properties</span></div>
-      <div class="stat reveal"><strong data-count-to="48" data-suffix="hr">0</strong><span>Average bespoke proposal turnaround</span></div>
-      <div class="stat reveal"><strong data-count-to="365" data-suffix="">0</strong><span>Days of dedicated agent access</span></div>
-    </div>
-  </section>
-
-  <!-- The Process -->
-  <section class="section" id="process">
+  <!-- Crypto payments -->
+  <section class="section section-alt crypto-section" id="crypto">
     <div class="container">
       <div class="section-head reveal">
-        <span class="eyebrow">The process</span>
-        <h2>You describe the journey. We handle everything else.</h2>
-        <p class="section-sub">A private holiday agent, not a booking site — three steps, one point of contact.</p>
+        <span class="eyebrow">Payments</span>
+        <h2>Your money's good here.</h2>
+        <p class="section-sub">Pay for your trip with a major card, bank transfer, or leading cryptocurrencies. Once your agent confirms your booking, we'll send a secure payment link in your currency of choice.</p>
       </div>
 
-      <div class="steps">
-        <div class="step reveal">
-          <div class="step-icon" aria-hidden="true">☎</div>
-          <span class="step-num">01</span>
-          <h3>Discovery call</h3>
-          <p>A private conversation with your holiday agent to understand your taste, occasion, and how you like to travel — no forms, no boxes to tick.</p>
-        </div>
-        <div class="step reveal">
-          <div class="step-icon" aria-hidden="true">✎</div>
-          <span class="step-num">02</span>
-          <h3>Bespoke proposal</h3>
-          <p>A fully designed itinerary is built around you — private villas, chartered flights, reservations at the tables you can't get into — usually within 48 hours.</p>
-        </div>
-        <div class="step reveal">
-          <div class="step-icon" aria-hidden="true">✦</div>
-          <span class="step-num">03</span>
-          <h3>Seamless delivery</h3>
-          <p>Every booking, transfer and reservation is arranged and monitored by our team, with a direct line to your holiday agent for the entire trip — day or night.</p>
-        </div>
+      <div class="crypto-grid reveal">
+        <span class="crypto-badge"><span class="crypto-symbol">₿</span>Bitcoin</span>
+        <span class="crypto-badge"><span class="crypto-symbol">Ξ</span>Ethereum</span>
+        <span class="crypto-badge"><span class="crypto-symbol">₮</span>USDT</span>
+        <span class="crypto-badge"><span class="crypto-symbol">$</span>USD Coin</span>
+        <span class="crypto-badge"><span class="crypto-symbol">◎</span>Solana</span>
+        <span class="crypto-badge"><span class="crypto-symbol">Ł</span>Litecoin</span>
+        <span class="crypto-badge"><span class="crypto-symbol">Ð</span>Dogecoin</span>
+        <span class="crypto-badge crypto-badge-card"><span class="crypto-symbol">💳</span>Card &amp; Bank Transfer</span>
+      </div>
+
+      <div class="center-cta">
+        <a href="#contact" class="btn btn-outline">Ask about payment options</a>
       </div>
     </div>
   </section>
 
-  <!-- Signature Experiences -->
-  <section class="section section-alt" id="experiences">
+  <!-- Popular destinations -->
+  <section class="section" id="experiences">
     <div class="container">
       <div class="section-head reveal">
-        <span class="eyebrow">Signature experiences</span>
-        <h2>A glimpse of what we arrange</h2>
-        <p class="section-sub">Every journey is designed from a blank page — these are recent proposals, not a catalogue.</p>
+        <span class="eyebrow">Popular right now</span>
+        <h2>Destinations worth booking</h2>
+        <p class="section-sub">A sample of what's searchable today — pricing shown is illustrative until your live quote is confirmed.</p>
       </div>
 
       <div class="destinations-grid">
         <article class="dest-card reveal">
-          <div class="dest-photo photo-1"><span class="dest-badge">Private villa</span></div>
+          <div class="dest-photo photo-1"><span class="dest-badge">Villa</span></div>
           <div class="dest-body">
             <h3>Amalfi Coast, Italy</h3>
-            <p class="muted">Staffed clifftop villa · Private chef</p>
-            <div class="dest-foot"><span class="price">Price on application</span><span class="rating">★ Curated</span></div>
+            <p class="muted">Clifftop villa · Private pool</p>
+            <div class="dest-foot"><span class="price">From $649<span class="price-unit">/trip</span></span><span class="rating">★ 4.9</span></div>
           </div>
         </article>
         <article class="dest-card reveal">
-          <div class="dest-photo photo-2"><span class="dest-badge">Superyacht</span></div>
+          <div class="dest-photo photo-2"><span class="dest-badge">Beach</span></div>
           <div class="dest-body">
-            <h3>Amalfi &amp; the Aeolian Islands</h3>
-            <p class="muted">Crewed charter · Full itinerary</p>
-            <div class="dest-foot"><span class="price">Price on application</span><span class="rating">★ Curated</span></div>
+            <h3>Bali, Indonesia</h3>
+            <p class="muted">8 nights · Villas &amp; wellness</p>
+            <div class="dest-foot"><span class="price">From $799<span class="price-unit">/trip</span></span><span class="rating">★ 4.8</span></div>
           </div>
         </article>
         <article class="dest-card reveal">
-          <div class="dest-photo photo-3"><span class="dest-badge">Private jet</span></div>
+          <div class="dest-photo photo-3"><span class="dest-badge">Ski</span></div>
           <div class="dest-body">
             <h3>Alpine Chalet, Courchevel</h3>
-            <p class="muted">Ski-in staffed chalet · Private transfers</p>
-            <div class="dest-foot"><span class="price">Price on application</span><span class="rating">★ Curated</span></div>
+            <p class="muted">Ski-in chalet · 7 nights</p>
+            <div class="dest-foot"><span class="price">From $1,290<span class="price-unit">/trip</span></span><span class="rating">★ 4.9</span></div>
           </div>
         </article>
         <article class="dest-card reveal">
-          <div class="dest-photo photo-4"><span class="dest-badge">Fully escorted</span></div>
+          <div class="dest-photo photo-4"><span class="dest-badge">Safari</span></div>
           <div class="dest-body">
-            <h3>Safari &amp; Private Rail, Southern Africa</h3>
-            <p class="muted">Luxury camps · Personal ranger</p>
-            <div class="dest-foot"><span class="price">Price on application</span><span class="rating">★ Curated</span></div>
+            <h3>Safari &amp; Rail, Southern Africa</h3>
+            <p class="muted">14 days · Fully escorted</p>
+            <div class="dest-foot"><span class="price">From $2,450<span class="price-unit">/trip</span></span><span class="rating">★ 4.9</span></div>
           </div>
         </article>
         <article class="dest-card reveal">
-          <div class="dest-photo photo-5"><span class="dest-badge">Private island</span></div>
+          <div class="dest-photo photo-5"><span class="dest-badge">Island</span></div>
           <div class="dest-body">
-            <h3>Private Island, Seychelles</h3>
-            <p class="muted">Whole-island buyout · Seaplane transfer</p>
-            <div class="dest-foot"><span class="price">Price on application</span><span class="rating">★ Curated</span></div>
+            <h3>Seychelles</h3>
+            <p class="muted">Beachfront resort · 6 nights</p>
+            <div class="dest-foot"><span class="price">From $1,050<span class="price-unit">/trip</span></span><span class="rating">★ 4.8</span></div>
           </div>
         </article>
         <article class="dest-card reveal">
-          <div class="dest-photo photo-6"><span class="dest-badge">Ryokan retreat</span></div>
+          <div class="dest-photo photo-6"><span class="dest-badge">City</span></div>
           <div class="dest-body">
-            <h3>Kyoto &amp; the Japanese Alps</h3>
-            <p class="muted">Private guide · Rare reservations</p>
-            <div class="dest-foot"><span class="price">Price on application</span><span class="rating">★ Curated</span></div>
+            <h3>Kyoto, Japan</h3>
+            <p class="muted">Ryokan stay · Private guide</p>
+            <div class="dest-foot"><span class="price">From $890<span class="price-unit">/trip</span></span><span class="rating">★ 4.9</span></div>
           </div>
         </article>
       </div>
 
       <div class="center-cta">
-        <a href="#contact" class="btn btn-outline">Discuss a journey of your own</a>
+        <a href="#search" class="btn btn-outline">Search more destinations</a>
       </div>
     </div>
   </section>
 
-  <!-- Membership -->
-  <section class="section" id="membership">
+  <!-- Property types -->
+  <section class="section section-alt" id="property-types">
     <div class="container">
       <div class="section-head reveal">
-        <span class="eyebrow">Membership</span>
-        <h2>Access to the level of service you need</h2>
-        <p class="section-sub">All membership is by application. Every tier includes 365-day agent access and full discretion.</p>
+        <span class="eyebrow">Browse by type</span>
+        <h2>Whatever kind of trip you're after</h2>
       </div>
 
-      <div class="plans-grid">
-        <div class="plan-card reveal">
-          <h3>Private Client</h3>
-          <p class="plan-price"><span>By application</span></p>
-          <p class="muted">For occasional bespoke journeys</p>
-          <ul class="plan-features">
-            <li>Dedicated holiday agent per trip</li>
-            <li>Bespoke proposal within 48 hours</li>
-            <li>24/7 in-trip support</li>
-          </ul>
-          <a href="#contact" class="btn btn-outline btn-block">Enquire</a>
-        </div>
-
-        <div class="plan-card plan-featured reveal">
-          <span class="plan-tag">Most requested</span>
-          <h3>Signature</h3>
-          <p class="plan-price"><span>By application</span></p>
-          <p class="muted">For clients who travel often</p>
-          <ul class="plan-features">
-            <li>Standing holiday agent &amp; team</li>
-            <li>Priority access to partner properties</li>
-            <li>Private jet &amp; first-class flight booking</li>
-            <li>24/7 support while you're travelling</li>
-          </ul>
-          <a href="#contact" class="btn btn-primary btn-block">Enquire about Signature</a>
-        </div>
-
-        <div class="plan-card reveal">
-          <h3>Black Card</h3>
-          <p class="plan-price"><span>By invitation</span></p>
-          <p class="muted">For unlimited, on-demand travel</p>
-          <ul class="plan-features">
-            <li>Everything in Signature</li>
-            <li>Named holiday agent, direct line, 365 days a year</li>
-            <li>Access to unlisted &amp; owner-only properties</li>
-            <li>Multi-generational &amp; multi-destination trip planning</li>
-          </ul>
-          <a href="#contact" class="btn btn-outline btn-block">Request an introduction</a>
-        </div>
+      <div class="property-grid reveal">
+        <a href="#search" class="property-tile"><span class="property-icon">🏨</span>Hotel</a>
+        <a href="#search" class="property-tile"><span class="property-icon">🏡</span>Villa</a>
+        <a href="#search" class="property-tile"><span class="property-icon">🏖</span>Resort</a>
+        <a href="#search" class="property-tile"><span class="property-icon">🏢</span>Apartment</a>
+        <a href="#search" class="property-tile"><span class="property-icon">🚢</span>Cruise</a>
+        <a href="#search" class="property-tile"><span class="property-icon">🏔</span>Chalet</a>
       </div>
     </div>
   </section>
 
   <!-- About / Testimonials -->
-  <section class="section section-alt" id="about">
+  <section class="section" id="about">
     <div class="container about-grid">
       <div class="about-copy reveal">
         <span class="eyebrow">About us</span>
-        <h2>A private holiday agent, not a booking site</h2>
+        <h2>Travel booking that actually helps</h2>
         <p>
-          365 Travel exists for clients who don't have time to plan
-          and shouldn't have to compare websites. Our holiday agents have
-          lived and worked in the places they book, and our partner network —
-          hoteliers, private aviation desks, yacht owners, guides — answers to
-          us directly, so nothing is left to a call centre.
+          365 Travel brings together stays, flights, holiday packages and
+          activities worldwide in one place — with real support and
+          flexible payment, including leading cryptocurrencies, behind
+          every booking.
         </p>
         <ul class="about-points">
-          <li><strong>One point of contact</strong> — from the first call to the return transfer home.</li>
-          <li><strong>No public rate cards</strong> — every proposal is negotiated and priced for you.</li>
-          <li><strong>Real people, always reachable</strong> — a named holiday agent, 365 days a year.</li>
+          <li><strong>One search, every trip type</strong> — stays, flights, packages and activities together.</li>
+          <li><strong>Pay your way</strong> — card, bank transfer, or crypto.</li>
+          <li><strong>Real people, always reachable</strong> — support available 365 days a year.</li>
         </ul>
       </div>
 
       <div class="testimonials">
         <blockquote class="testimonial reveal">
-          <p>"I called on a Thursday for a Saturday departure. By Friday morning we had a villa, a chef, and a boat waiting."</p>
-          <cite>— Private Client, London</cite>
+          <p>"Booked a villa in Amalfi in ten minutes and paid in USDT. Didn't expect it to be that easy."</p>
+          <cite>— Priya M., London</cite>
         </blockquote>
         <blockquote class="testimonial reveal">
-          <p>"They don't ask what my budget is. They ask what the trip needs to feel like. That's the difference."</p>
-          <cite>— Signature Member, Singapore</cite>
+          <p>"Found a cheaper price elsewhere and they matched it within the hour. No arguing required."</p>
+          <cite>— Daniel K., Singapore</cite>
         </blockquote>
         <blockquote class="testimonial reveal">
-          <p>"Our holiday agent rerouted an entire family trip around a storm without waking us up to ask permission. That's what we pay for."</p>
-          <cite>— Black Card Member, New York</cite>
+          <p>"Our flight got cancelled and support had us rebooked before we'd even finished the call."</p>
+          <cite>— The Alvarez Family, New York</cite>
         </blockquote>
       </div>
     </div>
@@ -307,9 +366,9 @@
   <!-- CTA banner -->
   <section class="cta-banner">
     <div class="container cta-banner-inner reveal">
-      <h2>Your next journey, entirely arranged.</h2>
-      <p>Speak with a holiday agent — by phone, in person, or by private consultation.</p>
-      <a href="#contact" class="btn btn-light">Request a Private Consultation</a>
+      <h2>Your next trip is one search away.</h2>
+      <p>Stays, flights, packages and activities worldwide — pay with card or crypto.</p>
+      <a href="#search" class="btn btn-light">Start Searching</a>
     </div>
   </section>
 
@@ -318,8 +377,8 @@
     <div class="container contact-grid">
       <div class="contact-info reveal">
         <span class="eyebrow">Get in touch</span>
-        <h2>Request a private consultation</h2>
-        <p class="section-sub">Tell us what you have in mind. A holiday agent will call you directly — no forms to fill in after that.</p>
+        <h2>Questions or need help?</h2>
+        <p class="section-sub">Our support team is available 365 days a year — by phone, email or the form below.</p>
 
         <ul class="contact-list">
           <li><span aria-hidden="true">📍</span> 365 Voyager Way, Austin, TX 78701</li>
@@ -355,21 +414,21 @@
             <input type="tel" id="phone" name="phone" placeholder="Optional, for a direct call back">
           </div>
           <div class="field">
-            <label for="budget">Indicative budget</label>
-            <select id="budget" name="budget">
-              <option value="10-25k">$10,000 – $25,000</option>
-              <option value="25-50k">$25,000 – $50,000</option>
-              <option value="50-100k">$50,000 – $100,000</option>
-              <option value="100k+">$100,000+</option>
+            <label for="topic">I'm asking about</label>
+            <select id="topic" name="topic">
+              <option value="booking">An existing booking</option>
+              <option value="payments">Payment options</option>
+              <option value="new-trip">A new trip</option>
+              <option value="other">Something else</option>
             </select>
           </div>
         </div>
         <div class="field">
-          <label for="message">Tell us about the journey</label>
-          <textarea id="message" name="message" rows="4" placeholder="Destination, dates, occasion, party size — as much or as little as you'd like." required></textarea>
+          <label for="message">Message</label>
+          <textarea id="message" name="message" rows="4" placeholder="Tell us what you need — as much or as little as you'd like." required></textarea>
           <span class="error" data-error-for="message"></span>
         </div>
-        <button type="submit" class="btn btn-primary btn-block">Request Consultation</button>
+        <button type="submit" class="btn btn-primary btn-block">Send Message</button>
         <p class="form-status" id="formStatus" role="status" aria-live="polite"></p>
       </form>
     </div>
@@ -385,21 +444,23 @@
         <span class="logo-mark">✦</span>
         <span class="logo-text"><em>365</em> Travel</span>
       </a>
-      <p class="muted">A private holiday agent for clients who expect everything arranged, every day of the year.</p>
+      <p class="muted">Stays, flights, holiday packages and activities worldwide — pay with card or crypto.</p>
     </div>
 
     <div class="footer-col">
       <h4>Explore</h4>
       <ul>
-        <li><a href="#experiences">Experiences</a></li>
-        <li><a href="#process">The process</a></li>
-        <li><a href="#membership">Membership</a></li>
+        <li><a href="#search" data-tab-link="stays">Stays</a></li>
+        <li><a href="#search" data-tab-link="flights">Flights</a></li>
+        <li><a href="#search" data-tab-link="packages">Packages</a></li>
+        <li><a href="#search" data-tab-link="activities">Activities</a></li>
       </ul>
     </div>
 
     <div class="footer-col">
       <h4>Company</h4>
       <ul>
+        <li><a href="#crypto">Payment options</a></li>
         <li><a href="#about">About us</a></li>
         <li><a href="#contact">Contact</a></li>
         <li><a href="#">Careers</a></li>
@@ -408,7 +469,7 @@
 
     <div class="footer-col">
       <h4>The Dispatch</h4>
-      <p class="muted footer-note">Occasional notes on new properties and private openings. No mass mailings.</p>
+      <p class="muted footer-note">Deals and new destinations. No mass mailings.</p>
       <form class="newsletter-form" id="newsletterForm">
         <label for="newsletterEmail" class="visually-hidden">Email address</label>
         <input type="email" id="newsletterEmail" placeholder="you@email.com" required>
