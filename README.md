@@ -1,15 +1,19 @@
 # 365 Travel
 
-Marketing website for **365 Travel** (365travel.co), a private holiday
-agent for clients who want every detail of a trip arranged for them.
-Static HTML/CSS/JS — no build step, no dependencies.
+Marketing/booking website for **365 Travel** (365travel.co) — search stays,
+flights, holiday packages and activities worldwide, then pay with a major
+card or leading cryptocurrencies. Static HTML/CSS/JS — no build step, no
+dependencies.
+
+Note: search and crypto checkout are UI/design only right now — there's no
+live inventory or payment backend wired up yet.
 
 ## Structure
 
 ```
-index.html       Single-page site (Home, The Process, Experiences, Membership, About, Contact)
+index.html       Single-page site (Home/Search, Payments, Destinations, Property Types, About, Contact)
 css/styles.css    Styles
-js/script.js      Mobile nav, active-link highlighting, scroll-reveal, animated stats, form validation
+js/script.js      Mobile nav, search-widget tabs, active-link highlighting, scroll-reveal, animated stats, form validation
 ```
 
 ## Running locally
