@@ -243,10 +243,31 @@
       return;
     }
 
-    formStatus.textContent =
-      "Thank you, " + name.split(" ")[0] + ". Our team will be in touch shortly — 365 days a year.";
-    formStatus.className = "form-status success";
-    contactForm.reset();
+    var submitBtn = contactForm.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    formStatus.textContent = "Sending...";
+    formStatus.className = "form-status";
+
+    fetch("https://formsubmit.co/ajax/hello@365travel.co", {
+      method: "POST",
+      headers: { Accept: "application/json" },
+      body: new FormData(contactForm)
+    })
+      .then(function (response) {
+        if (!response.ok) throw new Error("Request failed");
+        formStatus.textContent =
+          "Thank you, " + name.split(" ")[0] + ". Our team will be in touch shortly — 365 days a year.";
+        formStatus.className = "form-status success";
+        contactForm.reset();
+      })
+      .catch(function () {
+        formStatus.textContent =
+          "Something went wrong sending your message — please email hello@365travel.co directly.";
+        formStatus.className = "form-status error";
+      })
+      .finally(function () {
+        submitBtn.disabled = false;
+      });
   });
 
   /* ---------- Newsletter form ---------- */
@@ -261,8 +282,29 @@
       newsletterStatus.className = "form-status error";
       return;
     }
-    newsletterStatus.textContent = "You're subscribed! Watch your inbox for deals.";
-    newsletterStatus.className = "form-status success";
-    newsletterForm.reset();
+
+    var subscribeBtn = newsletterForm.querySelector('button[type="submit"]');
+    subscribeBtn.disabled = true;
+    newsletterStatus.textContent = "Sending...";
+    newsletterStatus.className = "form-status";
+
+    fetch("https://formsubmit.co/ajax/hello@365travel.co", {
+      method: "POST",
+      headers: { Accept: "application/json" },
+      body: new FormData(newsletterForm)
+    })
+      .then(function (response) {
+        if (!response.ok) throw new Error("Request failed");
+        newsletterStatus.textContent = "You're subscribed! Watch your inbox for deals.";
+        newsletterStatus.className = "form-status success";
+        newsletterForm.reset();
+      })
+      .catch(function () {
+        newsletterStatus.textContent = "Something went wrong — please try again.";
+        newsletterStatus.className = "form-status error";
+      })
+      .finally(function () {
+        subscribeBtn.disabled = false;
+      });
   });
 })();
