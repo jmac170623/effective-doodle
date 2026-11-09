@@ -646,6 +646,22 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 }
 .footer-legal { display: flex; gap: 20px; }
 
+/* ---------- Legal pages ---------- */
+.legal-content { max-width: 720px; margin: 0 auto; }
+.legal-content h1 { font-size: clamp(2rem, 3.6vw, 2.6rem); margin-top: 6px; }
+.legal-content h2 { font-size: 1.3rem; margin-top: 2em; }
+.legal-content p, .legal-content li { color: var(--text); }
+.legal-list { margin: 0 0 1.2em; padding-left: 1.3em; list-style: disc; }
+.legal-list li { margin-bottom: 8px; }
+.legal-disclaimer {
+  margin-top: 3em;
+  padding-top: 1.4em;
+  border-top: 1px solid var(--border);
+  font-size: .85rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
 /* ---------- Back to top ---------- */
 .back-to-top {
   position: fixed;
