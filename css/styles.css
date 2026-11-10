@@ -646,6 +646,82 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 }
 .footer-legal { display: flex; gap: 20px; }
 
+/* ---------- Currency select ---------- */
+.currency-select {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--ink);
+  font-size: .82rem;
+  font-weight: 600;
+  padding: 9px 10px;
+  cursor: pointer;
+}
+.currency-select:focus { outline: none; border-color: var(--gold); }
+
+/* ---------- Review counts ---------- */
+.review-count { font-weight: 400; color: var(--muted); font-size: .78rem; }
+
+/* ---------- Trust strip ---------- */
+.trust-strip {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 32px;
+  margin: 32px auto 0;
+  font-size: .88rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+/* ---------- FAQ ---------- */
+.faq-list { max-width: 760px; margin: 0 auto; }
+.faq-item {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 4px 24px;
+  margin-bottom: 14px;
+}
+.faq-item summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 18px 28px 18px 0;
+  position: relative;
+  font-weight: 600;
+  color: var(--ink);
+  font-size: 1rem;
+}
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary::after {
+  content: "+";
+  position: absolute;
+  right: 0; top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.3rem;
+  color: var(--gold-dark);
+  transition: transform .2s ease;
+}
+.faq-item[open] summary::after { content: "\2212"; }
+.faq-item p { padding-bottom: 20px; color: var(--muted); margin: 0; }
+
+/* ---------- Mobile search bar ---------- */
+.mobile-search-bar {
+  display: none;
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 450;
+  padding: 12px 16px;
+  background: rgba(248, 245, 239, .96);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -8px 24px rgba(20, 24, 31, .1);
+  opacity: 0;
+  transform: translateY(100%);
+  transition: opacity .25s ease, transform .25s ease;
+}
+.mobile-search-bar.visible { opacity: 1; transform: translateY(0); }
+
 /* ---------- Legal pages ---------- */
 .legal-content { max-width: 720px; margin: 0 auto; }
 .legal-content h1 { font-size: clamp(2rem, 3.6vw, 2.6rem); margin-top: 6px; }
@@ -795,7 +871,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   .main-nav li:first-child { border-top: none; }
   .nav-link { display: block; padding: 14px 0; }
   .nav-toggle { display: flex; }
-  .header-actions .btn-primary, .header-actions .header-login { display: none; }
+  .header-actions .btn-primary, .header-actions .header-login, .header-actions .currency-select { display: none; }
   .mobile-nav-cta { display: block; padding: 16px 24px 22px; }
   .steps, .steps-4, .destinations-grid, .plans-grid { grid-template-columns: 1fr 1fr; }
 }
@@ -812,4 +888,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   .crypto-grid { grid-template-columns: 1fr 1fr; }
   .crypto-badge-card { grid-column: span 2; }
   .property-grid { grid-template-columns: repeat(2, 1fr); }
+  .faq-item summary { font-size: .92rem; }
+  .mobile-search-bar { display: block; }
+  .back-to-top { display: none; }
 }

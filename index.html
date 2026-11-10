@@ -57,6 +57,13 @@
     </nav>
 
     <div class="header-actions">
+      <label for="currencySelect" class="visually-hidden">Currency</label>
+      <select id="currencySelect" class="currency-select" aria-label="Currency">
+        <option value="USD">USD $</option>
+        <option value="GBP">GBP £</option>
+        <option value="EUR">EUR €</option>
+        <option value="AUD">AUD A$</option>
+      </select>
       <a href="#contact" class="btn btn-outline header-login">Log In</a>
       <a href="#search" class="btn btn-primary">Start Searching</a>
       <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="main-nav">
@@ -253,6 +260,12 @@
         <span class="crypto-badge crypto-badge-card"><span class="crypto-symbol">💳</span>Card &amp; Bank Transfer</span>
       </div>
 
+      <ul class="trust-strip reveal">
+        <li>🔒 Payments handled by trusted, secure processors</li>
+        <li>✓ No hidden fees — the price you see is the price you pay</li>
+        <li>↺ Free cancellation on eligible bookings</li>
+      </ul>
+
       <div class="center-cta">
         <a href="#contact" class="btn btn-outline">Ask about payment options</a>
       </div>
@@ -274,7 +287,7 @@
           <div class="dest-body">
             <h3>Amalfi Coast, Italy</h3>
             <p class="muted">Clifftop villa · Private pool</p>
-            <div class="dest-foot"><span class="price">From $649<span class="price-unit">/trip</span></span><span class="rating">★ 4.9</span></div>
+            <div class="dest-foot"><span class="price" data-usd="649">From <span class="price-amount">$649</span><span class="price-unit">/trip</span></span><span class="rating">★ 4.9 <span class="review-count">(1,842)</span></span></div>
           </div>
         </article>
         <article class="dest-card reveal">
@@ -282,7 +295,7 @@
           <div class="dest-body">
             <h3>Bali, Indonesia</h3>
             <p class="muted">8 nights · Villas &amp; wellness</p>
-            <div class="dest-foot"><span class="price">From $799<span class="price-unit">/trip</span></span><span class="rating">★ 4.8</span></div>
+            <div class="dest-foot"><span class="price" data-usd="799">From <span class="price-amount">$799</span><span class="price-unit">/trip</span></span><span class="rating">★ 4.8 <span class="review-count">(2,967)</span></span></div>
           </div>
         </article>
         <article class="dest-card reveal">
@@ -290,7 +303,7 @@
           <div class="dest-body">
             <h3>Alpine Chalet, Courchevel</h3>
             <p class="muted">Ski-in chalet · 7 nights</p>
-            <div class="dest-foot"><span class="price">From $1,290<span class="price-unit">/trip</span></span><span class="rating">★ 4.9</span></div>
+            <div class="dest-foot"><span class="price" data-usd="1290">From <span class="price-amount">$1,290</span><span class="price-unit">/trip</span></span><span class="rating">★ 4.9 <span class="review-count">(1,124)</span></span></div>
           </div>
         </article>
         <article class="dest-card reveal">
@@ -298,7 +311,7 @@
           <div class="dest-body">
             <h3>Safari &amp; Rail, Southern Africa</h3>
             <p class="muted">14 days · Fully escorted</p>
-            <div class="dest-foot"><span class="price">From $2,450<span class="price-unit">/trip</span></span><span class="rating">★ 4.9</span></div>
+            <div class="dest-foot"><span class="price" data-usd="2450">From <span class="price-amount">$2,450</span><span class="price-unit">/trip</span></span><span class="rating">★ 4.9 <span class="review-count">(876)</span></span></div>
           </div>
         </article>
         <article class="dest-card reveal">
@@ -306,7 +319,7 @@
           <div class="dest-body">
             <h3>Seychelles</h3>
             <p class="muted">Beachfront resort · 6 nights</p>
-            <div class="dest-foot"><span class="price">From $1,050<span class="price-unit">/trip</span></span><span class="rating">★ 4.8</span></div>
+            <div class="dest-foot"><span class="price" data-usd="1050">From <span class="price-amount">$1,050</span><span class="price-unit">/trip</span></span><span class="rating">★ 4.8 <span class="review-count">(1,533)</span></span></div>
           </div>
         </article>
         <article class="dest-card reveal">
@@ -314,7 +327,7 @@
           <div class="dest-body">
             <h3>Kyoto, Japan</h3>
             <p class="muted">Ryokan stay · Private guide</p>
-            <div class="dest-foot"><span class="price">From $890<span class="price-unit">/trip</span></span><span class="rating">★ 4.9</span></div>
+            <div class="dest-foot"><span class="price" data-usd="890">From <span class="price-amount">$890</span><span class="price-unit">/trip</span></span><span class="rating">★ 4.9 <span class="review-count">(2,041)</span></span></div>
           </div>
         </article>
       </div>
@@ -376,6 +389,51 @@
           <p>"Our flight got cancelled and support had us rebooked before we'd even finished the call."</p>
           <cite>— The Alvarez Family, New York</cite>
         </blockquote>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section section-alt" id="faq">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">Questions</span>
+        <h2>Good to know before you book</h2>
+      </div>
+
+      <div class="faq-list reveal">
+        <details class="faq-item">
+          <summary>Is the site live for real bookings yet?</summary>
+          <p>Not quite — search, pricing and the payment options shown are a preview of what we're
+          building. Right now the fastest way to actually book is to get in touch directly and our
+          team will arrange it for you.</p>
+        </details>
+        <details class="faq-item">
+          <summary>What payment methods will you accept?</summary>
+          <p>Major cards, bank transfer, and leading cryptocurrencies including Bitcoin, Ethereum,
+          USDT, USD Coin, Solana, Litecoin and Dogecoin. You'll choose whichever suits you at
+          checkout.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Is paying with crypto safe?</summary>
+          <p>Yes — payments are handled through established, secure payment processors. Because
+          crypto values can move between the moment you pay and when it settles, we'll always make
+          the exchange rate used clear before you confirm.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Can I cancel or change a booking?</summary>
+          <p>Most stays include free cancellation up to a set date — this will be shown clearly on
+          each booking before you pay. For changes, our support team can help directly.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Do you charge booking fees?</summary>
+          <p>No — the price you're quoted is the price you pay. No surprise fees added at checkout.</p>
+        </details>
+        <details class="faq-item">
+          <summary>How do I get in touch?</summary>
+          <p>Use the contact form below, email <a href="mailto:hello@365travel.co">hello@365travel.co</a>,
+          or call us — we're available 365 days a year.</p>
+        </details>
       </div>
     </div>
   </section>
@@ -481,6 +539,7 @@
       <h4>Company</h4>
       <ul>
         <li><a href="#crypto">Payment options</a></li>
+        <li><a href="#faq">FAQ</a></li>
         <li><a href="#about">About us</a></li>
         <li><a href="#contact">Contact</a></li>
         <li><a href="#">Careers</a></li>
@@ -511,6 +570,10 @@
 </footer>
 
 <button id="backToTop" class="back-to-top" aria-label="Back to top">↑</button>
+
+<div class="mobile-search-bar" id="mobileSearchBar">
+  <a href="#search" class="btn btn-primary btn-block">🔍 Search Stays, Flights &amp; More</a>
+</div>
 
 <script src="js/script.js"></script>
 </body>

@@ -50,6 +50,12 @@
     backToTop.classList.toggle("visible", window.scrollY > 500);
   }
 
+  /* ---------- Mobile search bar ---------- */
+  var mobileSearchBar = document.getElementById("mobileSearchBar");
+  function toggleMobileSearchBar() {
+    mobileSearchBar.classList.toggle("visible", window.scrollY > 500);
+  }
+
   /* ---------- Scroll progress bar ---------- */
   var scrollProgress = document.getElementById("scrollProgress");
   function updateScrollProgress() {
@@ -63,17 +69,40 @@
     function () {
       setActiveLink();
       toggleBackToTop();
+      toggleMobileSearchBar();
       updateScrollProgress();
     },
     { passive: true }
   );
   setActiveLink();
   toggleBackToTop();
+  toggleMobileSearchBar();
   updateScrollProgress();
 
   backToTop.addEventListener("click", function () {
     window.scrollTo({ top: 0, behavior: "smooth" });
   });
+
+  /* ---------- Currency selector (display only, illustrative prices) ---------- */
+  var currencySelect = document.getElementById("currencySelect");
+  var currencyRates = {
+    USD: { rate: 1, symbol: "$" },
+    GBP: { rate: 0.79, symbol: "£" },
+    EUR: { rate: 0.92, symbol: "€" },
+    AUD: { rate: 1.52, symbol: "A$" }
+  };
+  if (currencySelect) {
+    currencySelect.addEventListener("change", function () {
+      var currency = currencyRates[currencySelect.value] || currencyRates.USD;
+      document.querySelectorAll(".price[data-usd]").forEach(function (priceEl) {
+        var usd = parseFloat(priceEl.getAttribute("data-usd"));
+        var amountEl = priceEl.querySelector(".price-amount");
+        if (!amountEl || isNaN(usd)) return;
+        var converted = Math.round(usd * currency.rate).toLocaleString();
+        amountEl.textContent = currency.symbol + converted;
+      });
+    });
+  }
 
   /* ---------- Scroll-reveal animations ---------- */
   var revealEls = Array.prototype.slice.call(document.querySelectorAll(".reveal"));
