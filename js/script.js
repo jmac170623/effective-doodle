@@ -84,25 +84,33 @@
   });
 
   /* ---------- Currency selector (display only, illustrative prices) ---------- */
-  var currencySelect = document.getElementById("currencySelect");
+  var currencySelects = Array.prototype.slice.call(
+    document.querySelectorAll("#currencySelect, #currencySelectMobile")
+  );
   var currencyRates = {
     USD: { rate: 1, symbol: "$" },
     GBP: { rate: 0.79, symbol: "£" },
     EUR: { rate: 0.92, symbol: "€" },
     AUD: { rate: 1.52, symbol: "A$" }
   };
-  if (currencySelect) {
-    currencySelect.addEventListener("change", function () {
-      var currency = currencyRates[currencySelect.value] || currencyRates.USD;
-      document.querySelectorAll(".price[data-usd]").forEach(function (priceEl) {
-        var usd = parseFloat(priceEl.getAttribute("data-usd"));
-        var amountEl = priceEl.querySelector(".price-amount");
-        if (!amountEl || isNaN(usd)) return;
-        var converted = Math.round(usd * currency.rate).toLocaleString();
-        amountEl.textContent = currency.symbol + converted;
-      });
+  function applyCurrency(value) {
+    var currency = currencyRates[value] || currencyRates.USD;
+    document.querySelectorAll(".price[data-usd]").forEach(function (priceEl) {
+      var usd = parseFloat(priceEl.getAttribute("data-usd"));
+      var amountEl = priceEl.querySelector(".price-amount");
+      if (!amountEl || isNaN(usd)) return;
+      var converted = Math.round(usd * currency.rate).toLocaleString();
+      amountEl.textContent = currency.symbol + converted;
     });
   }
+  currencySelects.forEach(function (select) {
+    select.addEventListener("change", function () {
+      currencySelects.forEach(function (other) {
+        if (other !== select) other.value = select.value;
+      });
+      applyCurrency(select.value);
+    });
+  });
 
   /* ---------- Scroll-reveal animations ---------- */
   var revealEls = Array.prototype.slice.call(document.querySelectorAll(".reveal"));
