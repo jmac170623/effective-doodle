@@ -194,6 +194,8 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 .nav-toggle.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
 .mobile-nav-cta { display: none; }
+.mobile-nav-currency { display: none; }
+.mobile-nav-currency .currency-select { width: 100%; padding: 12px; }
 
 /* ---------- Hero ---------- */
 .hero {
@@ -460,7 +462,22 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 .dest-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; }
 .price { font-weight: 600; font-size: .84rem; color: var(--gold-dark); text-transform: uppercase; letter-spacing: .02em; }
 .price-unit { text-transform: none; font-weight: 500; color: var(--muted); font-size: .78rem; }
-.rating { font-size: .82rem; color: var(--muted); font-weight: 500; }
+.rating { display: flex; align-items: center; gap: 8px; }
+.rating-score {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 6px;
+  background: var(--ink);
+  color: var(--gold-light);
+  font-weight: 700;
+  font-size: .86rem;
+  border-radius: var(--radius-sm);
+}
+.rating-text { display: flex; flex-direction: column; line-height: 1.25; }
+.rating-text strong { font-size: .8rem; font-weight: 600; color: var(--ink); }
 
 /* ---------- About / testimonials ---------- */
 .about-grid {
@@ -601,7 +618,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 .currency-select:focus { outline: none; border-color: var(--gold); }
 
 /* ---------- Review counts ---------- */
-.review-count { font-weight: 400; color: var(--muted); font-size: .78rem; }
+.review-count { font-weight: 400; color: var(--muted); font-size: .72rem; }
 
 /* ---------- Trust strip ---------- */
 .trust-strip {
@@ -806,6 +823,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   .nav-link { display: block; padding: 14px 0; }
   .nav-toggle { display: flex; }
   .header-actions .btn-primary, .header-actions .header-login, .header-actions .currency-select { display: none; }
+  .mobile-nav-currency { display: block; padding: 16px 24px 0; }
   .mobile-nav-cta { display: block; padding: 16px 24px 22px; }
 }
 
