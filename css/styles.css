@@ -203,7 +203,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   overflow: hidden;
   padding: 96px 0 108px;
   background:
-    linear-gradient(180deg, rgba(20, 24, 31, .82) 0%, rgba(31, 37, 48, .92) 100%),
+    linear-gradient(180deg, rgba(20, 24, 31, .18) 0%, rgba(20, 24, 31, .4) 100%),
     url("../assets/hero-bg.jpg") center 55% / cover no-repeat;
   color: #f3efe6;
 }
@@ -225,6 +225,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   max-width: 720px;
   margin: 0 auto;
   text-align: center;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, .55), 0 1px 4px rgba(0, 0, 0, .5);
 }
 .eyebrow {
   display: inline-block;
