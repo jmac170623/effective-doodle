@@ -185,14 +185,6 @@
     flights: {
       headline: "Book your flight<br>with crypto or card.",
       lead: "Search hundreds of airlines worldwide, then pay however suits you — major cards or leading cryptocurrencies."
-    },
-    packages: {
-      headline: "Book your holiday<br>with crypto or card.",
-      lead: "Bundle flights, stays and activities into one trip, then pay however suits you — major cards or leading cryptocurrencies."
-    },
-    activities: {
-      headline: "Book your experience<br>with crypto or card.",
-      lead: "Search tours and activities worldwide, then pay however suits you — major cards or leading cryptocurrencies."
     }
   };
 
@@ -229,9 +221,7 @@
   var heroSearch = document.getElementById("heroSearch");
   var primaryFieldByTab = {
     stays: "staysDestination",
-    flights: "flightsTo",
-    packages: "packagesDestination",
-    activities: "activitiesDestination"
+    flights: "flightsTo"
   };
   heroSearch.addEventListener("submit", function (e) {
     e.preventDefault();
