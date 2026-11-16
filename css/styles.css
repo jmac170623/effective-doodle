@@ -362,6 +362,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   gap: 28px;
 }
 .steps-4 { grid-template-columns: repeat(4, 1fr); }
+.steps-2 { grid-template-columns: repeat(2, 1fr); max-width: 760px; margin: 0 auto; }
 .step {
   position: relative;
   background: #fff;
@@ -997,7 +998,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 
 @media (max-width: 600px) {
   .container { padding: 0 18px; }
-  .steps, .steps-4, .destinations-grid, .footer-grid { grid-template-columns: 1fr; }
+  .steps, .steps-4, .steps-2, .destinations-grid, .footer-grid { grid-template-columns: 1fr; }
   .form-row { grid-template-columns: 1fr; }
   .search-tabs { flex-wrap: wrap; }
   .search-tab { flex: 1 1 100%; white-space: normal; }
