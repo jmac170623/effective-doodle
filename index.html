@@ -26,7 +26,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20261116b">
+<link rel="stylesheet" href="css/styles.css?v=20261116d">
 </head>
 <body>
 
@@ -51,7 +51,7 @@
       </ul>
       <div class="mobile-nav-currency">
         <label for="currencySelectMobile" class="visually-hidden">Currency</label>
-        <select id="currencySelectMobile" class="currency-select" aria-label="Currency">
+        <select id="currencySelectMobile" class="currency-select js-customselect" aria-label="Currency">
           <option value="USD">USD $</option>
           <option value="GBP">GBP £</option>
           <option value="EUR">EUR €</option>
@@ -65,7 +65,7 @@
 
     <div class="header-actions">
       <label for="currencySelect" class="visually-hidden">Currency</label>
-      <select id="currencySelect" class="currency-select" aria-label="Currency">
+      <select id="currencySelect" class="currency-select js-customselect" aria-label="Currency">
         <option value="USD">USD $</option>
         <option value="GBP">GBP £</option>
         <option value="EUR">EUR €</option>
@@ -125,15 +125,15 @@
             </div>
             <div class="hero-field">
               <label for="staysCheckin">Check-in</label>
-              <input type="date" id="staysCheckin" name="checkin">
+              <input type="text" id="staysCheckin" name="checkin" class="js-datepicker" readonly autocomplete="off" placeholder="Select date">
             </div>
             <div class="hero-field">
               <label for="staysCheckout">Check-out</label>
-              <input type="date" id="staysCheckout" name="checkout">
+              <input type="text" id="staysCheckout" name="checkout" class="js-datepicker" readonly autocomplete="off" placeholder="Select date">
             </div>
             <div class="hero-field">
               <label for="staysGuests">Guests</label>
-              <select id="staysGuests" name="guests">
+              <select id="staysGuests" name="guests" class="js-customselect">
                 <option>2 Adults, 1 Room</option>
                 <option>1 Adult</option>
                 <option>Family (2 Adults + Kids)</option>
@@ -153,11 +153,11 @@
             </div>
             <div class="hero-field">
               <label for="flightsDepart">Depart</label>
-              <input type="date" id="flightsDepart" name="depart">
+              <input type="text" id="flightsDepart" name="depart" class="js-datepicker" readonly autocomplete="off" placeholder="Select date">
             </div>
             <div class="hero-field">
               <label for="flightsPassengers">Passengers</label>
-              <select id="flightsPassengers" name="passengers">
+              <select id="flightsPassengers" name="passengers" class="js-customselect">
                 <option>1 Adult</option>
                 <option>2 Adults</option>
                 <option>Family (2 Adults + Kids)</option>
@@ -173,15 +173,15 @@
             </div>
             <div class="hero-field">
               <label for="bundleCheckin">Check-in</label>
-              <input type="date" id="bundleCheckin" name="bundleCheckin">
+              <input type="text" id="bundleCheckin" name="bundleCheckin" class="js-datepicker" readonly autocomplete="off" placeholder="Select date">
             </div>
             <div class="hero-field">
               <label for="bundleCheckout">Check-out</label>
-              <input type="date" id="bundleCheckout" name="bundleCheckout">
+              <input type="text" id="bundleCheckout" name="bundleCheckout" class="js-datepicker" readonly autocomplete="off" placeholder="Select date">
             </div>
             <div class="hero-field">
               <label for="bundleTravellers">Travellers</label>
-              <select id="bundleTravellers" name="bundleTravellers">
+              <select id="bundleTravellers" name="bundleTravellers" class="js-customselect">
                 <option>2 Adults, 1 Room</option>
                 <option>1 Adult</option>
                 <option>Family (2 Adults + Kids)</option>
@@ -484,7 +484,7 @@
           </div>
           <div class="field">
             <label for="topic">I'm asking about</label>
-            <select id="topic" name="topic">
+            <select id="topic" name="topic" class="js-customselect">
               <option value="booking">An existing booking</option>
               <option value="payments">Payment options</option>
               <option value="new-trip">A new trip</option>
@@ -564,6 +564,6 @@
   <a href="#search" class="btn btn-primary btn-block">🔍 Search Stays, Flights &amp; More</a>
 </div>
 
-<script src="js/script.js?v=20261116"></script>
+<script src="js/script.js?v=20261116c"></script>
 </body>
 </html>
