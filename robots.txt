@@ -3,4 +3,4 @@ Allow: /
 Disallow: /privacy.html
 Disallow: /terms.html
 
-Sitemap: https://jmac170623.github.io/effective-doodle/sitemap.xml
+Sitemap: https://365travel.co/sitemap.xml
