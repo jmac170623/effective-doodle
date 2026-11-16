@@ -364,4 +364,256 @@
         subscribeBtn.disabled = false;
       });
   });
+
+  /* ---------- Shared popover close-all helper ---------- */
+  function closeAllPoppers(except) {
+    Array.prototype.slice.call(document.querySelectorAll(".custom-select.open")).forEach(function (el) {
+      if (el !== except) el.classList.remove("open");
+    });
+    Array.prototype.slice.call(document.querySelectorAll(".custom-datepicker.open")).forEach(function (el) {
+      if (el !== except) el.classList.remove("open");
+    });
+  }
+  document.addEventListener("click", function (e) {
+    if (!e.target.closest(".custom-select") && !e.target.closest(".custom-datepicker")) {
+      closeAllPoppers(null);
+    }
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeAllPoppers(null);
+  });
+
+  function positionPanelHorizontally(wrapper, panel) {
+    wrapper.classList.remove("align-right");
+    var rect = wrapper.getBoundingClientRect();
+    var panelWidth = panel.offsetWidth || 280;
+    if (rect.left + panelWidth > window.innerWidth - 16) {
+      wrapper.classList.add("align-right");
+    }
+  }
+
+  /* ---------- Custom select dropdowns ---------- */
+  function enhanceSelect(select) {
+    if (select.dataset.enhanced) return;
+    select.dataset.enhanced = "true";
+
+    var wrapper = document.createElement("div");
+    wrapper.className = "custom-select";
+    if (select.classList.contains("currency-select")) {
+      wrapper.classList.add("custom-select--compact");
+    }
+    select.parentNode.insertBefore(wrapper, select);
+    wrapper.appendChild(select);
+    select.classList.add("custom-select-native");
+    select.setAttribute("tabindex", "-1");
+    select.setAttribute("aria-hidden", "true");
+
+    var button = document.createElement("button");
+    button.type = "button";
+    button.className = "custom-select-trigger";
+    button.setAttribute("aria-haspopup", "listbox");
+    button.setAttribute("aria-expanded", "false");
+
+    var label = document.createElement("span");
+    label.className = "custom-select-label";
+    button.appendChild(label);
+
+    var chevron = document.createElement("span");
+    chevron.className = "custom-select-chevron";
+    chevron.setAttribute("aria-hidden", "true");
+    chevron.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+    button.appendChild(chevron);
+
+    var listbox = document.createElement("ul");
+    listbox.className = "custom-select-list";
+    listbox.setAttribute("role", "listbox");
+
+    var optionEls = Array.prototype.slice.call(select.options).map(function (opt, i) {
+      var li = document.createElement("li");
+      li.className = "custom-select-option";
+      li.setAttribute("role", "option");
+      li.textContent = opt.textContent;
+      if (opt.selected) li.classList.add("active");
+      li.addEventListener("click", function () {
+        select.selectedIndex = i;
+        syncActiveOption();
+        syncLabel();
+        closeList();
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      listbox.appendChild(li);
+      return li;
+    });
+
+    function syncActiveOption() {
+      optionEls.forEach(function (el, i) {
+        el.classList.toggle("active", i === select.selectedIndex);
+      });
+    }
+    function syncLabel() {
+      var selected = select.options[select.selectedIndex];
+      label.textContent = selected ? selected.textContent : "";
+    }
+    syncLabel();
+
+    function closeList() {
+      wrapper.classList.remove("open");
+      button.setAttribute("aria-expanded", "false");
+    }
+    function openList() {
+      closeAllPoppers(wrapper);
+      wrapper.classList.add("open");
+      button.setAttribute("aria-expanded", "true");
+      positionPanelHorizontally(wrapper, listbox);
+    }
+
+    button.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (wrapper.classList.contains("open")) closeList(); else openList();
+    });
+
+    wrapper.appendChild(button);
+    wrapper.appendChild(listbox);
+  }
+
+  Array.prototype.slice.call(document.querySelectorAll(".js-customselect")).forEach(enhanceSelect);
+
+  /* ---------- Custom date pickers ---------- */
+  var MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  var WEEKDAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"];
+
+  function pad2(n) { return n < 10 ? "0" + n : "" + n; }
+  function formatDisplayDate(date) {
+    return date.getDate() + " " + MONTH_NAMES[date.getMonth()].slice(0, 3) + " " + date.getFullYear();
+  }
+
+  function enhanceDatePicker(input) {
+    if (input.dataset.enhanced) return;
+    input.dataset.enhanced = "true";
+
+    var wrapper = document.createElement("div");
+    wrapper.className = "custom-datepicker";
+    input.parentNode.insertBefore(wrapper, input);
+    wrapper.appendChild(input);
+
+    var icon = document.createElement("span");
+    icon.className = "custom-datepicker-icon";
+    icon.setAttribute("aria-hidden", "true");
+    icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M8 3v4M16 3v4M3 10h18"></path></svg>';
+    wrapper.appendChild(icon);
+
+    var panel = document.createElement("div");
+    panel.className = "custom-datepicker-panel";
+
+    var header = document.createElement("div");
+    header.className = "custom-datepicker-header";
+    var prevBtn = document.createElement("button");
+    prevBtn.type = "button";
+    prevBtn.className = "custom-datepicker-nav";
+    prevBtn.innerHTML = "‹";
+    prevBtn.setAttribute("aria-label", "Previous month");
+    var monthLabel = document.createElement("span");
+    monthLabel.className = "custom-datepicker-month";
+    var nextBtn = document.createElement("button");
+    nextBtn.type = "button";
+    nextBtn.className = "custom-datepicker-nav";
+    nextBtn.innerHTML = "›";
+    nextBtn.setAttribute("aria-label", "Next month");
+    header.appendChild(prevBtn);
+    header.appendChild(monthLabel);
+    header.appendChild(nextBtn);
+
+    var weekdaysRow = document.createElement("div");
+    weekdaysRow.className = "custom-datepicker-weekdays";
+    WEEKDAY_LABELS.forEach(function (w) {
+      var el = document.createElement("span");
+      el.textContent = w;
+      weekdaysRow.appendChild(el);
+    });
+
+    var grid = document.createElement("div");
+    grid.className = "custom-datepicker-grid";
+
+    panel.appendChild(header);
+    panel.appendChild(weekdaysRow);
+    panel.appendChild(grid);
+    wrapper.appendChild(panel);
+
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    var viewYear = today.getFullYear();
+    var viewMonth = today.getMonth();
+    var selectedTime = null;
+
+    function render() {
+      monthLabel.textContent = MONTH_NAMES[viewMonth] + " " + viewYear;
+      grid.innerHTML = "";
+      var firstDay = new Date(viewYear, viewMonth, 1);
+      var startOffset = (firstDay.getDay() + 6) % 7;
+      var daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+      for (var i = 0; i < startOffset; i++) {
+        var blank = document.createElement("span");
+        blank.className = "custom-datepicker-day is-empty";
+        grid.appendChild(blank);
+      }
+      var _loop = function (day) {
+        var cellDate = new Date(viewYear, viewMonth, day);
+        var cellTime = cellDate.getTime();
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "custom-datepicker-day";
+        btn.textContent = day;
+        if (cellTime === today.getTime()) btn.classList.add("is-today");
+        if (selectedTime === cellTime) btn.classList.add("is-selected");
+        if (cellTime < today.getTime()) {
+          btn.disabled = true;
+          btn.classList.add("is-disabled");
+        }
+        btn.addEventListener("click", function () {
+          selectedTime = cellTime;
+          input.value = formatDisplayDate(cellDate);
+          input.dataset.iso = cellDate.getFullYear() + "-" + pad2(cellDate.getMonth() + 1) + "-" + pad2(cellDate.getDate());
+          closePanel();
+          input.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+        grid.appendChild(btn);
+      };
+      for (var d = 1; d <= daysInMonth; d++) _loop(d);
+    }
+
+    function openPanel() {
+      closeAllPoppers(wrapper);
+      wrapper.classList.add("open");
+      viewYear = (selectedTime ? new Date(selectedTime) : today).getFullYear();
+      viewMonth = (selectedTime ? new Date(selectedTime) : today).getMonth();
+      render();
+      positionPanelHorizontally(wrapper, panel);
+    }
+    function closePanel() {
+      wrapper.classList.remove("open");
+    }
+
+    input.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (wrapper.classList.contains("open")) closePanel(); else openPanel();
+    });
+    icon.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (wrapper.classList.contains("open")) closePanel(); else openPanel();
+    });
+    prevBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      viewMonth--;
+      if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+      render();
+    });
+    nextBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      viewMonth++;
+      if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+      render();
+    });
+  }
+
+  Array.prototype.slice.call(document.querySelectorAll(".js-datepicker")).forEach(enhanceDatePicker);
 })();

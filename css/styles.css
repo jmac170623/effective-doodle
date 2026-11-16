@@ -640,6 +640,176 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 }
 .currency-select:focus { outline: none; border-color: var(--gold); }
 
+/* ---------- Custom select (replaces native <select> dropdowns) ---------- */
+.custom-select {
+  position: relative;
+  width: 100%;
+}
+.custom-select-native {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+}
+.custom-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 11px 12px;
+  background: var(--cream);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 1rem;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .15s ease;
+}
+.custom-select-trigger:hover { border-color: var(--gold); }
+.custom-select.open .custom-select-trigger { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(182, 144, 79, .15); }
+.custom-select-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.custom-select-chevron { display: flex; flex-shrink: 0; color: var(--muted); transition: transform .15s ease; }
+.custom-select-chevron svg { width: 16px; height: 16px; }
+.custom-select.open .custom-select-chevron { transform: rotate(180deg); }
+.custom-select-list {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 60;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  padding: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+  transition: opacity .15s ease, transform .15s ease;
+}
+.custom-select.open .custom-select-list { opacity: 1; transform: none; pointer-events: auto; }
+.custom-select-option {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  font-size: .92rem;
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.custom-select-option:hover { background: var(--cream-alt); }
+.custom-select-option.active { background: var(--gold); color: #1a1a1a; font-weight: 600; }
+
+/* Compact variant for the header/mobile-nav currency picker */
+.custom-select--compact { width: auto; }
+.custom-select--compact .custom-select-trigger {
+  background: #fff;
+  font-size: .82rem;
+  font-weight: 600;
+  padding: 9px 10px;
+}
+.custom-select--compact .custom-select-list { min-width: 140px; right: auto; }
+.mobile-nav-currency .custom-select--compact { width: 100%; }
+.mobile-nav-currency .custom-select--compact .custom-select-trigger { padding: 12px; }
+.mobile-nav-currency .custom-select--compact .custom-select-list { right: 0; }
+
+/* ---------- Custom date picker (replaces native <input type="date">) ---------- */
+.custom-datepicker { position: relative; width: 100%; }
+.custom-datepicker input {
+  width: 100%;
+  cursor: pointer;
+  padding-right: 36px !important;
+}
+.custom-datepicker-icon {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  display: flex;
+  color: var(--muted);
+  pointer-events: none;
+}
+.custom-datepicker-icon svg { width: 17px; height: 17px; }
+.custom-datepicker.open input { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(182, 144, 79, .15); }
+.custom-datepicker-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 60;
+  width: 280px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  padding: 16px;
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+  transition: opacity .15s ease, transform .15s ease;
+}
+.custom-datepicker.align-right .custom-datepicker-panel { left: auto; right: 0; }
+.custom-datepicker.open .custom-datepicker-panel { opacity: 1; transform: none; pointer-events: auto; }
+.custom-datepicker-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.custom-datepicker-month { font-family: var(--font-head); font-weight: 700; font-size: .95rem; color: var(--ink); }
+.custom-datepicker-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--ink);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color .15s ease, background .15s ease;
+}
+.custom-datepicker-nav:hover { border-color: var(--gold); background: var(--cream-alt); }
+.custom-datepicker-weekdays, .custom-datepicker-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+.custom-datepicker-weekdays {
+  margin-bottom: 4px;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .03em;
+  color: var(--muted);
+  text-align: center;
+  text-transform: uppercase;
+}
+.custom-datepicker-weekdays span { padding: 4px 0; }
+.custom-datepicker-day {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 1;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text);
+  font-size: .86rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease;
+}
+.custom-datepicker-day:not(.is-empty):not(.is-disabled):hover { background: var(--cream-alt); }
+.custom-datepicker-day.is-today { color: var(--gold-dark); font-weight: 700; }
+.custom-datepicker-day.is-selected { background: var(--gold); color: #1a1a1a; font-weight: 700; }
+.custom-datepicker-day.is-disabled { color: var(--border); cursor: default; }
+.custom-datepicker-day.is-empty { cursor: default; }
+
 /* ---------- Review counts ---------- */
 .review-count { font-weight: 400; color: var(--muted); font-size: .72rem; }
 
@@ -845,7 +1015,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   .main-nav li:first-child { border-top: none; }
   .nav-link { display: block; padding: 14px 0; }
   .nav-toggle { display: flex; }
-  .header-actions .btn-primary, .header-actions .header-login, .header-actions .currency-select { display: none; }
+  .header-actions .btn-primary, .header-actions .header-login, .header-actions .currency-select, .header-actions .custom-select { display: none; }
   .mobile-nav-currency { display: block; padding: 16px 24px 0; }
   .mobile-nav-cta { display: block; padding: 16px 24px 22px; }
 }
