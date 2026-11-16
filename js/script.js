@@ -175,6 +175,26 @@
   /* ---------- Search widget tabs ---------- */
   var searchTabs = Array.prototype.slice.call(document.querySelectorAll(".search-tab"));
   var searchPanels = Array.prototype.slice.call(document.querySelectorAll(".search-panel"));
+  var heroHeadline = document.getElementById("heroHeadline");
+  var heroLead = document.getElementById("heroLead");
+  var heroCopyByTab = {
+    stays: {
+      headline: "Book your stay<br>with crypto or card.",
+      lead: "Search thousands of stays worldwide, then pay however suits you — major cards or leading cryptocurrencies."
+    },
+    flights: {
+      headline: "Book your flight<br>with crypto or card.",
+      lead: "Search hundreds of airlines worldwide, then pay however suits you — major cards or leading cryptocurrencies."
+    },
+    packages: {
+      headline: "Book your holiday<br>with crypto or card.",
+      lead: "Bundle flights, stays and activities into one trip, then pay however suits you — major cards or leading cryptocurrencies."
+    },
+    activities: {
+      headline: "Book your experience<br>with crypto or card.",
+      lead: "Search tours and activities worldwide, then pay however suits you — major cards or leading cryptocurrencies."
+    }
+  };
 
   function activateTab(tabName) {
     searchTabs.forEach(function (tab) {
@@ -185,6 +205,11 @@
     searchPanels.forEach(function (panel) {
       panel.classList.toggle("active", panel.getAttribute("data-panel") === tabName);
     });
+    var copy = heroCopyByTab[tabName];
+    if (copy && heroHeadline && heroLead) {
+      heroHeadline.innerHTML = copy.headline;
+      heroLead.textContent = copy.lead;
+    }
     setActiveLink();
   }
 
