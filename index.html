@@ -100,8 +100,21 @@
 
       <div class="search-widget" id="search">
         <div class="search-tabs" role="tablist">
-          <button type="button" class="search-tab active" data-tab="stays" role="tab" aria-selected="true">Stays</button>
-          <button type="button" class="search-tab" data-tab="flights" role="tab" aria-selected="false">Flights</button>
+          <button type="button" class="search-tab active" data-tab="stays" role="tab" aria-selected="true">
+            <span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 17V8a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v4"/><path d="M2 17h20"/><path d="M22 17v-4a2 2 0 0 0-2-2H9"/><path d="M2 21v-2"/><path d="M22 21v-2"/></svg></span>
+            Stays
+          </button>
+          <button type="button" class="search-tab" data-tab="flights" role="tab" aria-selected="false">
+            <span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2.5 1.5V22l4-1.5 4 1.5v-1.5L13 19v-5.5z"/></svg></span>
+            Flights
+          </button>
+          <button type="button" class="search-tab" data-tab="bundle" role="tab" aria-selected="false">
+            <span class="tab-icon tab-icon-bundle" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="currentColor" class="icon-plane-sm"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2.5 1.5V22l4-1.5 4 1.5v-1.5L13 19v-5.5z"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="icon-bed-sm"><path d="M2 17V8a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v4"/><path d="M2 17h20"/><path d="M22 17v-4a2 2 0 0 0-2-2H9"/><path d="M2 21v-2"/><path d="M22 21v-2"/></svg>
+            </span>
+            Flights + Hotels
+          </button>
         </div>
 
         <form id="heroSearch">
@@ -147,6 +160,30 @@
               <select id="flightsPassengers" name="passengers">
                 <option>1 Adult</option>
                 <option>2 Adults</option>
+                <option>Family (2 Adults + Kids)</option>
+                <option>Group (5+)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="search-panel" data-panel="bundle">
+            <div class="hero-field">
+              <label for="bundleDestination">Flying to</label>
+              <input type="text" id="bundleDestination" name="bundleDestination" placeholder="City or airport">
+            </div>
+            <div class="hero-field">
+              <label for="bundleCheckin">Check-in</label>
+              <input type="date" id="bundleCheckin" name="bundleCheckin">
+            </div>
+            <div class="hero-field">
+              <label for="bundleCheckout">Check-out</label>
+              <input type="date" id="bundleCheckout" name="bundleCheckout">
+            </div>
+            <div class="hero-field">
+              <label for="bundleTravellers">Travellers</label>
+              <select id="bundleTravellers" name="bundleTravellers">
+                <option>2 Adults, 1 Room</option>
+                <option>1 Adult</option>
                 <option>Family (2 Adults + Kids)</option>
                 <option>Group (5+)</option>
               </select>

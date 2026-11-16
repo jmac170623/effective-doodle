@@ -266,6 +266,10 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   border-bottom: 1px solid var(--border);
 }
 .search-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   flex: 1 1 auto;
   background: transparent;
   border: none;
@@ -274,7 +278,21 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   font-size: .9rem;
   color: var(--muted);
   border-bottom: 2px solid transparent;
+  white-space: nowrap;
   transition: color .15s ease, border-color .15s ease, background .15s ease;
+}
+.tab-icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.tab-icon svg { width: 18px; height: 18px; }
+.tab-icon-bundle { position: relative; width: 22px; height: 18px; }
+.tab-icon-bundle .icon-plane-sm {
+  position: absolute;
+  top: -2px; right: 0;
+  width: 14px; height: 14px;
+}
+.tab-icon-bundle .icon-bed-sm {
+  position: absolute;
+  bottom: -2px; left: 0;
+  width: 14px; height: 14px;
 }
 .search-tab:hover { color: var(--ink); }
 .search-tab.active {
@@ -841,7 +859,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   .steps, .steps-4, .destinations-grid, .footer-grid { grid-template-columns: 1fr; }
   .form-row { grid-template-columns: 1fr; }
   .search-tabs { flex-wrap: wrap; }
-  .search-tab { flex: 1 1 50%; }
+  .search-tab { flex: 1 1 100%; white-space: normal; }
   .search-panel { grid-template-columns: 1fr; padding: 18px; }
   .btn-search-wide { width: calc(100% - 36px); margin: 0 18px 18px; }
   .crypto-grid { grid-template-columns: 1fr 1fr; }
