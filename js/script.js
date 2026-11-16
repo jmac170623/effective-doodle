@@ -305,7 +305,7 @@
     formStatus.textContent = "Sending...";
     formStatus.className = "form-status";
 
-    fetch("https://formsubmit.co/ajax/hello@365travel.co", {
+    fetch("https://formsubmit.co/ajax/info@365travel.co", {
       method: "POST",
       headers: { Accept: "application/json" },
       body: new FormData(contactForm)
@@ -319,7 +319,7 @@
       })
       .catch(function () {
         formStatus.textContent =
-          "Something went wrong sending your message — please email hello@365travel.co directly.";
+          "Something went wrong sending your message — please email info@365travel.co directly.";
         formStatus.className = "form-status error";
       })
       .finally(function () {
@@ -345,7 +345,7 @@
     newsletterStatus.textContent = "Sending...";
     newsletterStatus.className = "form-status";
 
-    fetch("https://formsubmit.co/ajax/hello@365travel.co", {
+    fetch("https://formsubmit.co/ajax/info@365travel.co", {
       method: "POST",
       headers: { Accept: "application/json" },
       body: new FormData(newsletterForm)

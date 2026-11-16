@@ -415,34 +415,6 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 .crypto-badge-card .crypto-symbol { background: rgba(255,255,255,.12); color: var(--gold-light); }
 .crypto-badge-card:hover { border-color: var(--gold); }
 
-/* ---------- Property types ---------- */
-.property-grid {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 16px;
-}
-.property-tile {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 26px 12px;
-  font-weight: 600;
-  font-size: .88rem;
-  color: var(--ink);
-  text-align: center;
-  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
-}
-.property-tile:hover {
-  transform: translateY(-4px);
-  border-color: var(--gold);
-  box-shadow: 0 16px 36px rgba(182, 144, 79, .16), var(--shadow);
-}
-.property-icon { font-size: 1.8rem; }
-
 /* ---------- Destinations ---------- */
 .destinations-grid {
   display: grid;
@@ -995,7 +967,6 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   .search-panel { grid-template-columns: 1fr 1fr; }
   .crypto-grid { grid-template-columns: repeat(2, 1fr); }
   .crypto-badge-card { grid-column: span 2; }
-  .property-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
 @media (max-width: 1180px) {
@@ -1034,7 +1005,6 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   .btn-search-wide { width: calc(100% - 36px); margin: 0 18px 18px; }
   .crypto-grid { grid-template-columns: 1fr 1fr; }
   .crypto-badge-card { grid-column: span 2; }
-  .property-grid { grid-template-columns: repeat(2, 1fr); }
   .faq-item summary { font-size: .92rem; }
   .mobile-search-bar { display: block; }
   .back-to-top { display: none; }
