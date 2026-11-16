@@ -204,7 +204,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   padding: 96px 0 108px;
   background:
     linear-gradient(180deg, rgba(20, 24, 31, .18) 0%, rgba(20, 24, 31, .4) 100%),
-    url("../assets/hero-bg.jpg") center 55% / cover no-repeat;
+    url("../assets/hero-bg.jpg?v=20261116b") center 55% / cover no-repeat;
   color: #f3efe6;
 }
 .hero-bg { position: absolute; inset: 0; z-index: 0; }
