@@ -16,7 +16,7 @@
   --shadow-lg: 0 24px 60px rgba(20, 24, 31, 0.18);
   --radius: 4px;
   --radius-sm: 2px;
-  --font-head: "Cormorant Garamond", "Georgia", serif;
+  --font-head: "Montserrat", "Arial Black", sans-serif;
   --font-body: "Inter", "Segoe UI", sans-serif;
   --header-h: 84px;
 }
@@ -202,7 +202,9 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   position: relative;
   overflow: hidden;
   padding: 96px 0 108px;
-  background: linear-gradient(180deg, var(--ink) 0%, var(--ink-2) 100%);
+  background:
+    linear-gradient(180deg, rgba(20, 24, 31, .82) 0%, rgba(31, 37, 48, .92) 100%),
+    url("../assets/hero-bg.jpg") center 55% / cover no-repeat;
   color: #f3efe6;
 }
 .hero-bg { position: absolute; inset: 0; z-index: 0; }
@@ -234,8 +236,10 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   margin-bottom: 18px;
 }
 .hero h1 {
-  font-size: clamp(2.4rem, 4.4vw, 3.8rem);
-  font-weight: 600;
+  font-size: clamp(2.2rem, 4.2vw, 3.6rem);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
   color: #fdfbf6;
 }
 .hero .lead {
@@ -497,7 +501,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   margin: 0;
   box-shadow: var(--shadow);
 }
-.testimonial p { font-family: var(--font-head); font-size: 1.15rem; font-style: italic; color: var(--ink); margin-bottom: 12px; }
+.testimonial p { font-family: var(--font-head); font-size: 1.1rem; font-weight: 600; color: var(--ink); margin-bottom: 12px; }
 .testimonial cite { font-family: var(--font-body); font-style: normal; font-weight: 600; color: var(--muted); font-size: .82rem; letter-spacing: .02em; text-transform: uppercase; }
 
 /* ---------- CTA banner ---------- */
