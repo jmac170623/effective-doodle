@@ -803,6 +803,108 @@ input.text-hidden { color: transparent; }
 }
 .destination-display.visible { display: flex; }
 
+/* ---------- Guests / rooms picker ---------- */
+.guests-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 320px;
+  max-width: 90vw;
+  z-index: 60;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: var(--shadow-lg);
+  padding: 20px;
+  max-height: 70vh;
+  overflow-y: auto;
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+  transition: opacity .15s ease, transform .15s ease;
+}
+.guests-picker.align-right .guests-panel { left: auto; right: 0; }
+.guests-picker.open .guests-panel { opacity: 1; transform: none; pointer-events: auto; }
+.guests-room + .guests-room { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border); }
+.guests-room-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.guests-room-title { font-family: var(--font-head); font-weight: 700; font-size: .95rem; color: var(--ink); }
+.guests-remove-room {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: .8rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.guests-remove-room:hover { color: var(--ink); }
+.guests-row { display: flex; gap: 16px; }
+.guests-field { flex: 1 1 0; min-width: 0; }
+.guests-field-label { display: block; font-size: .8rem; font-weight: 600; color: var(--ink); margin-bottom: 8px; }
+.guests-field-label small { font-weight: 500; color: var(--muted); }
+.guests-stepper { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.guests-step-btn {
+  width: 32px; height: 32px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--cream);
+  color: var(--ink);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color .15s ease, background .15s ease;
+}
+.guests-step-btn:hover:not(:disabled) { border-color: var(--gold); background: #fff; }
+.guests-step-btn:disabled { opacity: .35; cursor: not-allowed; }
+.guests-step-value { font-weight: 600; color: var(--ink); min-width: 18px; text-align: center; }
+.guests-ages { margin-top: 14px; }
+.guests-ages-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.guests-age-select {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 9px 12px;
+  background: var(--cream);
+  color: var(--text);
+  font-family: inherit;
+  font-size: .88rem;
+}
+.guests-age-select:focus { outline: none; border-color: var(--gold); }
+.guests-add-room {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 18px;
+  background: none;
+  border: none;
+  color: var(--gold-dark);
+  font-weight: 700;
+  font-size: .86rem;
+  letter-spacing: .02em;
+  cursor: pointer;
+}
+.guests-add-room:hover { color: var(--ink); }
+.guests-add-room span { font-size: 1.1rem; line-height: 1; }
+.guests-done {
+  display: block;
+  width: 100%;
+  margin-top: 18px;
+  padding: 12px;
+  border: none;
+  border-radius: 999px;
+  background: var(--gold);
+  color: #1a1a1a;
+  font-weight: 700;
+  font-size: .86rem;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background .15s ease;
+}
+.guests-done:hover { background: var(--gold-dark); }
+
 /* ---------- Custom date picker (replaces native <input type="date">) ---------- */
 .custom-datepicker { position: relative; width: 100%; }
 .custom-datepicker input {
