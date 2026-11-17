@@ -374,9 +374,12 @@
     Array.prototype.slice.call(document.querySelectorAll(".custom-datepicker.open")).forEach(function (el) {
       if (el !== except) el.classList.remove("open");
     });
+    Array.prototype.slice.call(document.querySelectorAll(".custom-destination.open")).forEach(function (el) {
+      if (el !== except) el.classList.remove("open");
+    });
   }
   document.addEventListener("click", function (e) {
-    if (!e.target.closest(".custom-select") && !e.target.closest(".custom-datepicker")) {
+    if (!e.target.closest(".custom-select") && !e.target.closest(".custom-datepicker") && !e.target.closest(".custom-destination")) {
       closeAllPoppers(null);
     }
   });
@@ -478,6 +481,79 @@
   }
 
   Array.prototype.slice.call(document.querySelectorAll(".js-customselect")).forEach(enhanceSelect);
+
+  /* ---------- Destination suggestions (type freely, or pick a common search) ---------- */
+  var POPULAR_DESTINATIONS = [
+    "London, UK",
+    "Paris, France",
+    "New York, USA",
+    "Dubai, UAE",
+    "Rome, Italy",
+    "Santorini, Greece",
+    "Amalfi Coast, Italy",
+    "Bali, Indonesia",
+    "Courchevel, France",
+    "Seychelles",
+    "Kyoto, Japan",
+    "Cape Town, South Africa"
+  ];
+
+  function enhanceDestinationInput(input) {
+    if (input.dataset.enhanced) return;
+    input.dataset.enhanced = "true";
+
+    var wrapper = document.createElement("div");
+    wrapper.className = "custom-destination";
+    input.parentNode.insertBefore(wrapper, input);
+    wrapper.appendChild(input);
+
+    var listbox = document.createElement("ul");
+    listbox.className = "custom-destination-list";
+    listbox.setAttribute("role", "listbox");
+    wrapper.appendChild(listbox);
+
+    function render(query) {
+      var q = (query || "").trim().toLowerCase();
+      var matches = q
+        ? POPULAR_DESTINATIONS.filter(function (name) { return name.toLowerCase().indexOf(q) !== -1; })
+        : POPULAR_DESTINATIONS;
+      listbox.innerHTML = "";
+      matches.forEach(function (name) {
+        var li = document.createElement("li");
+        li.className = "custom-destination-option";
+        li.setAttribute("role", "option");
+        li.textContent = name;
+        li.addEventListener("click", function () {
+          input.value = name;
+          closePanel();
+        });
+        listbox.appendChild(li);
+      });
+      return matches.length;
+    }
+
+    function openPanel() {
+      if (render(input.value) === 0) return;
+      closeAllPoppers(wrapper);
+      wrapper.classList.add("open");
+      positionPanelHorizontally(wrapper, listbox);
+    }
+    function closePanel() {
+      wrapper.classList.remove("open");
+    }
+
+    listbox.addEventListener("mousedown", function (e) { e.preventDefault(); });
+    input.addEventListener("focus", openPanel);
+    input.addEventListener("input", function () {
+      if (render(input.value) === 0) closePanel(); else wrapper.classList.add("open");
+    });
+    input.addEventListener("click", function (e) {
+      e.stopPropagation();
+      openPanel();
+    });
+  }
+
+  Array.prototype.slice.call(document.querySelectorAll(".js-destination")).forEach(enhanceDestinationInput);
 
   /* ---------- Custom date pickers ---------- */
   var MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
