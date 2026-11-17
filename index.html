@@ -26,7 +26,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20261117e">
+<link rel="stylesheet" href="css/styles.css?v=20261117f">
 </head>
 <body>
 
@@ -121,7 +121,7 @@
           <div class="search-panel active" data-panel="stays">
             <div class="hero-field">
               <label for="staysDestination">Destination</label>
-              <input type="text" id="staysDestination" name="destination" placeholder="City, hotel or region">
+              <input type="text" id="staysDestination" name="destination" class="js-destination" autocomplete="off" placeholder="City, hotel or region">
             </div>
             <div class="hero-field">
               <label for="staysCheckin">Check-in</label>
@@ -145,11 +145,11 @@
           <div class="search-panel" data-panel="flights">
             <div class="hero-field">
               <label for="flightsFrom">From</label>
-              <input type="text" id="flightsFrom" name="from" placeholder="Departure city or airport">
+              <input type="text" id="flightsFrom" name="from" class="js-destination" autocomplete="off" placeholder="Departure city or airport">
             </div>
             <div class="hero-field">
               <label for="flightsTo">To</label>
-              <input type="text" id="flightsTo" name="to" placeholder="Destination city or airport">
+              <input type="text" id="flightsTo" name="to" class="js-destination" autocomplete="off" placeholder="Destination city or airport">
             </div>
             <div class="hero-field">
               <label for="flightsDepart">Depart</label>
@@ -169,7 +169,7 @@
           <div class="search-panel" data-panel="bundle">
             <div class="hero-field">
               <label for="bundleDestination">Flying to</label>
-              <input type="text" id="bundleDestination" name="bundleDestination" placeholder="City or airport">
+              <input type="text" id="bundleDestination" name="bundleDestination" class="js-destination" autocomplete="off" placeholder="City or airport">
             </div>
             <div class="hero-field">
               <label for="bundleCheckin">Check-in</label>
@@ -521,6 +521,6 @@
   <a href="#search" class="btn btn-primary btn-block btn-badge"><span class="badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></span>Search Stays, Flights &amp; More</a>
 </div>
 
-<script src="js/script.js?v=20261117b"></script>
+<script src="js/script.js?v=20261117c"></script>
 </body>
 </html>
