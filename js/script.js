@@ -389,10 +389,24 @@
 
   function positionPanelHorizontally(wrapper, panel) {
     wrapper.classList.remove("align-right");
+    panel.style.left = "";
+    panel.style.right = "";
     var rect = wrapper.getBoundingClientRect();
     var panelWidth = panel.offsetWidth || 280;
-    if (rect.left + panelWidth > window.innerWidth - 16) {
+    var viewportWidth = window.innerWidth;
+    if (rect.left + panelWidth > viewportWidth - 16) {
       wrapper.classList.add("align-right");
+    }
+    // Belt-and-braces: for panels wider than the field itself, the left/right
+    // toggle above can still clip on narrow screens. Pin with an exact pixel
+    // offset if it does.
+    var panelRect = panel.getBoundingClientRect();
+    if (panelRect.left < 8) {
+      panel.style.right = "auto";
+      panel.style.left = (8 - rect.left) + "px";
+    } else if (panelRect.right > viewportWidth - 8) {
+      panel.style.left = "auto";
+      panel.style.right = (rect.right - (viewportWidth - 8)) + "px";
     }
   }
 
@@ -639,6 +653,238 @@
   }
 
   Array.prototype.slice.call(document.querySelectorAll(".js-destination")).forEach(enhanceDestinationInput);
+
+  /* ---------- Guests / rooms picker ---------- */
+  function enhanceGuestsPicker(input) {
+    if (input.dataset.enhanced) return;
+    input.dataset.enhanced = "true";
+
+    var MAX_ROOMS = 6, MAX_ADULTS = 8, MAX_CHILDREN = 6;
+    var state = [{ adults: 2, children: 0, childAges: [] }];
+
+    function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+    var wrapper = document.createElement("div");
+    wrapper.className = "custom-select guests-picker";
+    input.parentNode.insertBefore(wrapper, input);
+    wrapper.appendChild(input);
+    input.classList.add("custom-select-native");
+    input.setAttribute("tabindex", "-1");
+    input.setAttribute("aria-hidden", "true");
+
+    var button = document.createElement("button");
+    button.type = "button";
+    button.className = "custom-select-trigger";
+    button.setAttribute("aria-haspopup", "true");
+    button.setAttribute("aria-expanded", "false");
+
+    var label = document.createElement("span");
+    label.className = "custom-select-label";
+    button.appendChild(label);
+
+    var chevron = document.createElement("span");
+    chevron.className = "custom-select-chevron";
+    chevron.setAttribute("aria-hidden", "true");
+    chevron.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+    button.appendChild(chevron);
+
+    var panel = document.createElement("div");
+    panel.className = "guests-panel";
+
+    var roomsList = document.createElement("div");
+    panel.appendChild(roomsList);
+
+    var addRoomBtn = document.createElement("button");
+    addRoomBtn.type = "button";
+    addRoomBtn.className = "guests-add-room";
+    addRoomBtn.innerHTML = '<span aria-hidden="true">+</span> Add room';
+    panel.appendChild(addRoomBtn);
+
+    var doneBtn = document.createElement("button");
+    doneBtn.type = "button";
+    doneBtn.className = "guests-done";
+    doneBtn.textContent = "Done";
+    panel.appendChild(doneBtn);
+
+    wrapper.appendChild(button);
+    wrapper.appendChild(panel);
+
+    function summary() {
+      var totalAdults = 0, totalChildren = 0;
+      state.forEach(function (r) { totalAdults += r.adults; totalChildren += r.children; });
+      var parts = [totalAdults + (totalAdults === 1 ? " Adult" : " Adults")];
+      if (totalChildren > 0) parts.push(totalChildren + (totalChildren === 1 ? " Child" : " Children"));
+      var roomsPart = state.length + (state.length === 1 ? " Room" : " Rooms");
+      return parts.join(", ") + " · " + roomsPart;
+    }
+
+    function sync() {
+      var text = summary();
+      input.value = text;
+      setupMarqueeText(label, text);
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+
+    function renderAgeOptions(selectEl, selectedValue) {
+      selectEl.innerHTML = "";
+      var placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = "Age required";
+      placeholder.disabled = true;
+      if (!selectedValue) placeholder.selected = true;
+      selectEl.appendChild(placeholder);
+      var under1 = document.createElement("option");
+      under1.value = "0";
+      under1.textContent = "Under 1";
+      if (selectedValue === "0") under1.selected = true;
+      selectEl.appendChild(under1);
+      for (var age = 1; age <= 17; age++) {
+        var opt = document.createElement("option");
+        opt.value = String(age);
+        opt.textContent = String(age);
+        if (selectedValue === String(age)) opt.selected = true;
+        selectEl.appendChild(opt);
+      }
+    }
+
+    function makeStepper(labelText, sub, value, min, max, onChange) {
+      var field = document.createElement("div");
+      field.className = "guests-field";
+      var lbl = document.createElement("span");
+      lbl.className = "guests-field-label";
+      lbl.innerHTML = labelText + (sub ? " <small>" + sub + "</small>" : "");
+      field.appendChild(lbl);
+
+      var stepper = document.createElement("div");
+      stepper.className = "guests-stepper";
+
+      var minusBtn = document.createElement("button");
+      minusBtn.type = "button";
+      minusBtn.className = "guests-step-btn";
+      minusBtn.setAttribute("aria-label", "Decrease " + labelText.toLowerCase());
+      minusBtn.textContent = "−";
+      minusBtn.disabled = value <= min;
+      minusBtn.addEventListener("click", function () { onChange(clamp(value - 1, min, max)); });
+
+      var valueEl = document.createElement("span");
+      valueEl.className = "guests-step-value";
+      valueEl.textContent = value;
+
+      var plusBtn = document.createElement("button");
+      plusBtn.type = "button";
+      plusBtn.className = "guests-step-btn";
+      plusBtn.setAttribute("aria-label", "Increase " + labelText.toLowerCase());
+      plusBtn.textContent = "+";
+      plusBtn.disabled = value >= max;
+      plusBtn.addEventListener("click", function () { onChange(clamp(value + 1, min, max)); });
+
+      stepper.appendChild(minusBtn);
+      stepper.appendChild(valueEl);
+      stepper.appendChild(plusBtn);
+      field.appendChild(stepper);
+      return field;
+    }
+
+    function render() {
+      roomsList.innerHTML = "";
+      state.forEach(function (room, index) {
+        var roomEl = document.createElement("div");
+        roomEl.className = "guests-room";
+
+        var head = document.createElement("div");
+        head.className = "guests-room-head";
+        var title = document.createElement("span");
+        title.className = "guests-room-title";
+        title.textContent = "Room " + (index + 1);
+        head.appendChild(title);
+        if (state.length > 1) {
+          var removeBtn = document.createElement("button");
+          removeBtn.type = "button";
+          removeBtn.className = "guests-remove-room";
+          removeBtn.textContent = "Remove";
+          removeBtn.addEventListener("click", function () {
+            state.splice(index, 1);
+            render();
+            sync();
+          });
+          head.appendChild(removeBtn);
+        }
+        roomEl.appendChild(head);
+
+        var row = document.createElement("div");
+        row.className = "guests-row";
+        row.appendChild(makeStepper("Adults", "", room.adults, 1, MAX_ADULTS, function (next) {
+          room.adults = next;
+          render();
+          sync();
+        }));
+        row.appendChild(makeStepper("Children", "(Age 0-17)", room.children, 0, MAX_CHILDREN, function (next) {
+          var diff = next - room.children;
+          if (diff > 0) { for (var i = 0; i < diff; i++) room.childAges.push(""); }
+          else if (diff < 0) { room.childAges.splice(next); }
+          room.children = next;
+          render();
+          sync();
+        }));
+        roomEl.appendChild(row);
+
+        if (room.children > 0) {
+          var agesWrap = document.createElement("div");
+          agesWrap.className = "guests-ages";
+          var agesLabel = document.createElement("span");
+          agesLabel.className = "guests-field-label";
+          agesLabel.textContent = "Age of children";
+          agesWrap.appendChild(agesLabel);
+          var agesGrid = document.createElement("div");
+          agesGrid.className = "guests-ages-grid";
+          room.childAges.forEach(function (age, childIndex) {
+            var sel = document.createElement("select");
+            sel.className = "guests-age-select";
+            renderAgeOptions(sel, age);
+            sel.addEventListener("change", function () {
+              room.childAges[childIndex] = sel.value;
+            });
+            agesGrid.appendChild(sel);
+          });
+          agesWrap.appendChild(agesGrid);
+          roomEl.appendChild(agesWrap);
+        }
+
+        roomsList.appendChild(roomEl);
+      });
+    }
+
+    function openPanel() {
+      closeAllPoppers(wrapper);
+      wrapper.classList.add("open");
+      button.setAttribute("aria-expanded", "true");
+      positionPanelHorizontally(wrapper, panel);
+    }
+    function closePanel() {
+      wrapper.classList.remove("open");
+      button.setAttribute("aria-expanded", "false");
+    }
+
+    addRoomBtn.addEventListener("click", function () {
+      if (state.length >= MAX_ROOMS) return;
+      state.push({ adults: 1, children: 0, childAges: [] });
+      render();
+      sync();
+      positionPanelHorizontally(wrapper, panel);
+    });
+    doneBtn.addEventListener("click", function () { closePanel(); });
+    panel.addEventListener("click", function (e) { e.stopPropagation(); });
+    button.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (wrapper.classList.contains("open")) closePanel(); else openPanel();
+    });
+
+    render();
+    sync();
+    positionPanelHorizontally(wrapper, panel);
+  }
+
+  Array.prototype.slice.call(document.querySelectorAll(".js-guests-picker")).forEach(enhanceGuestsPicker);
 
   /* ---------- Custom date pickers ---------- */
   var MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
