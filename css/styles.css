@@ -571,6 +571,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   padding: 11px 16px;
   background: var(--cream);
 }
+.field .destination-display { padding: 0 16px; }
 .field textarea {
   width: 100%;
   border: 1px solid var(--border);
@@ -747,6 +748,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 
 /* ---------- Destination suggestions ---------- */
 .custom-destination { position: relative; width: 100%; }
+.text-overflow-wrap { position: relative; width: 100%; min-width: 0; }
 .custom-destination-list {
   position: absolute;
   top: calc(100% + 6px);
@@ -778,7 +780,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 }
 .custom-destination-option:hover { background: var(--cream-alt); }
 
-.custom-destination input.text-hidden { color: transparent; }
+input.text-hidden { color: transparent; }
 .destination-display {
   position: absolute;
   inset: 0;

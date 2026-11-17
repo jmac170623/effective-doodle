@@ -529,15 +529,8 @@
     "Cape Town, South Africa"
   ];
 
-  function enhanceDestinationInput(input) {
-    if (input.dataset.enhanced) return;
-    input.dataset.enhanced = "true";
-
-    var wrapper = document.createElement("div");
-    wrapper.className = "custom-destination";
-    input.parentNode.insertBefore(wrapper, input);
-    wrapper.appendChild(input);
-
+  /* ---------- Shared: show the full value (scrolling if needed) once a text input is blurred ---------- */
+  function attachOverflowDisplay(wrapper, input) {
     var display = document.createElement("span");
     display.className = "destination-display";
     display.setAttribute("aria-hidden", "true");
@@ -557,6 +550,39 @@
       input.classList.remove("text-hidden");
       display.classList.remove("visible");
     }
+
+    return { showDisplay: showDisplay, hideDisplay: hideDisplay };
+  }
+
+  function enhanceOverflowInput(input) {
+    if (input.dataset.overflowEnhanced) return;
+    input.dataset.overflowEnhanced = "true";
+
+    var wrapper = document.createElement("div");
+    wrapper.className = "text-overflow-wrap";
+    input.parentNode.insertBefore(wrapper, input);
+    wrapper.appendChild(input);
+
+    var controls = attachOverflowDisplay(wrapper, input);
+    input.addEventListener("focus", controls.hideDisplay);
+    input.addEventListener("blur", controls.showDisplay);
+    controls.showDisplay();
+  }
+
+  Array.prototype.slice.call(document.querySelectorAll(".js-overflow-text")).forEach(enhanceOverflowInput);
+
+  function enhanceDestinationInput(input) {
+    if (input.dataset.enhanced) return;
+    input.dataset.enhanced = "true";
+
+    var wrapper = document.createElement("div");
+    wrapper.className = "custom-destination";
+    input.parentNode.insertBefore(wrapper, input);
+    wrapper.appendChild(input);
+
+    var controls = attachOverflowDisplay(wrapper, input);
+    var showDisplay = controls.showDisplay;
+    var hideDisplay = controls.hideDisplay;
 
     var listbox = document.createElement("ul");
     listbox.className = "custom-destination-list";
