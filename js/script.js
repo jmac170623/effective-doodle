@@ -111,6 +111,7 @@
       applyCurrency(select.value);
     });
   });
+  if (currencySelects.length) applyCurrency(currencySelects[0].value);
 
   /* ---------- Scroll-reveal animations ---------- */
   var revealEls = Array.prototype.slice.call(document.querySelectorAll(".reveal"));
