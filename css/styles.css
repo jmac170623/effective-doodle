@@ -618,7 +618,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 .newsletter-form input::placeholder { color: rgba(255,255,255,.4); }
 .newsletter-form .btn { width: 100%; padding: 10px 16px; justify-content: center; }
 .newsletter-form .btn-badge { padding-left: 46px; }
-.newsletter-form .btn-badge .badge { width: 32px; height: 32px; left: -8px; }
+.newsletter-form .btn-badge .badge { width: 32px; height: 32px; }
 #newsletterStatus { font-size: .82rem; }
 
 .footer-bottom {
