@@ -538,6 +538,26 @@
     input.parentNode.insertBefore(wrapper, input);
     wrapper.appendChild(input);
 
+    var display = document.createElement("span");
+    display.className = "destination-display";
+    display.setAttribute("aria-hidden", "true");
+    wrapper.appendChild(display);
+
+    function showDisplay() {
+      if (!input.value) {
+        input.classList.remove("text-hidden");
+        display.classList.remove("visible");
+        return;
+      }
+      setupMarqueeText(display, input.value);
+      input.classList.add("text-hidden");
+      display.classList.add("visible");
+    }
+    function hideDisplay() {
+      input.classList.remove("text-hidden");
+      display.classList.remove("visible");
+    }
+
     var listbox = document.createElement("ul");
     listbox.className = "custom-destination-list";
     listbox.setAttribute("role", "listbox");
@@ -557,6 +577,7 @@
         li.addEventListener("click", function () {
           input.value = name;
           closePanel();
+          input.blur();
         });
         listbox.appendChild(li);
       });
@@ -574,14 +595,21 @@
     }
 
     listbox.addEventListener("mousedown", function (e) { e.preventDefault(); });
-    input.addEventListener("focus", openPanel);
+    input.addEventListener("focus", function () {
+      hideDisplay();
+      openPanel();
+    });
     input.addEventListener("input", function () {
       if (render(input.value) === 0) closePanel(); else wrapper.classList.add("open");
     });
     input.addEventListener("click", function (e) {
       e.stopPropagation();
+      hideDisplay();
       openPanel();
     });
+    input.addEventListener("blur", showDisplay);
+
+    showDisplay();
   }
 
   Array.prototype.slice.call(document.querySelectorAll(".js-destination")).forEach(enhanceDestinationInput);

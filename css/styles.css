@@ -778,6 +778,22 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 }
 .custom-destination-option:hover { background: var(--cream-alt); }
 
+.custom-destination input.text-hidden { color: transparent; }
+.destination-display {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  padding: 0 12px;
+  pointer-events: none;
+  overflow: hidden;
+  white-space: nowrap;
+  color: var(--text);
+  font-size: 1rem;
+  border-radius: 999px;
+}
+.destination-display.visible { display: flex; }
+
 /* ---------- Custom date picker (replaces native <input type="date">) ---------- */
 .custom-datepicker { position: relative; width: 100%; }
 .custom-datepicker input {
