@@ -180,15 +180,15 @@
   var heroCopyByTab = {
     stays: {
       headline: "Book your stay<br>with crypto or card.",
-      lead: "Search thousands of stays worldwide, then pay however suits you — major cards or leading cryptocurrencies."
+      lead: "Search thousands of stays worldwide, then pay however suits you using major cards or leading cryptocurrencies."
     },
     flights: {
       headline: "Book your flight<br>with crypto or card.",
-      lead: "Search hundreds of airlines worldwide, then pay however suits you — major cards or leading cryptocurrencies."
+      lead: "Search hundreds of airlines worldwide, then pay however suits you using major cards or leading cryptocurrencies."
     },
     bundle: {
       headline: "Book flight + hotel<br>with crypto or card.",
-      lead: "Bundle your flight and stay into one trip, then pay however suits you — major cards or leading cryptocurrencies."
+      lead: "Bundle your flight and stay into one trip, then pay however suits you using major cards or leading cryptocurrencies."
     }
   };
 
@@ -239,7 +239,7 @@
     var status = document.getElementById("formStatus");
     if (destination) {
       status.textContent =
-        'Noted — tell us a little more about ' + destination + ' below and our team will send you live pricing.';
+        'Noted. Tell us a little more about ' + destination + ' below and our team will send you live pricing.';
       status.className = "form-status success";
       document.getElementById("message").value = "I'd like to book: " + destination + ".";
     } else {
@@ -313,13 +313,13 @@
       .then(function (response) {
         if (!response.ok) throw new Error("Request failed");
         formStatus.textContent =
-          "Thank you, " + name.split(" ")[0] + ". Our team will be in touch shortly — 365 days a year.";
+          "Thank you, " + name.split(" ")[0] + ". Our team will be in touch shortly, 365 days a year.";
         formStatus.className = "form-status success";
         contactForm.reset();
       })
       .catch(function () {
         formStatus.textContent =
-          "Something went wrong sending your message — please email info@365travel.co directly.";
+          "Something went wrong sending your message. Please email info@365travel.co directly.";
         formStatus.className = "form-status error";
       })
       .finally(function () {
@@ -357,7 +357,7 @@
         newsletterForm.reset();
       })
       .catch(function () {
-        newsletterStatus.textContent = "Something went wrong — please try again.";
+        newsletterStatus.textContent = "Something went wrong. Please try again.";
         newsletterStatus.className = "form-status error";
       })
       .finally(function () {
