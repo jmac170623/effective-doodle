@@ -396,6 +396,37 @@
     }
   }
 
+  /* ---------- Marquee text: scroll text that's too long to fit, instead of "..." ---------- */
+  var prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function setupMarqueeText(container, text) {
+    container.classList.remove("marquee");
+    container.innerHTML = "";
+    var track = document.createElement("span");
+    track.className = "marquee-track";
+    var copyA = document.createElement("span");
+    copyA.className = "marquee-copy";
+    copyA.textContent = text;
+    track.appendChild(copyA);
+    container.appendChild(track);
+
+    if (prefersReducedMotion) return;
+
+    requestAnimationFrame(function () {
+      var overflowAmount = container.scrollWidth - container.clientWidth;
+      if (overflowAmount > 4) {
+        var copyB = document.createElement("span");
+        copyB.className = "marquee-copy";
+        copyB.setAttribute("aria-hidden", "true");
+        copyB.textContent = text;
+        track.appendChild(copyB);
+        var singleWidth = track.scrollWidth / 2;
+        var duration = Math.max(4, singleWidth / 38);
+        track.style.animationDuration = duration + "s";
+        container.classList.add("marquee");
+      }
+    });
+  }
+
   /* ---------- Custom select dropdowns ---------- */
   function enhanceSelect(select) {
     if (select.dataset.enhanced) return;
@@ -436,7 +467,7 @@
       var li = document.createElement("li");
       li.className = "custom-select-option";
       li.setAttribute("role", "option");
-      li.textContent = opt.textContent;
+      setupMarqueeText(li, opt.textContent);
       if (opt.selected) li.classList.add("active");
       li.addEventListener("click", function () {
         select.selectedIndex = i;
@@ -456,7 +487,7 @@
     }
     function syncLabel() {
       var selected = select.options[select.selectedIndex];
-      label.textContent = selected ? selected.textContent : "";
+      setupMarqueeText(label, selected ? selected.textContent : "");
     }
     syncLabel();
 
@@ -522,7 +553,7 @@
         var li = document.createElement("li");
         li.className = "custom-destination-option";
         li.setAttribute("role", "option");
-        li.textContent = name;
+        setupMarqueeText(li, name);
         li.addEventListener("click", function () {
           input.value = name;
           closePanel();

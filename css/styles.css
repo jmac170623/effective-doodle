@@ -217,14 +217,13 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 /* ---------- Hero ---------- */
 .hero {
   position: relative;
-  overflow: hidden;
   padding: 96px 0 108px;
   background:
     linear-gradient(180deg, rgba(20, 24, 31, .18) 0%, rgba(20, 24, 31, .4) 100%),
     url("../assets/hero-bg.jpg?v=20261116b") center 55% / cover no-repeat;
   color: #f3efe6;
 }
-.hero-bg { position: absolute; inset: 0; z-index: 0; }
+.hero-bg { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
 .glow {
   position: absolute;
   border-radius: 50%;
@@ -328,6 +327,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   padding: 22px;
 }
 .search-panel.active { display: grid; }
+.search-panel > * { min-width: 0; }
 .search-widget .hero-field label {
   display: block;
   font-size: .7rem;
@@ -531,6 +531,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   grid-template-columns: .9fr 1.1fr;
   gap: 56px;
 }
+.contact-grid > * { min-width: 0; }
 .contact-list { margin: 24px 0; }
 .contact-list li { display: flex; align-items: center; gap: 12px; padding: 10px 0; color: var(--muted); }
 .contact-icon { display: inline-flex; flex-shrink: 0; color: var(--gold-dark); }
@@ -555,7 +556,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   box-shadow: var(--shadow);
 }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.field { margin-bottom: 18px; }
+.field { margin-bottom: 18px; min-width: 0; }
 .field label {
   display: block;
   font-size: .78rem;
@@ -645,10 +646,27 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 }
 .currency-select:focus { outline: none; border-color: var(--gold); }
 
+/* ---------- Marquee text (for labels/options too long to fit) ---------- */
+.marquee-track { display: inline-flex; white-space: nowrap; }
+.marquee-copy { white-space: nowrap; padding-right: 36px; }
+@media (prefers-reduced-motion: no-preference) {
+  .marquee { text-overflow: clip; }
+  .marquee .marquee-track {
+    animation-name: marqueeScroll;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+  }
+  @keyframes marqueeScroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+}
+
 /* ---------- Custom select (replaces native <select> dropdowns) ---------- */
 .custom-select {
   position: relative;
   width: 100%;
+  min-width: 0;
 }
 .custom-select-native {
   position: absolute;
@@ -664,6 +682,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   justify-content: space-between;
   gap: 8px;
   width: 100%;
+  min-width: 0;
   border: 1px solid var(--border);
   border-radius: 999px;
   padding: 11px 18px;
@@ -677,7 +696,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 }
 .custom-select-trigger:hover { border-color: var(--gold); }
 .custom-select.open .custom-select-trigger { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(182, 144, 79, .15); }
-.custom-select-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.custom-select-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1 1 auto; }
 .custom-select-chevron { display: flex; flex-shrink: 0; color: var(--muted); transition: transform .15s ease; }
 .custom-select-chevron svg { width: 16px; height: 16px; }
 .custom-select.open .custom-select-chevron { transform: rotate(180deg); }
