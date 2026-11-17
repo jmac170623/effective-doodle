@@ -82,7 +82,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   justify-content: center;
   gap: 8px;
   padding: 14px 28px;
-  border-radius: var(--radius-sm);
+  border-radius: 999px;
   font-weight: 600;
   font-size: .82rem;
   letter-spacing: .04em;
@@ -91,8 +91,21 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   transition: transform .15s ease, box-shadow .15s ease, background .15s ease, color .15s ease, border-color .15s ease;
   white-space: nowrap;
 }
-.btn-icon { display: inline-flex; flex-shrink: 0; }
-.btn-icon svg { width: 16px; height: 16px; display: block; }
+.btn-badge { position: relative; padding-left: 54px; }
+.btn-badge .badge {
+  position: absolute;
+  left: -2px; top: 50%;
+  transform: translateY(-50%);
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--gold-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(20, 24, 31, .3);
+}
+.btn-badge .badge svg { width: 18px; height: 18px; display: block; }
 .btn-primary {
   background: var(--gold);
   color: #1a1a1a;
@@ -175,6 +188,8 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 
 .header-actions { display: flex; align-items: center; gap: 12px; }
 .header-actions .btn { padding: 11px 22px; }
+.header-actions .btn-badge { padding-left: 50px; }
+.header-actions .btn-badge .badge { width: 36px; height: 36px; }
 
 .nav-toggle {
   display: none;
@@ -585,6 +600,8 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 }
 .newsletter-form input::placeholder { color: rgba(255,255,255,.4); }
 .newsletter-form .btn { padding: 10px 16px; }
+.newsletter-form .btn-badge { padding-left: 46px; }
+.newsletter-form .btn-badge .badge { width: 32px; height: 32px; left: -8px; }
 #newsletterStatus { font-size: .82rem; }
 
 .footer-bottom {
