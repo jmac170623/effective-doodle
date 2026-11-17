@@ -656,6 +656,13 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
     animation-name: marqueeScroll;
     animation-timing-function: linear;
     animation-iteration-count: infinite;
+    animation-play-state: paused;
+  }
+  .marquee:hover .marquee-track,
+  .custom-select-trigger:hover .marquee-track,
+  .custom-destination:hover .destination-display .marquee-track,
+  .text-overflow-wrap:hover .destination-display .marquee-track {
+    animation-play-state: running;
   }
   @keyframes marqueeScroll {
     from { transform: translateX(0); }
