@@ -180,16 +180,16 @@
   var heroLead = document.getElementById("heroLead");
   var heroCopyByTab = {
     stays: {
-      headline: "Book your stay<br>with crypto or card.",
-      lead: "Search thousands of stays worldwide, then pay however suits you using major cards or leading cryptocurrencies."
+      headline: "Your next stay,<br>planned around you.",
+      lead: "Search thousands of stays worldwide, or ask our team to put the trip together for you."
     },
     flights: {
-      headline: "Book your flight<br>with crypto or card.",
-      lead: "Search hundreds of airlines worldwide, then pay however suits you using major cards or leading cryptocurrencies."
+      headline: "Your next flight,<br>planned around you.",
+      lead: "Search hundreds of airlines worldwide, or ask our team to put the trip together for you."
     },
     bundle: {
-      headline: "Book flight + hotel<br>with crypto or card.",
-      lead: "Bundle your flight and stay into one trip, then pay however suits you using major cards or leading cryptocurrencies."
+      headline: "Your next trip,<br>planned around you.",
+      lead: "Bundle your flight and stay into one trip, or ask our team to put it together for you."
     }
   };
 
@@ -322,6 +322,73 @@
         formStatus.textContent =
           "Something went wrong sending your message. Please email info@365travel.co directly.";
         formStatus.className = "form-status error";
+      })
+      .finally(function () {
+        submitBtn.disabled = false;
+      });
+  });
+
+  /* ---------- Plan it with us form ---------- */
+  var planForm = document.getElementById("planForm");
+  var planStatus = document.getElementById("planStatus");
+
+  function showPlanFieldError(fieldId, message) {
+    var field = document.getElementById(fieldId);
+    var errorEl = planForm.querySelector('[data-error-for="' + fieldId + '"]');
+    field.closest(".field").classList.toggle("has-error", Boolean(message));
+    if (errorEl) errorEl.textContent = message || "";
+  }
+
+  planForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var name = document.getElementById("planName").value.trim();
+    var email = document.getElementById("planEmail").value.trim();
+    var valid = true;
+
+    if (!name) {
+      showPlanFieldError("planName", "Please enter your name.");
+      valid = false;
+    } else {
+      showPlanFieldError("planName", "");
+    }
+
+    if (!email) {
+      showPlanFieldError("planEmail", "Please enter your email.");
+      valid = false;
+    } else if (!isValidEmail(email)) {
+      showPlanFieldError("planEmail", "Please enter a valid email address.");
+      valid = false;
+    } else {
+      showPlanFieldError("planEmail", "");
+    }
+
+    if (!valid) {
+      planStatus.textContent = "Please fix the errors above and try again.";
+      planStatus.className = "form-status error";
+      return;
+    }
+
+    var submitBtn = planForm.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    planStatus.textContent = "Sending...";
+    planStatus.className = "form-status";
+
+    fetch("https://formsubmit.co/ajax/info@365travel.co", {
+      method: "POST",
+      headers: { Accept: "application/json" },
+      body: new FormData(planForm)
+    })
+      .then(function (response) {
+        if (!response.ok) throw new Error("Request failed");
+        planStatus.textContent =
+          "Thank you, " + name.split(" ")[0] + ". A travel adviser will be in touch with a tailored plan shortly.";
+        planStatus.className = "form-status success";
+        planForm.reset();
+      })
+      .catch(function () {
+        planStatus.textContent =
+          "Something went wrong sending your request. Please email info@365travel.co directly.";
+        planStatus.className = "form-status error";
       })
       .finally(function () {
         submitBtn.disabled = false;
