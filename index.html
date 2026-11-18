@@ -26,7 +26,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20261118a">
+<link rel="stylesheet" href="css/styles.css?v=20261118b">
 </head>
 <body>
 
@@ -90,12 +90,12 @@
     </div>
     <div class="container hero-inner-stack" id="search">
       <div class="hero-copy-center">
-        <span class="eyebrow">Search worldwide · Pay with card or crypto</span>
-        <h1 id="heroHeadline">Book your stay<br>with crypto or card.</h1>
+        <span class="eyebrow">Stays, flights &amp; tailor-made trips</span>
+        <h1 id="heroHeadline">Your next stay,<br>planned around you.</h1>
         <p class="lead" id="heroLead">
-          Search thousands of stays worldwide, then pay however suits you
-          using major cards or leading cryptocurrencies.
+          Search thousands of stays worldwide, or ask our team to put the trip together for you.
         </p>
+        <a href="#plan" class="hero-plan-link">Prefer a tailored trip? Tell us what you want &rarr;</a>
       </div>
 
       <div class="search-widget">
@@ -204,44 +204,79 @@
     </div>
   </section>
 
-  <!-- Crypto payments -->
-  <section class="section section-alt crypto-section" id="crypto">
+  <!-- Plan it with us -->
+  <section class="section section-alt" id="plan">
     <div class="container">
       <div class="section-head reveal">
-        <span class="eyebrow">Payments</span>
-        <h2>Your money's good here.</h2>
-        <p class="section-sub">Pay for your trip with a major card, bank transfer, or leading cryptocurrencies. Once your agent confirms your booking, we'll send a secure payment link in your currency of choice.</p>
+        <span class="eyebrow">Plan it with us</span>
+        <h2>Tell us what you want. We'll do the rest.</h2>
+        <p class="section-sub">Send your destination, dates and budget and a real travel adviser will come back with a tailored plan, not a search results page.</p>
       </div>
 
-      <div class="crypto-grid reveal">
-        <span class="crypto-badge"><span class="crypto-symbol">₿</span>Bitcoin</span>
-        <span class="crypto-badge"><span class="crypto-symbol">Ξ</span>Ethereum</span>
-        <span class="crypto-badge"><span class="crypto-symbol">₮</span>USDT</span>
-        <span class="crypto-badge"><span class="crypto-symbol">$</span>USD Coin</span>
-        <span class="crypto-badge"><span class="crypto-symbol">◎</span>Solana</span>
-        <span class="crypto-badge"><span class="crypto-symbol">Ł</span>Litecoin</span>
-        <span class="crypto-badge"><span class="crypto-symbol">Ð</span>Dogecoin</span>
-        <span class="crypto-badge crypto-badge-card"><span class="crypto-symbol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span>Card &amp; Bank Transfer</span>
-      </div>
-
-      <ul class="trust-strip reveal">
-        <li><span class="trust-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span> Payments handled by trusted, secure processors</li>
-        <li><span class="trust-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 10 18 20 6"/></svg></span> No hidden fees, the price you see is the price you pay</li>
-      </ul>
-
-      <div class="center-cta">
-        <a href="#contact" class="btn btn-outline">Ask about payment options</a>
-      </div>
+      <form class="contact-form plan-form reveal" id="planForm" novalidate>
+        <input type="hidden" name="_subject" value="New trip request: 365 Travel website">
+        <input type="hidden" name="_captcha" value="false">
+        <input type="hidden" name="_template" value="table">
+        <div class="form-row">
+          <div class="field">
+            <label for="planName">Full name</label>
+            <input type="text" id="planName" name="name" class="js-overflow-text" required>
+            <span class="error" data-error-for="planName"></span>
+          </div>
+          <div class="field">
+            <label for="planEmail">Email</label>
+            <input type="email" id="planEmail" name="email" class="js-overflow-text" required>
+            <span class="error" data-error-for="planEmail"></span>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label for="planDestination">Where to?</label>
+            <input type="text" id="planDestination" name="destination" class="js-overflow-text" placeholder="A place in mind, or just a vibe">
+          </div>
+          <div class="field">
+            <label for="planWhen">When?</label>
+            <input type="text" id="planWhen" name="when" class="js-overflow-text" placeholder="Exact dates or roughly when">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label for="planBudget">Budget</label>
+            <select id="planBudget" name="budget" class="js-customselect">
+              <option value="Not sure yet">Not sure yet</option>
+              <option value="Under £1,000 pp">Under £1,000 pp</option>
+              <option value="£1,000 to £2,500 pp">£1,000 to £2,500 pp</option>
+              <option value="£2,500 to £5,000 pp">£2,500 to £5,000 pp</option>
+              <option value="£5,000+ pp">£5,000+ pp</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="planTravellers">Travellers</label>
+            <select id="planTravellers" name="travellers" class="js-customselect">
+              <option>1 Adult</option>
+              <option>2 Adults</option>
+              <option>Family with kids</option>
+              <option>Group (5+)</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="planMessage">Anything else we should know?</label>
+          <textarea id="planMessage" name="message" rows="4" placeholder="Occasion, must-haves, places you've loved before, anything at all."></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block btn-badge"><span class="badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M3 6.5l9 6 9-6"/></svg></span>Request My Trip Plan</button>
+        <p class="form-status" id="planStatus" role="status" aria-live="polite"></p>
+      </form>
     </div>
   </section>
 
-  <!-- Popular destinations -->
+  <!-- Curated trip ideas -->
   <section class="section" id="experiences">
     <div class="container">
       <div class="section-head reveal">
-        <span class="eyebrow">Popular right now</span>
-        <h2>Destinations worth booking</h2>
-        <p class="section-sub">A sample of what's searchable today. Pricing shown is illustrative until your live quote is confirmed.</p>
+        <span class="eyebrow">Curated by our team</span>
+        <h2>A few trips we'd recommend first</h2>
+        <p class="section-sub">A sample of what we'd put together for you. Nothing here quite right? Tell us what you have in mind and we'll build it from scratch.</p>
       </div>
 
       <div class="destinations-grid">
@@ -306,17 +341,16 @@
     <div class="container about-grid">
       <div class="about-copy reveal">
         <span class="eyebrow">About us</span>
-        <h2>Travel booking that actually helps</h2>
+        <h2>Travel booking with a real person behind it</h2>
         <p>
-          365 Travel brings together stays and flights worldwide in one
-          place, with real support and
-          flexible payment, including leading cryptocurrencies, behind
-          every booking.
+          365 Travel brings together stays and flights worldwide, with a
+          real travel adviser and flexible payment, including leading
+          cryptocurrencies, behind every booking.
         </p>
         <ul class="about-points">
           <li><strong>One search, every trip type:</strong> stays and flights together.</li>
-          <li><strong>Pay your way:</strong> card, bank transfer, or crypto.</li>
           <li><strong>Real people, always reachable:</strong> support available 365 days a year.</li>
+          <li><strong>Pay your way:</strong> card, bank transfer, or crypto.</li>
         </ul>
       </div>
 
@@ -333,6 +367,37 @@
           <p>"Support answered within minutes and talked us through the whole booking before we paid."</p>
           <cite>The Alvarez Family, New York</cite>
         </blockquote>
+      </div>
+    </div>
+  </section>
+
+  <!-- Crypto payments -->
+  <section class="section crypto-section" id="crypto">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">Payments</span>
+        <h2>Your money's good here.</h2>
+        <p class="section-sub">Pay for your trip with a major card, bank transfer, or leading cryptocurrencies. Once your agent confirms your booking, we'll send a secure payment link in your currency of choice.</p>
+      </div>
+
+      <div class="crypto-grid reveal">
+        <span class="crypto-badge"><span class="crypto-symbol">₿</span>Bitcoin</span>
+        <span class="crypto-badge"><span class="crypto-symbol">Ξ</span>Ethereum</span>
+        <span class="crypto-badge"><span class="crypto-symbol">₮</span>USDT</span>
+        <span class="crypto-badge"><span class="crypto-symbol">$</span>USD Coin</span>
+        <span class="crypto-badge"><span class="crypto-symbol">◎</span>Solana</span>
+        <span class="crypto-badge"><span class="crypto-symbol">Ł</span>Litecoin</span>
+        <span class="crypto-badge"><span class="crypto-symbol">Ð</span>Dogecoin</span>
+        <span class="crypto-badge crypto-badge-card"><span class="crypto-symbol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span>Card &amp; Bank Transfer</span>
+      </div>
+
+      <ul class="trust-strip reveal">
+        <li><span class="trust-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span> Payments handled by trusted, secure processors</li>
+        <li><span class="trust-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 10 18 20 6"/></svg></span> No hidden fees, the price you see is the price you pay</li>
+      </ul>
+
+      <div class="center-cta">
+        <a href="#contact" class="btn btn-outline">Ask about payment options</a>
       </div>
     </div>
   </section>
@@ -511,6 +576,6 @@
   <a href="#search" class="btn btn-primary btn-block btn-badge"><span class="badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></span>Search Stays, Flights &amp; More</a>
 </div>
 
-<script src="js/script.js?v=20261118a"></script>
+<script src="js/script.js?v=20261118b"></script>
 </body>
 </html>
